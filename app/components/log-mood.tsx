@@ -1,4 +1,3 @@
-import { createFileRoute } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,11 +18,7 @@ import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
 
-export const Route = createFileRoute('/log')({
-  component: RouteComponent,
-});
-
-function RouteComponent() {
+export function LogMood() {
   const addMood = useMutation(api.mood.createMood);
 
   const [selectedMood, setSelectedMood] =

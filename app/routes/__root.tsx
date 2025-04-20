@@ -10,7 +10,6 @@ import { Toaster } from '@/components/ui/sonner';
 
 import appCss from '@/styles/app.css?url';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { TopNav } from '@/components/top-nav';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -43,8 +42,7 @@ function RootComponent() {
   return (
     <RootDocument>
       <div className="flex min-h-screen flex-col">
-        <TopNav />
-        <main className="flex-1 overflow-y-auto px-2 sm:px-6 pt-12">
+        <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>

@@ -12,8 +12,11 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as TrendsImport } from './routes/trends'
-import { Route as LogImport } from './routes/log'
+import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
+import { Route as LoginIndexImport } from './routes/login/index'
+import { Route as AuthenticatedLogImport } from './routes/_authenticated/log'
+import { Route as AuthenticatedDashboardImport } from './routes/_authenticated/dashboard'
 
 // Create/Update Routes
 
@@ -23,9 +26,8 @@ const TrendsRoute = TrendsImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const LogRoute = LogImport.update({
-  id: '/log',
-  path: '/log',
+const AuthenticatedRoute = AuthenticatedImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -33,6 +35,24 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const LoginIndexRoute = LoginIndexImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthenticatedLogRoute = AuthenticatedLogImport.update({
+  id: '/log',
+  path: '/log',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+
+const AuthenticatedDashboardRoute = AuthenticatedDashboardImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -46,11 +66,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/log': {
-      id: '/log'
-      path: '/log'
-      fullPath: '/log'
-      preLoaderRoute: typeof LogImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedImport
       parentRoute: typeof rootRoute
     }
     '/trends': {
@@ -60,49 +80,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrendsImport
       parentRoute: typeof rootRoute
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardImport
+      parentRoute: typeof AuthenticatedImport
+    }
+    '/_authenticated/log': {
+      id: '/_authenticated/log'
+      path: '/log'
+      fullPath: '/log'
+      preLoaderRoute: typeof AuthenticatedLogImport
+      parentRoute: typeof AuthenticatedImport
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
 // Create and export the route tree
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedLogRoute: typeof AuthenticatedLogRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedLogRoute: AuthenticatedLogRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/log': typeof LogRoute
+  '': typeof AuthenticatedRouteWithChildren
   '/trends': typeof TrendsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/log': typeof AuthenticatedLogRoute
+  '/login': typeof LoginIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/log': typeof LogRoute
+  '': typeof AuthenticatedRouteWithChildren
   '/trends': typeof TrendsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/log': typeof AuthenticatedLogRoute
+  '/login': typeof LoginIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/log': typeof LogRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/trends': typeof TrendsRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/log': typeof AuthenticatedLogRoute
+  '/login/': typeof LoginIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/log' | '/trends'
+  fullPaths: '/' | '' | '/trends' | '/dashboard' | '/log' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/log' | '/trends'
-  id: '__root__' | '/' | '/log' | '/trends'
+  to: '/' | '' | '/trends' | '/dashboard' | '/log' | '/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/trends'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/log'
+    | '/login/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LogRoute: typeof LogRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   TrendsRoute: typeof TrendsRoute
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LogRoute: LogRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   TrendsRoute: TrendsRoute,
+  LoginIndexRoute: LoginIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -116,18 +189,34 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/log",
-        "/trends"
+        "/_authenticated",
+        "/trends",
+        "/login/"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/log": {
-      "filePath": "log.tsx"
+    "/_authenticated": {
+      "filePath": "_authenticated.tsx",
+      "children": [
+        "/_authenticated/dashboard",
+        "/_authenticated/log"
+      ]
     },
     "/trends": {
       "filePath": "trends.tsx"
+    },
+    "/_authenticated/dashboard": {
+      "filePath": "_authenticated/dashboard.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/log": {
+      "filePath": "_authenticated/log.tsx",
+      "parent": "/_authenticated"
+    },
+    "/login/": {
+      "filePath": "login/index.tsx"
     }
   }
 }
