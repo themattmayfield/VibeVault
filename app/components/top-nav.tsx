@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  BarChart3,
   Home,
   Menu,
   PlusCircle,
@@ -34,11 +33,6 @@ const routes = [
     label: 'Log Mood',
     icon: PlusCircle,
     href: '/log',
-  },
-  {
-    label: 'Home',
-    icon: BarChart3,
-    href: '/home',
   },
   {
     label: 'Groups',
