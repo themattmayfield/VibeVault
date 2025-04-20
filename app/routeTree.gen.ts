@@ -11,9 +11,9 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as TrendsImport } from './routes/trends'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
+import { Route as AuthenticatedTrendsImport } from './routes/_authenticated/trends'
 import { Route as AuthenticatedLogImport } from './routes/_authenticated/log'
 import { Route as AuthenticatedDashboardImport } from './routes/_authenticated/dashboard'
 import { Route as AuthRoutesSignUpImport } from './routes/_authRoutes/sign-up'
@@ -22,12 +22,6 @@ import { Route as AuthRoutesForgotPasswordImport } from './routes/_authRoutes/fo
 import { Route as AuthRoutesAuthFormImport } from './routes/_authRoutes/_auth-form'
 
 // Create/Update Routes
-
-const TrendsRoute = TrendsImport.update({
-  id: '/trends',
-  path: '/trends',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const AuthenticatedRoute = AuthenticatedImport.update({
   id: '/_authenticated',
@@ -38,6 +32,12 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthenticatedTrendsRoute = AuthenticatedTrendsImport.update({
+  id: '/trends',
+  path: '/trends',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 const AuthenticatedLogRoute = AuthenticatedLogImport.update({
@@ -93,13 +93,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImport
       parentRoute: typeof rootRoute
     }
-    '/trends': {
-      id: '/trends'
-      path: '/trends'
-      fullPath: '/trends'
-      preLoaderRoute: typeof TrendsImport
-      parentRoute: typeof rootRoute
-    }
     '/_authRoutes/_auth-form': {
       id: '/_authRoutes/_auth-form'
       path: ''
@@ -142,6 +135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLogImport
       parentRoute: typeof AuthenticatedImport
     }
+    '/_authenticated/trends': {
+      id: '/_authenticated/trends'
+      path: '/trends'
+      fullPath: '/trends'
+      preLoaderRoute: typeof AuthenticatedTrendsImport
+      parentRoute: typeof AuthenticatedImport
+    }
   }
 }
 
@@ -150,11 +150,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLogRoute: typeof AuthenticatedLogRoute
+  AuthenticatedTrendsRoute: typeof AuthenticatedTrendsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLogRoute: AuthenticatedLogRoute,
+  AuthenticatedTrendsRoute: AuthenticatedTrendsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -164,36 +166,36 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRoutesAuthFormRoute
-  '/trends': typeof TrendsRoute
   '/forgot-password': typeof AuthRoutesForgotPasswordRoute
   '/sign-in': typeof AuthRoutesSignInRoute
   '/sign-up': typeof AuthRoutesSignUpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/log': typeof AuthenticatedLogRoute
+  '/trends': typeof AuthenticatedTrendsRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRoutesAuthFormRoute
-  '/trends': typeof TrendsRoute
   '/forgot-password': typeof AuthRoutesForgotPasswordRoute
   '/sign-in': typeof AuthRoutesSignInRoute
   '/sign-up': typeof AuthRoutesSignUpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/log': typeof AuthenticatedLogRoute
+  '/trends': typeof AuthenticatedTrendsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/trends': typeof TrendsRoute
   '/_authRoutes/_auth-form': typeof AuthRoutesAuthFormRoute
   '/_authRoutes/forgot-password': typeof AuthRoutesForgotPasswordRoute
   '/_authRoutes/sign-in': typeof AuthRoutesSignInRoute
   '/_authRoutes/sign-up': typeof AuthRoutesSignUpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/log': typeof AuthenticatedLogRoute
+  '/_authenticated/trends': typeof AuthenticatedTrendsRoute
 }
 
 export interface FileRouteTypes {
@@ -201,40 +203,39 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | ''
-    | '/trends'
     | '/forgot-password'
     | '/sign-in'
     | '/sign-up'
     | '/dashboard'
     | '/log'
+    | '/trends'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | ''
-    | '/trends'
     | '/forgot-password'
     | '/sign-in'
     | '/sign-up'
     | '/dashboard'
     | '/log'
+    | '/trends'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/trends'
     | '/_authRoutes/_auth-form'
     | '/_authRoutes/forgot-password'
     | '/_authRoutes/sign-in'
     | '/_authRoutes/sign-up'
     | '/_authenticated/dashboard'
     | '/_authenticated/log'
+    | '/_authenticated/trends'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  TrendsRoute: typeof TrendsRoute
   AuthRoutesAuthFormRoute: typeof AuthRoutesAuthFormRoute
   AuthRoutesForgotPasswordRoute: typeof AuthRoutesForgotPasswordRoute
   AuthRoutesSignInRoute: typeof AuthRoutesSignInRoute
@@ -244,7 +245,6 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  TrendsRoute: TrendsRoute,
   AuthRoutesAuthFormRoute: AuthRoutesAuthFormRoute,
   AuthRoutesForgotPasswordRoute: AuthRoutesForgotPasswordRoute,
   AuthRoutesSignInRoute: AuthRoutesSignInRoute,
@@ -263,7 +263,6 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_authenticated",
-        "/trends",
         "/_authRoutes/_auth-form",
         "/_authRoutes/forgot-password",
         "/_authRoutes/sign-in",
@@ -277,11 +276,9 @@ export const routeTree = rootRoute
       "filePath": "_authenticated.tsx",
       "children": [
         "/_authenticated/dashboard",
-        "/_authenticated/log"
+        "/_authenticated/log",
+        "/_authenticated/trends"
       ]
-    },
-    "/trends": {
-      "filePath": "trends.tsx"
     },
     "/_authRoutes/_auth-form": {
       "filePath": "_authRoutes/_auth-form.tsx"
@@ -301,6 +298,10 @@ export const routeTree = rootRoute
     },
     "/_authenticated/log": {
       "filePath": "_authenticated/log.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/trends": {
+      "filePath": "_authenticated/trends.tsx",
       "parent": "/_authenticated"
     }
   }

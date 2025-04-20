@@ -111,7 +111,11 @@ export function LogMood() {
             </div> */}
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={!selectedMood}>
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              disabled={!selectedMood}
+            >
               Log Mood
             </Button>
           </CardFooter>
