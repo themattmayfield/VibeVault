@@ -1,19 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoodCalendar } from "@/components/mood-calendar";
-import { PersonalMoodChart } from "@/components/personal-mood-chart";
-import { MoodInsights } from "@/components/mood-insights";
-import { getMoodEmoji } from "@/lib/getMoodEmoji";
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MoodCalendar } from '@/components/mood-calendar';
+import { PersonalMoodChart } from '@/components/personal-mood-chart';
+import { MoodInsights } from '@/components/mood-insights';
+import { getMoodEmoji } from '@/lib/getMoodEmoji';
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute('/')({
   component: Home,
 });
 
@@ -119,29 +119,29 @@ function Home() {
                   <div className="space-y-4">
                     {[
                       {
-                        date: "Today, 9:30 AM",
-                        mood: "Excited",
-                        note: "Starting a new project!",
+                        date: 'Today, 9:30 AM',
+                        mood: 'Excited',
+                        note: 'Starting a new project!',
                       },
                       {
-                        date: "Yesterday, 8:15 PM",
-                        mood: "Calm",
-                        note: "Evening meditation helped",
+                        date: 'Yesterday, 8:15 PM',
+                        mood: 'Calm',
+                        note: 'Evening meditation helped',
                       },
                       {
-                        date: "2 days ago, 12:30 PM",
-                        mood: "Stressed",
-                        note: "Deadline approaching",
+                        date: '2 days ago, 12:30 PM',
+                        mood: 'Stressed',
+                        note: 'Deadline approaching',
                       },
                       {
-                        date: "3 days ago, 10:00 AM",
-                        mood: "Happy",
-                        note: "Great team meeting",
+                        date: '3 days ago, 10:00 AM',
+                        mood: 'Happy',
+                        note: 'Great team meeting',
                       },
                       {
-                        date: "4 days ago, 7:45 PM",
-                        mood: "Tired",
-                        note: "Long day at work",
+                        date: '4 days ago, 7:45 PM',
+                        mood: 'Tired',
+                        note: 'Long day at work',
                       },
                     ].map((entry, i) => (
                       <div key={i} className="flex items-start space-x-4">

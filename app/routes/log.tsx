@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { createFileRoute } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -7,27 +7,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { MoodSelector } from "@/components/mood-selector";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { MoodSelector } from '@/components/mood-selector';
 
-import { useState } from "react";
-import { api } from "convex/_generated/api";
-import { useMutation } from "convex/react";
-import { moodLiteral } from "convex/schema";
-import { Infer } from "convex/values";
+import { useState } from 'react';
+import { api } from 'convex/_generated/api';
+import { useMutation } from 'convex/react';
+import type { moodLiteral } from 'convex/schema';
+import type { Infer } from 'convex/values';
 
-export const Route = createFileRoute("/log")({
+export const Route = createFileRoute('/log')({
   component: RouteComponent,
 });
 
@@ -35,26 +27,26 @@ function RouteComponent() {
   const addMood = useMutation(api.mood.createMood);
 
   const [selectedMood, setSelectedMood] =
-    useState<Infer<typeof moodLiteral>>("happy");
+    useState<Infer<typeof moodLiteral>>('happy');
 
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedMood) {
-      toast.error("Please add a mood!");
+      toast.error('Please add a mood!');
       return;
     }
 
     try {
       addMood({ mood: selectedMood, note });
-      toast.success("Mood logged successfully!", {
+      toast.success('Mood logged successfully!', {
         description: `You're feeling ${selectedMood} today.`,
       });
-      setNote("");
-    } catch (error) {
-      toast.error("Failed to log mood");
+      setNote('');
+    } catch (_error) {
+      toast.error('Failed to log mood');
     }
   };
 

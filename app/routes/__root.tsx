@@ -1,16 +1,16 @@
-import { QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   HeadContent,
-} from "@tanstack/react-router";
-import { Outlet, ScrollRestoration } from "@tanstack/react-router";
-import { Scripts } from "@tanstack/react-start";
-import * as React from "react";
-import { Toaster } from "@/components/ui/sonner";
+} from '@tanstack/react-router';
+import { Outlet, ScrollRestoration } from '@tanstack/react-router';
+import { Scripts } from '@tanstack/react-start';
+import type * as React from 'react';
+import { Toaster } from '@/components/ui/sonner';
 
-import appCss from "@/styles/app.css?url";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { TopNav } from "@/components/top-nav";
+import appCss from '@/styles/app.css?url';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { TopNav } from '@/components/top-nav';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -18,19 +18,19 @@ export const Route = createRootRouteWithContext<{
   head: () => ({
     meta: [
       {
-        charSet: "utf-8",
+        charSet: 'utf-8',
       },
       {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1',
       },
       {
-        title: "TanStack Start Starter",
+        title: 'TanStack Start Starter',
       },
     ],
     links: [
       {
-        rel: "stylesheet",
+        rel: 'stylesheet',
         href: appCss,
       },
     ],
@@ -54,7 +54,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html>
+    <html lang="en">
       <head>
         <HeadContent />
       </head>

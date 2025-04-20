@@ -7,11 +7,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts';
 
 const data = [
   {
-    date: "Apr 1",
+    date: 'Apr 1',
     happy: 1,
     excited: 0,
     calm: 0,
@@ -21,7 +21,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 2",
+    date: 'Apr 2',
     happy: 0,
     excited: 0,
     calm: 1,
@@ -31,7 +31,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 3",
+    date: 'Apr 3',
     happy: 0,
     excited: 0,
     calm: 0,
@@ -41,7 +41,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 4",
+    date: 'Apr 4',
     happy: 0,
     excited: 0,
     calm: 0,
@@ -51,7 +51,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 5",
+    date: 'Apr 5',
     happy: 0,
     excited: 1,
     calm: 0,
@@ -61,7 +61,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 6",
+    date: 'Apr 6',
     happy: 1,
     excited: 0,
     calm: 0,
@@ -71,7 +71,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 7",
+    date: 'Apr 7',
     happy: 0,
     excited: 0,
     calm: 0,
@@ -81,7 +81,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 8",
+    date: 'Apr 8',
     happy: 0,
     excited: 0,
     calm: 1,
@@ -91,7 +91,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 9",
+    date: 'Apr 9',
     happy: 1,
     excited: 0,
     calm: 0,
@@ -101,7 +101,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 10",
+    date: 'Apr 10',
     happy: 0,
     excited: 0,
     calm: 1,
@@ -111,7 +111,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 11",
+    date: 'Apr 11',
     happy: 0,
     excited: 0,
     calm: 0,
@@ -121,7 +121,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 12",
+    date: 'Apr 12',
     happy: 0,
     excited: 0,
     calm: 0,
@@ -131,7 +131,7 @@ const data = [
     sad: 1,
   },
   {
-    date: "Apr 13",
+    date: 'Apr 13',
     happy: 0,
     excited: 0,
     calm: 0,
@@ -141,7 +141,7 @@ const data = [
     sad: 0,
   },
   {
-    date: "Apr 14",
+    date: 'Apr 14',
     happy: 1,
     excited: 0,
     calm: 0,
@@ -153,13 +153,13 @@ const data = [
 ];
 
 const colors = {
-  happy: "#4ade80",
-  excited: "#facc15",
-  calm: "#60a5fa",
-  neutral: "#94a3b8",
-  tired: "#c084fc",
-  stressed: "#fb923c",
-  sad: "#818cf8",
+  happy: '#4ade80',
+  excited: '#facc15',
+  calm: '#60a5fa',
+  neutral: '#94a3b8',
+  tired: '#c084fc',
+  stressed: '#fb923c',
+  sad: '#818cf8',
 };
 
 export function PersonalMoodChart() {

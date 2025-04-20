@@ -1,18 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoodPieChart } from "@/components/mood-pie-chart";
-import { MoodWordCloud } from "@/components/mood-word-cloud";
-import { MoodTimeline } from "@/components/mood-timeline";
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MoodPieChart } from '@/components/mood-pie-chart';
+import { MoodWordCloud } from '@/components/mood-word-cloud';
+import { MoodTimeline } from '@/components/mood-timeline';
 
-export const Route = createFileRoute("/index copy")({
+export const Route = createFileRoute('/index copy')({
   component: Home,
 });
 

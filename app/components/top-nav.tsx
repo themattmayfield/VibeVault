@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   BarChart3,
@@ -9,10 +9,9 @@ import {
   Activity,
   Settings,
   LogOut,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,36 +19,36 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useState } from "react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Link } from "@tanstack/react-router";
+} from '@/components/ui/dropdown-menu';
+import { useState } from 'react';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Link } from '@tanstack/react-router';
 
 const routes = [
   {
-    label: "Dashboard",
+    label: 'Dashboard',
     icon: Home,
-    href: "/",
+    href: '/',
   },
   {
-    label: "Log Mood",
+    label: 'Log Mood',
     icon: PlusCircle,
-    href: "/log",
+    href: '/log',
   },
   {
-    label: "Home",
+    label: 'Home',
     icon: BarChart3,
-    href: "/home",
+    href: '/home',
   },
   {
-    label: "Groups",
+    label: 'Groups',
     icon: Users,
-    href: "/groups",
+    href: '/groups',
   },
   {
-    label: "Global Trends",
+    label: 'Global Trends',
     icon: Activity,
-    href: "/trends",
+    href: '/trends',
   },
 ];
 
@@ -76,10 +75,10 @@ export function TopNav() {
                 key={route.href}
                 to={route.href}
                 activeProps={{
-                  className: "text-primary",
+                  className: 'text-primary',
                 }}
                 inactiveProps={{
-                  className: "text-muted-foreground",
+                  className: 'text-muted-foreground',
                 }}
               >
                 <span className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary">
@@ -147,10 +146,10 @@ export function TopNav() {
                 to={route.href}
                 onClick={() => setMobileMenuOpen(false)}
                 activeProps={{
-                  className: "bg-accent text-accent-foreground",
+                  className: 'bg-accent text-accent-foreground',
                 }}
                 inactiveProps={{
-                  className: "transparent",
+                  className: 'transparent',
                 }}
               >
                 <route.icon className="h-5 w-5" />

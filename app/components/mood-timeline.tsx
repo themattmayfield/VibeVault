@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   LineChart,
@@ -9,11 +9,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts';
 
 const data = [
   {
-    time: "6 AM",
+    time: '6 AM',
     happy: 10,
     excited: 5,
     calm: 15,
@@ -23,7 +23,7 @@ const data = [
     sad: 2,
   },
   {
-    time: "9 AM",
+    time: '9 AM',
     happy: 25,
     excited: 15,
     calm: 10,
@@ -33,7 +33,7 @@ const data = [
     sad: 3,
   },
   {
-    time: "12 PM",
+    time: '12 PM',
     happy: 40,
     excited: 20,
     calm: 8,
@@ -43,7 +43,7 @@ const data = [
     sad: 5,
   },
   {
-    time: "3 PM",
+    time: '3 PM',
     happy: 30,
     excited: 15,
     calm: 12,
@@ -53,7 +53,7 @@ const data = [
     sad: 8,
   },
   {
-    time: "6 PM",
+    time: '6 PM',
     happy: 45,
     excited: 25,
     calm: 20,
@@ -63,7 +63,7 @@ const data = [
     sad: 5,
   },
   {
-    time: "9 PM",
+    time: '9 PM',
     happy: 35,
     excited: 15,
     calm: 30,
@@ -75,13 +75,13 @@ const data = [
 ];
 
 const colors = {
-  happy: "#4ade80",
-  excited: "#facc15",
-  calm: "#60a5fa",
-  neutral: "#94a3b8",
-  tired: "#c084fc",
-  stressed: "#fb923c",
-  sad: "#818cf8",
+  happy: '#4ade80',
+  excited: '#facc15',
+  calm: '#60a5fa',
+  neutral: '#94a3b8',
+  tired: '#c084fc',
+  stressed: '#fb923c',
+  sad: '#818cf8',
 };
 
 export function MoodTimeline() {

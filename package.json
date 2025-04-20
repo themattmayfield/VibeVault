@@ -10,7 +10,10 @@
     "dev:start": "vinxi dev",
     "seed": "npx convex dev --once && npx convex import --table tasks sampleData.jsonl",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "format": "biome format . --write && biome check . --write --unsafe"
   },
   "keywords": [],
   "author": "",
@@ -74,6 +77,7 @@
     "@tanstack/react-router-devtools": "1.116.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",

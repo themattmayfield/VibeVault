@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 const tags = [
-  { text: "work", value: 64 },
-  { text: "family", value: 42 },
-  { text: "weekend", value: 128 },
-  { text: "friends", value: 38 },
-  { text: "exercise", value: 25 },
-  { text: "sleep", value: 32 },
-  { text: "food", value: 18 },
-  { text: "travel", value: 15 },
-  { text: "weather", value: 22 },
-  { text: "movies", value: 12 },
-  { text: "music", value: 20 },
-  { text: "reading", value: 8 },
-  { text: "gaming", value: 14 },
-  { text: "shopping", value: 10 },
-  { text: "cooking", value: 16 },
+  { text: 'work', value: 64 },
+  { text: 'family', value: 42 },
+  { text: 'weekend', value: 128 },
+  { text: 'friends', value: 38 },
+  { text: 'exercise', value: 25 },
+  { text: 'sleep', value: 32 },
+  { text: 'food', value: 18 },
+  { text: 'travel', value: 15 },
+  { text: 'weather', value: 22 },
+  { text: 'movies', value: 12 },
+  { text: 'music', value: 20 },
+  { text: 'reading', value: 8 },
+  { text: 'gaming', value: 14 },
+  { text: 'shopping', value: 10 },
+  { text: 'cooking', value: 16 },
 ];
 
 export function MoodWordCloud() {
@@ -27,7 +27,7 @@ export function MoodWordCloud() {
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // Clear canvas
@@ -57,7 +57,7 @@ export function MoodWordCloud() {
 
       // Set font
       ctx.font = `${Math.round(fontSize)}px Arial`;
-      ctx.textAlign = "center";
+      ctx.textAlign = 'center';
 
       // Calculate position (simplified layout)
       const angle = (index / sortedTags.length) * Math.PI * 2;

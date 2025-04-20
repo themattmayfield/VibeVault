@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   PieChart,
@@ -7,16 +7,16 @@ import {
   ResponsiveContainer,
   Legend,
   Tooltip,
-} from "recharts";
+} from 'recharts';
 
 const data = [
-  { name: "Happy", value: 42, color: "#4ade80" },
-  { name: "Excited", value: 18, color: "#facc15" },
-  { name: "Calm", value: 15, color: "#60a5fa" },
-  { name: "Neutral", value: 10, color: "#94a3b8" },
-  { name: "Tired", value: 8, color: "#c084fc" },
-  { name: "Stressed", value: 5, color: "#fb923c" },
-  { name: "Sad", value: 2, color: "#818cf8" },
+  { name: 'Happy', value: 42, color: '#4ade80' },
+  { name: 'Excited', value: 18, color: '#facc15' },
+  { name: 'Calm', value: 15, color: '#60a5fa' },
+  { name: 'Neutral', value: 10, color: '#94a3b8' },
+  { name: 'Tired', value: 8, color: '#c084fc' },
+  { name: 'Stressed', value: 5, color: '#fb923c' },
+  { name: 'Sad', value: 2, color: '#818cf8' },
 ];
 
 export function MoodPieChart() {
