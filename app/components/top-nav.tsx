@@ -1,4 +1,4 @@
-import { Home, Menu, PlusCircle, Users, Activity } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -6,29 +6,7 @@ import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 import LogoutButton from './logout-button';
 import LoginButton from './login-button';
-
-const routes = [
-  {
-    label: 'Dashboard',
-    icon: Home,
-    href: '/dashboard',
-  },
-  {
-    label: 'Log Mood',
-    icon: PlusCircle,
-    href: '/log',
-  },
-  {
-    label: 'Groups',
-    icon: Users,
-    href: '/groups',
-  },
-  {
-    label: 'Global Trends',
-    icon: Activity,
-    href: '/trends',
-  },
-];
+import { routes } from '@/constants/routes';
 
 export function TopNav() {
   const { data: session } = authClient.useSession();

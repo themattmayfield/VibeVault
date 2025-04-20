@@ -45,9 +45,7 @@ export function LogMood() {
         note,
         neonUserId: session?.session.userId,
       });
-      toast.success('Mood logged successfully!', {
-        description: `You're feeling ${selectedMood} today.`,
-      });
+      toast.success('Mood logged successfully!');
       setNote('');
     } catch (_error) {
       toast.error('Failed to log mood');

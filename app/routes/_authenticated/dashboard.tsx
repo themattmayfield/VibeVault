@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
+import { createFileRoute } from '@tanstack/react-router';
 import {
   Card,
   CardContent,
@@ -20,23 +19,7 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
 function Home() {
   return (
     <div className="flex flex-col">
-      <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Your Mood Dashboard
-            </h2>
-            <p className="text-muted-foreground">
-              Track your emotional patterns and insights
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button asChild>
-              <Link to="/log">Log New Mood</Link>
-            </Button>
-          </div>
-        </div>
-
+      <div className="flex-1 space-y-4 px-4">
         <Tabs defaultValue="overview" className="space-y-4">
           <div className="flex justify-between">
             <TabsList>

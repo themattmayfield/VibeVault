@@ -19,6 +19,7 @@ import { useMutation } from 'convex/react';
 import { signUpEmail } from '@/actions/auth';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
+import { APP_INFO } from '@/constants/app-info';
 
 export function AuthForm() {
   const location = useRouterState({ select: (s) => s.location });
@@ -63,7 +64,7 @@ export function AuthForm() {
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <GalleryVerticalEnd className="size-4" />
           </div>
-          Acme Inc.
+          {APP_INFO.name}
         </a>
         <div className="flex flex-col gap-6">
           <Card>
