@@ -8,9 +8,8 @@ import { Scripts } from '@tanstack/react-start';
 import type * as React from 'react';
 import { Toaster } from '@/components/ui/sonner';
 
-import appCss from '@/styles/app.css?url';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { TopNav } from '@/components/top-nav';
+import appCss from '@/styles/app.css?url';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -60,7 +59,6 @@ function RootComponent() {
   return (
     <RootDocument>
       <div className="flex min-h-screen flex-col ">
-        <TopNav />
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>

@@ -18,9 +18,12 @@ import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
 import { authClient } from '@/lib/auth-client';
+import { Link } from '@tanstack/react-router';
+import { cn } from '@/lib/utils';
 
 export function LogMood() {
   const { data: session } = authClient.useSession();
+  const isLoggedIn = !!session;
   const addMood = useMutation(api.mood.createMood);
 
   const [selectedMood, setSelectedMood] =
@@ -61,9 +64,14 @@ export function LogMood() {
         <form onSubmit={handleSubmit}>
           <CardHeader className="mb-4">
             <CardTitle>Log Your Mood</CardTitle>
-            <CardDescription>
-              Track your emotional state and see patterns over time
-            </CardDescription>
+            {!isLoggedIn && (
+              <CardDescription>
+                <Link to="/sign-in" className="underline">
+                  Sign in
+                </Link>{' '}
+                to track your emotional state and see patterns over time
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -110,14 +118,26 @@ export function LogMood() {
               </Select>
             </div> */}
           </CardContent>
-          <CardFooter>
+          <CardFooter
+            className={cn(!isLoggedIn && 'grid sm:grid-cols-2 gap-2')}
+          >
             <Button
               type="submit"
-              className="w-full cursor-pointer"
+              className="cursor-pointer w-full"
               disabled={!selectedMood}
             >
-              Log Mood
+              Log Mood {isLoggedIn ? '' : ' Anonymously'}
             </Button>
+            {!isLoggedIn && (
+              <Button
+                type="submit"
+                variant="outline"
+                className="cursor-pointer w-full"
+                disabled={!selectedMood}
+              >
+                Sign in
+              </Button>
+            )}
           </CardFooter>
         </form>
       </Card>

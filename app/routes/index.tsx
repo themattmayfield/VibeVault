@@ -16,7 +16,10 @@ export const Route = createFileRoute('/')({
 function HomeRoute() {
   return (
     <>
-      <div className=" px-2 sm:px-6 pt-12">
+      <div className=" px-2 sm:px-6 pt-12 sm:pt-24">
+        <h1 className="text-3xl font-extrabold font-serif tracking-tight lg:text-5xl text-center mb-12">
+          MoodSync
+        </h1>
         <LogMood />
       </div>
     </>
