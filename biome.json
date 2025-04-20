@@ -7,8 +7,7 @@
       "bun.lock",
       "convex/_generated",
       "app.css",
-      "routeTree.gen.ts",
-      "app.config.timestamp**"
+      "routeTree.gen.ts"
     ]
   },
   "organizeImports": {
