@@ -14,9 +14,12 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as TrendsImport } from './routes/trends'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
-import { Route as LoginIndexImport } from './routes/login/index'
 import { Route as AuthenticatedLogImport } from './routes/_authenticated/log'
 import { Route as AuthenticatedDashboardImport } from './routes/_authenticated/dashboard'
+import { Route as AuthRoutesSignUpImport } from './routes/_authRoutes/sign-up'
+import { Route as AuthRoutesSignInImport } from './routes/_authRoutes/sign-in'
+import { Route as AuthRoutesForgotPasswordImport } from './routes/_authRoutes/forgot-password'
+import { Route as AuthRoutesAuthFormImport } from './routes/_authRoutes/_auth-form'
 
 // Create/Update Routes
 
@@ -37,12 +40,6 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const LoginIndexRoute = LoginIndexImport.update({
-  id: '/login/',
-  path: '/login/',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const AuthenticatedLogRoute = AuthenticatedLogImport.update({
   id: '/log',
   path: '/log',
@@ -53,6 +50,29 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+
+const AuthRoutesSignUpRoute = AuthRoutesSignUpImport.update({
+  id: '/_authRoutes/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthRoutesSignInRoute = AuthRoutesSignInImport.update({
+  id: '/_authRoutes/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthRoutesForgotPasswordRoute = AuthRoutesForgotPasswordImport.update({
+  id: '/_authRoutes/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthRoutesAuthFormRoute = AuthRoutesAuthFormImport.update({
+  id: '/_authRoutes/_auth-form',
+  getParentRoute: () => rootRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -80,6 +100,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrendsImport
       parentRoute: typeof rootRoute
     }
+    '/_authRoutes/_auth-form': {
+      id: '/_authRoutes/_auth-form'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthRoutesAuthFormImport
+      parentRoute: typeof rootRoute
+    }
+    '/_authRoutes/forgot-password': {
+      id: '/_authRoutes/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthRoutesForgotPasswordImport
+      parentRoute: typeof rootRoute
+    }
+    '/_authRoutes/sign-in': {
+      id: '/_authRoutes/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof AuthRoutesSignInImport
+      parentRoute: typeof rootRoute
+    }
+    '/_authRoutes/sign-up': {
+      id: '/_authRoutes/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof AuthRoutesSignUpImport
+      parentRoute: typeof rootRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -93,13 +141,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/log'
       preLoaderRoute: typeof AuthenticatedLogImport
       parentRoute: typeof AuthenticatedImport
-    }
-    '/login/': {
-      id: '/login/'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginIndexImport
-      parentRoute: typeof rootRoute
     }
   }
 }
@@ -122,20 +163,24 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '': typeof AuthenticatedRouteWithChildren
+  '': typeof AuthRoutesAuthFormRoute
   '/trends': typeof TrendsRoute
+  '/forgot-password': typeof AuthRoutesForgotPasswordRoute
+  '/sign-in': typeof AuthRoutesSignInRoute
+  '/sign-up': typeof AuthRoutesSignUpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/log': typeof AuthenticatedLogRoute
-  '/login': typeof LoginIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '': typeof AuthenticatedRouteWithChildren
+  '': typeof AuthRoutesAuthFormRoute
   '/trends': typeof TrendsRoute
+  '/forgot-password': typeof AuthRoutesForgotPasswordRoute
+  '/sign-in': typeof AuthRoutesSignInRoute
+  '/sign-up': typeof AuthRoutesSignUpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/log': typeof AuthenticatedLogRoute
-  '/login': typeof LoginIndexRoute
 }
 
 export interface FileRoutesById {
@@ -143,24 +188,46 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/trends': typeof TrendsRoute
+  '/_authRoutes/_auth-form': typeof AuthRoutesAuthFormRoute
+  '/_authRoutes/forgot-password': typeof AuthRoutesForgotPasswordRoute
+  '/_authRoutes/sign-in': typeof AuthRoutesSignInRoute
+  '/_authRoutes/sign-up': typeof AuthRoutesSignUpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/log': typeof AuthenticatedLogRoute
-  '/login/': typeof LoginIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/trends' | '/dashboard' | '/log' | '/login'
+  fullPaths:
+    | '/'
+    | ''
+    | '/trends'
+    | '/forgot-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/dashboard'
+    | '/log'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/trends' | '/dashboard' | '/log' | '/login'
+  to:
+    | '/'
+    | ''
+    | '/trends'
+    | '/forgot-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/dashboard'
+    | '/log'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/trends'
+    | '/_authRoutes/_auth-form'
+    | '/_authRoutes/forgot-password'
+    | '/_authRoutes/sign-in'
+    | '/_authRoutes/sign-up'
     | '/_authenticated/dashboard'
     | '/_authenticated/log'
-    | '/login/'
   fileRoutesById: FileRoutesById
 }
 
@@ -168,14 +235,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   TrendsRoute: typeof TrendsRoute
-  LoginIndexRoute: typeof LoginIndexRoute
+  AuthRoutesAuthFormRoute: typeof AuthRoutesAuthFormRoute
+  AuthRoutesForgotPasswordRoute: typeof AuthRoutesForgotPasswordRoute
+  AuthRoutesSignInRoute: typeof AuthRoutesSignInRoute
+  AuthRoutesSignUpRoute: typeof AuthRoutesSignUpRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   TrendsRoute: TrendsRoute,
-  LoginIndexRoute: LoginIndexRoute,
+  AuthRoutesAuthFormRoute: AuthRoutesAuthFormRoute,
+  AuthRoutesForgotPasswordRoute: AuthRoutesForgotPasswordRoute,
+  AuthRoutesSignInRoute: AuthRoutesSignInRoute,
+  AuthRoutesSignUpRoute: AuthRoutesSignUpRoute,
 }
 
 export const routeTree = rootRoute
@@ -191,7 +264,10 @@ export const routeTree = rootRoute
         "/",
         "/_authenticated",
         "/trends",
-        "/login/"
+        "/_authRoutes/_auth-form",
+        "/_authRoutes/forgot-password",
+        "/_authRoutes/sign-in",
+        "/_authRoutes/sign-up"
       ]
     },
     "/": {
@@ -207,6 +283,18 @@ export const routeTree = rootRoute
     "/trends": {
       "filePath": "trends.tsx"
     },
+    "/_authRoutes/_auth-form": {
+      "filePath": "_authRoutes/_auth-form.tsx"
+    },
+    "/_authRoutes/forgot-password": {
+      "filePath": "_authRoutes/forgot-password.tsx"
+    },
+    "/_authRoutes/sign-in": {
+      "filePath": "_authRoutes/sign-in.tsx"
+    },
+    "/_authRoutes/sign-up": {
+      "filePath": "_authRoutes/sign-up.tsx"
+    },
     "/_authenticated/dashboard": {
       "filePath": "_authenticated/dashboard.tsx",
       "parent": "/_authenticated"
@@ -214,9 +302,6 @@ export const routeTree = rootRoute
     "/_authenticated/log": {
       "filePath": "_authenticated/log.tsx",
       "parent": "/_authenticated"
-    },
-    "/login/": {
-      "filePath": "login/index.tsx"
     }
   }
 }

@@ -17,8 +17,10 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
+import { authClient } from '@/lib/auth-client';
 
 export function LogMood() {
+  const { data: session } = authClient.useSession();
   const addMood = useMutation(api.mood.createMood);
 
   const [selectedMood, setSelectedMood] =
@@ -35,7 +37,11 @@ export function LogMood() {
     }
 
     try {
-      addMood({ mood: selectedMood, note });
+      addMood({
+        mood: selectedMood,
+        note,
+        neonUserId: session?.session.userId,
+      });
       toast.success('Mood logged successfully!', {
         description: `You're feeling ${selectedMood} today.`,
       });

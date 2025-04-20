@@ -1,4 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouterState } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/_authRoutes/_auth-form')({});
+
 import { GalleryVerticalEnd } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,12 +13,49 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useState } from 'react';
+import { api } from 'convex/_generated/api';
+import { useMutation } from 'convex/react';
+import { signUpEmail } from '@/actions/auth';
+import { toast } from 'sonner';
+import { authClient } from '@/lib/auth-client';
 
-export const Route = createFileRoute('/login/')({
-  component: LoginPage,
-});
+export function AuthForm() {
+  const location = useRouterState({ select: (s) => s.location });
 
-function LoginPage() {
+  const isSignIn = location.pathname === '/sign-in';
+
+  const createUser = useMutation(api.user.createUser);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      if (isSignIn) {
+        await authClient.signIn.email({
+          email,
+          password,
+          callbackURL: '/dashboard',
+          rememberMe: true,
+        });
+      } else {
+        await authClient.signUp.email({
+          email,
+          password,
+          name: email,
+          callbackURL: '/dashboard',
+        });
+        const userId = await signUpEmail({ data: { email, password } });
+
+        await createUser({ neonUserId: userId });
+        toast.success('Successfully signed in');
+      }
+    } catch (_) {
+      console.error('error');
+    }
+  };
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -28,13 +68,17 @@ function LoginPage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Welcome back</CardTitle>
+              <CardTitle className="text-xl">
+                {isSignIn ? 'Welcome back' : 'Create an account'}
+              </CardTitle>
               <CardDescription>
-                Login with your Apple or Google account
+                {isSignIn
+                  ? 'Login with your Apple or Google account'
+                  : 'Create an account with your email and password'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form>
+              <form onSubmit={handleSubmit}>
                 <div className="grid gap-6">
                   <div className="flex flex-col gap-4">
                     <Button variant="outline" className="w-full">
@@ -47,7 +91,7 @@ function LoginPage() {
                           fill="currentColor"
                         />
                       </svg>
-                      Login with Apple
+                      {isSignIn ? 'Login with Apple' : 'Sign up with Apple'}
                     </Button>
                     <Button variant="outline" className="w-full">
                       <svg
@@ -59,7 +103,7 @@ function LoginPage() {
                           fill="currentColor"
                         />
                       </svg>
-                      Login with Google
+                      {isSignIn ? 'Login with Google' : 'Sign up with Google'}
                     </Button>
                   </div>
                   <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -75,29 +119,46 @@ function LoginPage() {
                         type="email"
                         placeholder="m@example.com"
                         required
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                        }}
                       />
                     </div>
                     <div className="grid gap-2">
                       <div className="flex items-center">
                         <Label htmlFor="password">Password</Label>
-                        <a
-                          href="#"
-                          className="ml-auto text-sm underline-offset-4 hover:underline"
-                        >
-                          Forgot your password?
-                        </a>
+                        {isSignIn && (
+                          <Link
+                            to="/forgot-password"
+                            className="ml-auto text-sm underline-offset-4 hover:underline"
+                          >
+                            Forgot your password?
+                          </Link>
+                        )}
                       </div>
-                      <Input id="password" type="password" required />
+                      <Input
+                        id="password"
+                        type="password"
+                        required
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                        }}
+                      />
                     </div>
                     <Button type="submit" className="w-full">
-                      Login
+                      {isSignIn ? 'Login' : 'Sign up'}
                     </Button>
                   </div>
                   <div className="text-center text-sm">
-                    Don&apos;t have an account?{' '}
-                    <a href="#" className="underline underline-offset-4">
-                      Sign up
-                    </a>
+                    {isSignIn
+                      ? "Don't have an account?"
+                      : 'Already have an account?'}{' '}
+                    <Link
+                      to={isSignIn ? '/sign-up' : '/sign-in'}
+                      className="underline underline-offset-4"
+                    >
+                      {isSignIn ? 'Sign up' : 'Login'}
+                    </Link>
                   </div>
                 </div>
               </form>

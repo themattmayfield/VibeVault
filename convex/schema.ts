@@ -15,8 +15,12 @@ export const moodLiteral = v.union(
 );
 
 export default defineSchema({
+  users: defineTable({
+    neonUserId: v.string(),
+  }).index('by_neon_user_id', ['neonUserId']),
   moods: defineTable({
     mood: moodLiteral,
     note: v.optional(v.string()),
-  }),
+    neonUserId: v.optional(v.string()),
+  }).index('by_neon_user_id', ['neonUserId']),
 });

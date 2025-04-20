@@ -1,26 +1,11 @@
-import {
-  Home,
-  Menu,
-  PlusCircle,
-  Users,
-  Activity,
-  Settings,
-  LogOut,
-} from 'lucide-react';
+import { Home, Menu, PlusCircle, Users, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
+import LogoutButton from './logout-button';
+import LoginButton from './login-button';
 
 const routes = [
   {
@@ -63,56 +48,30 @@ export function TopNav() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            {routes.map((route) => (
-              <Link
-                key={route.href}
-                to={route.href}
-                activeProps={{
-                  className: 'text-primary',
-                }}
-                inactiveProps={{
-                  className: 'text-muted-foreground',
-                }}
-              >
-                <span className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary">
-                  <route.icon className="h-4 w-4" />
-                  {route.label}
-                </span>
-              </Link>
-            ))}
-          </nav>
+          {session && (
+            <nav className="hidden md:flex items-center gap-6">
+              {routes.map((route) => (
+                <Link
+                  key={route.href}
+                  to={route.href}
+                  activeProps={{
+                    className: 'text-primary',
+                  }}
+                  inactiveProps={{
+                    className: 'text-muted-foreground',
+                  }}
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary">
+                    <route.icon className="h-4 w-4" />
+                    {route.label}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+          )}
 
           <div className="flex items-center gap-2">
-            {session ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src="/placeholder.svg?height=32&width=32"
-                        alt="User"
-                      />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="default">Sign in</Button>
-            )}
+            {session ? <LogoutButton /> : <LoginButton />}
 
             {/* Mobile Menu Button */}
             <Button
