@@ -1,6 +1,4 @@
-import { MailIcon, PlusCircleIcon, type LucideIcon } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
+import { PlusCircleIcon } from 'lucide-react';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,16 +7,9 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { Link } from '@tanstack/react-router';
+import { ROUTES } from '@/constants/routes';
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-  }[];
-}) {
+export function NavMain() {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -33,25 +24,25 @@ export function NavMain({
                 <span>Log Mood</span>
               </SidebarMenuButton>
             </Link>
-            <Button
-              size="icon"
-              className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <MailIcon />
-              <span className="sr-only">Inbox</span>
-            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {ROUTES.map((item) => {
+            if (item.ignoreInSidebar) return null;
+            return (
+              <SidebarMenuItem key={item.label}>
+                <Link to={item.href} key={item.label}>
+                  <SidebarMenuButton
+                    tooltip={item.label}
+                    className="cursor-pointer"
+                  >
+                    {item.icon && <item.icon />}
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

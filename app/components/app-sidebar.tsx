@@ -2,20 +2,15 @@
 
 import {
   ArrowUpCircleIcon,
-  BarChartIcon,
   CameraIcon,
   ClipboardListIcon,
   DatabaseIcon,
   FileCodeIcon,
   FileIcon,
   FileTextIcon,
-  FolderIcon,
   HelpCircleIcon,
-  LayoutDashboardIcon,
-  ListIcon,
   SearchIcon,
   SettingsIcon,
-  UsersIcon,
 } from 'lucide-react';
 
 import { NavDocuments } from '@/components/nav-documents';
@@ -32,40 +27,12 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { APP_INFO } from '@/constants/app-info';
-
 const data = {
   user: {
     name: 'shadcn',
     email: 'm@example.com',
     avatar: '/avatars/shadcn.jpg',
   },
-  navMain: [
-    {
-      title: 'Dashboard',
-      url: '#',
-      icon: LayoutDashboardIcon,
-    },
-    {
-      title: 'Lifecycle',
-      url: '#',
-      icon: ListIcon,
-    },
-    {
-      title: 'Analytics',
-      url: '#',
-      icon: BarChartIcon,
-    },
-    {
-      title: 'Projects',
-      url: '#',
-      icon: FolderIcon,
-    },
-    {
-      title: 'Team',
-      url: '#',
-      icon: UsersIcon,
-    },
-  ],
   navClouds: [
     {
       title: 'Capture',
@@ -133,17 +100,17 @@ const data = {
   ],
   documents: [
     {
-      name: 'Data Library',
+      name: 'Group 1',
       url: '#',
       icon: DatabaseIcon,
     },
     {
-      name: 'Reports',
+      name: 'Group 2',
       url: '#',
       icon: ClipboardListIcon,
     },
     {
-      name: 'Word Assistant',
+      name: 'Group 3',
       url: '#',
       icon: FileIcon,
     },
@@ -169,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

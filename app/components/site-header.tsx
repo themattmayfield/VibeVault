@@ -2,12 +2,12 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useRouterState } from '@tanstack/react-router';
-import { routes } from '@/constants/routes';
+import { ROUTES } from '@/constants/routes';
 
 export function SiteHeader() {
   const location = useRouterState({ select: (s) => s.location });
 
-  const activeRoute = routes.find((r) => r.href === location.pathname);
+  const activeRoute = ROUTES.find((r) => r.href === location.pathname);
 
   return (
     <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">

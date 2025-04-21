@@ -6,7 +6,7 @@ import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 import LogoutButton from './logout-button';
 import LoginButton from './login-button';
-import { routes } from '@/constants/routes';
+import { ROUTES } from '@/constants/routes';
 
 export function TopNav() {
   const { data: session } = authClient.useSession();
@@ -28,7 +28,7 @@ export function TopNav() {
           {/* Desktop Navigation */}
           {session && (
             <nav className="hidden md:flex items-center gap-6">
-              {routes.map((route) => (
+              {ROUTES.map((route) => (
                 <Link
                   key={route.href}
                   to={route.href}
