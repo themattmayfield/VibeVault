@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_authenticated')({
 
 function RouteComponent() {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-sidebar">
       <AppSidebar variant="inset" />
       <SidebarInset className="border">
         <SiteHeader />

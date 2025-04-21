@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { APP_INFO } from '@/constants/app-info';
+import { Link } from '@tanstack/react-router';
 const data = {
   user: {
     name: 'shadcn',
@@ -127,10 +128,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <Link to="/">
                 <ArrowUpCircleIcon className="h-5 w-5" />
                 <span className="text-base font-semibold">{APP_INFO.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
