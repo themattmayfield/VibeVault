@@ -1,7 +1,7 @@
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { ROUTES } from '@/constants/routes';
 
 export function SiteHeader() {
@@ -18,7 +18,11 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-base font-medium flex-1">{activeRoute?.label}</h1>
-        <Button size="sm">Log Mood</Button>
+        <Link to="/log" activeProps={{ className: 'hidden' }}>
+          <Button size="sm" className="cursor-pointer">
+            Log Mood
+          </Button>
+        </Link>
       </div>
     </header>
   );
