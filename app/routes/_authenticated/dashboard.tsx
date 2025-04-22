@@ -59,6 +59,13 @@ function Home() {
 
   const moodTodayLabel =
     moodOptions.find((mood) => mood.value === moodToday?.mood)?.label ?? '';
+  const moodTodayDate = new Date(moodToday?._creationTime).toLocaleTimeString(
+    'en-US',
+    {
+      hour: 'numeric',
+      minute: '2-digit',
+    }
+  );
 
   const dashboardCards = [
     {
@@ -88,7 +95,7 @@ function Home() {
           {
             title: 'Mood Today',
             value: moodTodayLabel,
-            description: 'Logged at 9:30 AM',
+            description: `Logged at ${moodTodayDate}`,
           },
         ]
       : []),
@@ -118,7 +125,7 @@ function Home() {
                 <CardHeader>
                   <CardTitle>Mood Trends</CardTitle>
                   <CardDescription>
-                    Your mood patterns over the past 30 days
+                    Your mood patterns over the past 2 weeks
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pl-2">

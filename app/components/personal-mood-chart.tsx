@@ -8,149 +8,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-
-const data = [
-  {
-    date: 'Apr 1',
-    happy: 1,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 2',
-    happy: 0,
-    excited: 0,
-    calm: 1,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 3',
-    happy: 0,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 1,
-    sad: 0,
-  },
-  {
-    date: 'Apr 4',
-    happy: 0,
-    excited: 0,
-    calm: 0,
-    neutral: 1,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 5',
-    happy: 0,
-    excited: 1,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 6',
-    happy: 1,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 7',
-    happy: 0,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 1,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 8',
-    happy: 0,
-    excited: 0,
-    calm: 1,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 9',
-    happy: 1,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 10',
-    happy: 0,
-    excited: 0,
-    calm: 1,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 11',
-    happy: 0,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 1,
-    sad: 0,
-  },
-  {
-    date: 'Apr 12',
-    happy: 0,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 1,
-  },
-  {
-    date: 'Apr 13',
-    happy: 0,
-    excited: 0,
-    calm: 0,
-    neutral: 1,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-  {
-    date: 'Apr 14',
-    happy: 1,
-    excited: 0,
-    calm: 0,
-    neutral: 0,
-    tired: 0,
-    stressed: 0,
-    sad: 0,
-  },
-];
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from 'convex/_generated/api';
+import { useLoaderData } from '@tanstack/react-router';
 
 const colors = {
   happy: '#4ade80',
@@ -163,11 +24,26 @@ const colors = {
 };
 
 export function PersonalMoodChart() {
+  const { user } = useLoaderData({
+    from: '/_authenticated',
+  });
+  const { data: getMoodTrends } = useSuspenseQuery(
+    convexQuery(api.mood.getMoodTrends, {
+      neonUserId: user.id,
+    })
+  );
+  const trendsWithFormattedDates = getMoodTrends.trends.map((trend) => ({
+    ...trend,
+    date: new Date(trend.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }),
+  }));
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
-          data={data}
+          data={trendsWithFormattedDates}
           margin={{
             top: 20,
             right: 30,

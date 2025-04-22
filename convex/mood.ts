@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { moodLiteral } from './schema';
+import type { Infer } from 'convex/values';
 
 export const createMood = mutation({
   args: {
@@ -203,5 +204,78 @@ export const getLastFiveMoods = query({
         relativeTime,
       };
     });
+  },
+});
+
+export const getMoodTrends = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get current timestamp and timestamp from 14 days ago
+    const now = new Date();
+    now.setHours(23, 59, 59, 999); // End of today
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    fourteenDaysAgo.setHours(0, 0, 0, 0); // Start of 14 days ago
+
+    // Get all moods from the last 14 days
+    const moods = await ctx.db
+      .query('moods')
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('neonUserId'), args.neonUserId),
+          q.gte(q.field('_creationTime'), fourteenDaysAgo.getTime()),
+          q.lte(q.field('_creationTime'), now.getTime())
+        )
+      )
+      .collect();
+
+    // Initialize the result object with all dates and empty mood counts
+    const trendData: Record<string, Record<string, number>> = {};
+    for (let i = 0; i < 14; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      trendData[dateStr] = {
+        happy: 0,
+        excited: 0,
+        calm: 0,
+        neutral: 0,
+        tired: 0,
+        stressed: 0,
+        sad: 0,
+        angry: 0,
+        anxious: 0,
+        pessimistic: 0,
+      } satisfies Record<Infer<typeof moodLiteral>, number>;
+    }
+
+    // Count moods for each date
+    moods.forEach((mood) => {
+      const date = new Date(mood._creationTime);
+      const dateStr = date.toISOString().split('T')[0];
+      if (trendData[dateStr]) {
+        trendData[dateStr][mood.mood]++;
+      }
+    });
+
+    // Convert to array format and sort by date
+    const result = Object.entries(trendData)
+      .map(([date, moodCounts]) => ({
+        date,
+        ...moodCounts,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      trends: result,
+      totalDays: 14,
+      totalMoods: moods.length,
+      dateRange: {
+        start: fourteenDaysAgo.toISOString(),
+        end: now.toISOString(),
+      },
+    };
   },
 });
