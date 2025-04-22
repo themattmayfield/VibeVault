@@ -12,11 +12,11 @@ import { MoodPieChart } from '@/components/mood-pie-chart';
 import { MoodWordCloud } from '@/components/mood-word-cloud';
 import { MoodTimeline } from '@/components/mood-timeline';
 
-export const Route = createFileRoute('/index copy')({
-  component: Home,
+export const Route = createFileRoute('/_authenticated/trends')({
+  component: Trends,
 });
 
-function Home() {
+function Trends() {
   return (
     <div className="flex flex-col">
       <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">

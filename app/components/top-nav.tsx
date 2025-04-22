@@ -75,7 +75,7 @@ export function TopNav() {
             <span>Moodboard</span>
           </div>
           <nav className="flex flex-col gap-4 mt-4">
-            {routes.map((route) => (
+            {ROUTES.map((route) => (
               <Link
                 key={route.href}
                 to={route.href}
