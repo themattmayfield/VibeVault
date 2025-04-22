@@ -1,7 +1,6 @@
-import { mutation } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { moodLiteral } from './schema';
-
 export const createMood = mutation({
   args: {
     mood: moodLiteral,
@@ -15,5 +14,15 @@ export const createMood = mutation({
       neonUserId: args.neonUserId,
     });
     return newMoodId;
+  },
+});
+
+export const getUsersTotalMoodEntries = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    console.log({ identity });
+    const totalMoodEntries = await ctx.db.query('moods').collect();
+    return totalMoodEntries.length;
   },
 });

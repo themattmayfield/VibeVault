@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from 'auth';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
