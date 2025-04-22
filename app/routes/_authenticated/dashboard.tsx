@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useLoaderData } from '@tanstack/react-router';
 import {
   Card,
   CardContent,
@@ -10,44 +10,90 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoodCalendar } from '@/components/mood-calendar';
 import { PersonalMoodChart } from '@/components/personal-mood-chart';
 import { MoodInsights } from '@/components/mood-insights';
-import { getMoodEmoji } from '@/lib/getMoodEmoji';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { api } from 'convex/_generated/api';
+import { getMoodEmoji, moodOptions } from '@/lib/getMoodEmoji';
 import { convexQuery } from '@convex-dev/react-query';
+import { api } from 'convex/_generated/api';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import numeral from 'numeral';
+import pluralize from 'pluralize';
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
   component: Home,
 });
 
 function Home() {
+  const { user } = useLoaderData({
+    from: '/_authenticated',
+  });
   const { data: totalMoodEntries } = useSuspenseQuery(
-    convexQuery(api.mood.getUsersTotalMoodEntries, {})
+    convexQuery(api.mood.getUsersTotalMoodEntries, {
+      neonUserId: user.id,
+    })
+  );
+  const { data: currentStreak } = useSuspenseQuery(
+    convexQuery(api.mood.getUsersCurrentStreak, {
+      neonUserId: user.id,
+    })
+  );
+  const { data: mostCommonMood } = useSuspenseQuery(
+    convexQuery(api.mood.getMostCommonMoodLast30Days, {
+      neonUserId: user.id,
+    })
   );
 
-  console.log(totalMoodEntries);
+  const { data: moodToday } = useSuspenseQuery(
+    convexQuery(api.mood.getMoodToday, {
+      neonUserId: user.id,
+    })
+  );
+
+  const { data: lastFiveMoods } = useSuspenseQuery(
+    convexQuery(api.mood.getLastFiveMoods, {
+      neonUserId: user.id,
+    })
+  );
+
+  const mostCommonMoodLabel =
+    moodOptions.find((mood) => mood.value === mostCommonMood?.moods[0].mood)
+      ?.label ?? '';
+
+  const moodTodayLabel =
+    moodOptions.find((mood) => mood.value === moodToday?.mood)?.label ?? '';
 
   const dashboardCards = [
     {
       title: 'Current Streak',
-      value: '7 days',
+      value: `${numeral(currentStreak).format('0,0')} ${pluralize(
+        'day',
+        currentStreak
+      )}`,
       description: 'Keep it up!',
     },
-    {
-      title: 'Most Common Mood',
-      value: 'Happy',
-      description: 'Last 30 days',
-    },
+    ...(mostCommonMoodLabel
+      ? [
+          {
+            title: 'Most Common Mood',
+            value: mostCommonMoodLabel,
+            description: 'Last 30 days',
+          },
+        ]
+      : []),
     {
       title: 'Total Entries',
-      value: totalMoodEntries,
+      value: numeral(totalMoodEntries).format('0,0'),
       description: 'Since you started',
     },
-    {
-      title: 'Mood Today',
-      value: 'Excited',
-      description: 'Logged at 9:30 AM',
-    },
+    ...(moodTodayLabel
+      ? [
+          {
+            title: 'Mood Today',
+            value: moodTodayLabel,
+            description: 'Logged at 9:30 AM',
+          },
+        ]
+      : []),
   ];
+
   return (
     <div className="flex flex-col">
       <div className="flex-1 space-y-4 px-4">
@@ -86,46 +132,24 @@ function Home() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      {
-                        date: 'Today, 9:30 AM',
-                        mood: 'Excited',
-                        note: 'Starting a new project!',
-                      },
-                      {
-                        date: 'Yesterday, 8:15 PM',
-                        mood: 'Calm',
-                        note: 'Evening meditation helped',
-                      },
-                      {
-                        date: '2 days ago, 12:30 PM',
-                        mood: 'Stressed',
-                        note: 'Deadline approaching',
-                      },
-                      {
-                        date: '3 days ago, 10:00 AM',
-                        mood: 'Happy',
-                        note: 'Great team meeting',
-                      },
-                      {
-                        date: '4 days ago, 7:45 PM',
-                        mood: 'Tired',
-                        note: 'Long day at work',
-                      },
-                    ].map((entry, i) => (
+                    {lastFiveMoods?.map((entry, i) => (
                       <div key={i} className="flex items-start space-x-4">
                         <div className="min-w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           {getMoodEmoji(entry.mood)}
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {entry.mood}
+                            {
+                              moodOptions.find(
+                                (mood) => mood.value === entry.mood
+                              )?.label
+                            }
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {entry.note}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {entry.date}
+                            {entry.relativeTime}
                           </p>
                         </div>
                       </div>

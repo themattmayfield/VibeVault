@@ -6,11 +6,13 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 export const Route = createFileRoute('/_authenticated')({
   component: RouteComponent,
-  beforeLoad: async () => {
+  loader: async () => {
     const user = await getAuthUser();
     if (!user) {
       throw redirect({ to: '/sign-in' });
     }
+
+    return { user };
   },
 });
 

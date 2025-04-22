@@ -1,6 +1,7 @@
 import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { moodLiteral } from './schema';
+
 export const createMood = mutation({
   args: {
     mood: moodLiteral,
@@ -18,11 +19,189 @@ export const createMood = mutation({
 });
 
 export const getUsersTotalMoodEntries = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    console.log({ identity });
-    const totalMoodEntries = await ctx.db.query('moods').collect();
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const totalMoodEntries = await ctx.db
+      .query('moods')
+      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .collect();
     return totalMoodEntries.length;
+  },
+});
+
+export const getUsersCurrentStreak = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const moods = await ctx.db
+      .query('moods')
+      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .order('desc')
+      .collect();
+
+    if (moods.length === 0) return 0;
+
+    let streak = 1;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get the date of the most recent mood entry
+    const lastMoodDate = new Date(moods[0]._creationTime);
+    lastMoodDate.setHours(0, 0, 0, 0);
+
+    // If the most recent mood is not from today or yesterday, streak is broken
+    const daysSinceLastMood = Math.floor(
+      (today.getTime() - lastMoodDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysSinceLastMood > 1) return 0;
+
+    // Check consecutive days
+    for (let i = 1; i < moods.length; i++) {
+      const currentDate = new Date(moods[i]._creationTime);
+      currentDate.setHours(0, 0, 0, 0);
+
+      const prevDate = new Date(moods[i - 1]._creationTime);
+      prevDate.setHours(0, 0, 0, 0);
+
+      // Calculate days between entries
+      const daysDiff = Math.floor(
+        (prevDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // If entries are from the same day, continue checking
+      if (daysDiff === 0) continue;
+
+      // If entries are consecutive days, increment streak
+      if (daysDiff === 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  },
+});
+
+export const getMostCommonMoodLast30Days = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get current timestamp and timestamp from 30 days ago
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Get all moods from the last 30 days
+    const moods = await ctx.db
+      .query('moods')
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('neonUserId'), args.neonUserId),
+          q.gte(q.field('_creationTime'), thirtyDaysAgo.getTime())
+        )
+      )
+      .collect();
+
+    if (moods.length === 0) {
+      return null;
+    }
+
+    // Count occurrences of each mood
+    const moodCounts = moods.reduce(
+      (acc, curr) => {
+        acc[curr.mood] = (acc[curr.mood] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    // Find the mood(s) with the highest count
+    const maxCount = Math.max(...Object.values(moodCounts));
+    const mostCommonMoods = Object.entries(moodCounts)
+      .filter(([_, count]) => count === maxCount)
+      .map(([mood, count]) => ({ mood, count }));
+
+    return {
+      moods: mostCommonMoods,
+      totalMoods: moods.length,
+      daysAnalyzed: 30,
+    };
+  },
+});
+
+export const getMoodToday = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get today's moods ordered by most recent first
+    const moodsToday = await ctx.db
+      .query('moods')
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('neonUserId'), args.neonUserId),
+          q.gte(q.field('_creationTime'), today.getTime()),
+          q.lt(q.field('_creationTime'), tomorrow.getTime())
+        )
+      )
+      .order('desc')
+      .take(1);
+
+    return moodsToday[0] || null;
+  },
+});
+
+export const getLastFiveMoods = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const moods = await ctx.db
+      .query('moods')
+      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .order('desc')
+      .take(5);
+
+    if (moods.length === 0) {
+      return null;
+    }
+
+    // Add relative time for each mood (e.g., "2 hours ago", "3 days ago")
+    return moods.map((mood) => {
+      const createdAt = new Date(mood._creationTime);
+      const now = new Date();
+      const diffInSeconds = Math.floor(
+        (now.getTime() - createdAt.getTime()) / 1000
+      );
+
+      let relativeTime;
+      if (diffInSeconds < 60) {
+        relativeTime = `${diffInSeconds} seconds ago`;
+      } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        relativeTime = `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+      } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        relativeTime = `${hours} hour${hours === 1 ? '' : 's'} ago`;
+      } else {
+        const days = Math.floor(diffInSeconds / 86400);
+        relativeTime = `${days} day${days === 1 ? '' : 's'} ago`;
+      }
+
+      return {
+        ...mood,
+        relativeTime,
+      };
+    });
   },
 });
