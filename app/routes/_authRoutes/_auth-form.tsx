@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createFileRoute,
   Link,
@@ -26,10 +28,30 @@ import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { APP_INFO } from '@/constants/app-info';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
+import {
+  createFormHook,
+  createFormHookContexts,
+  useStore,
+} from '@tanstack/react-form';
+import { z } from 'zod';
+import { useSubmittingDots } from '@/hooks/useSubmittingDots';
 
-const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
+const { fieldContext, formContext } = createFormHookContexts();
+
+const { useAppForm } = createFormHook({
+  fieldComponents: {
+    Input,
+  },
+  formComponents: {
+    Button,
+  },
+  fieldContext,
+  formContext,
+});
 
 export function AuthForm() {
+  const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
+
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
 
@@ -40,22 +62,47 @@ export function AuthForm() {
     api.mood.createMoodsFromLocalStorage
   );
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const dots = useSubmittingDots(isSubmitting);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      if (isSignIn) {
-        await authClient.signIn.email({
-          email,
-          password,
-          callbackURL: '/dashboard',
-          rememberMe: true,
-        });
-      } else {
-        const userId = await signUpEmail({ data: { email, password } });
-        await createUser({ neonUserId: userId });
+  const form = useAppForm({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    validators: {
+      onSubmit: z.object({
+        email: z.string().email(),
+        password: z
+          .string()
+          .min(8, { message: 'Password must be at least 8 characters long' })
+          .max(100, {
+            message: 'Password must be less than 100 characters long',
+          }),
+      }),
+    },
+    onSubmit: async ({ value }) => {
+      try {
+        setIsSubmitting(true);
+        let userId: string;
+        if (isSignIn) {
+          const { data, error } = await authClient.signIn.email({
+            email: value.email,
+            password: value.password,
+            rememberMe: true,
+          });
+          if (error) {
+            throw new Error(error.message);
+          }
+          userId = data.user.id;
+        } else {
+          const id = await signUpEmail({
+            data: { email: value.email, password: value.password },
+          });
+
+          userId = id;
+          await createUser({ neonUserId: userId });
+        }
         await createMoodsFromLocalStorage({
           neonUserId: userId,
           moods: JSON.parse(moods || '[]'),
@@ -63,13 +110,17 @@ export function AuthForm() {
         localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
 
         router.navigate({ to: '/dashboard' });
-        toast.success('Successfully signed in');
+        toast.success(
+          isSignIn ? 'Successfully signed in' : 'Successfully signed up'
+        );
+      } catch (error) {
+        setIsSubmitting(false);
+        toast.error(error.message);
       }
-    } catch (_) {
-      console.error('error');
-    }
-  };
-
+    },
+  });
+  const errors = useStore(form.store, (state) => state.errorMap);
+  console.log(errors);
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -95,10 +146,15 @@ export function AuthForm() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  form.handleSubmit();
+                }}
+              >
                 <div className="grid gap-6">
                   <div className="flex flex-col gap-4">
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full cursor-pointer">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -110,7 +166,7 @@ export function AuthForm() {
                       </svg>
                       {isSignIn ? 'Login with Apple' : 'Sign up with Apple'}
                     </Button>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full cursor-pointer">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -131,51 +187,88 @@ export function AuthForm() {
                   <div className="grid gap-6">
                     <div className="grid gap-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="m@example.com"
-                        required
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                        }}
+                      <form.AppField
+                        name="email"
+                        // biome-ignore lint/correctness/noChildrenProp: what
+                        children={(field) => (
+                          <>
+                            <field.Input
+                              type="email"
+                              placeholder="m@example.com"
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                            />
+                            {field.state.meta.errors.map((error, index) => (
+                              <p key={index} className="text-sm text-red-500">
+                                {error?.message}
+                              </p>
+                            ))}
+                          </>
+                        )}
                       />
                     </div>
                     <div className="grid gap-2">
                       <div className="flex items-center">
                         <Label htmlFor="password">Password</Label>
-                        {isSignIn && (
-                          <Link
-                            to="/forgot-password"
-                            className="ml-auto text-sm underline-offset-4 hover:underline"
-                          >
-                            Forgot your password?
-                          </Link>
-                        )}
                       </div>
-                      <Input
-                        id="password"
-                        type="password"
-                        required
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                        }}
+                      <form.AppField
+                        name="password"
+                        // biome-ignore lint/correctness/noChildrenProp: what
+                        children={(field) => (
+                          <>
+                            <field.Input
+                              type="password"
+                              onChange={(e) =>
+                                field.handleChange(e.target.value)
+                              }
+                            />
+                            {field.state.meta.errors.map((error, index) => (
+                              <p key={index} className="text-sm text-red-500">
+                                {error?.message}
+                              </p>
+                            ))}
+                          </>
+                        )}
                       />
                     </div>
-                    <Button type="submit" className="w-full">
-                      {isSignIn ? 'Login' : 'Sign up'}
-                    </Button>
+                    <form.AppForm>
+                      <form.Button
+                        type="submit"
+                        className="w-full cursor-pointer"
+                      >
+                        {isSubmitting
+                          ? isSignIn
+                            ? `Signing in${dots}`
+                            : `Signing up${dots}`
+                          : isSignIn
+                            ? 'Login'
+                            : 'Sign up'}
+                      </form.Button>
+                    </form.AppForm>
                   </div>
-                  <div className="text-center text-sm">
-                    {isSignIn
-                      ? "Don't have an account?"
-                      : 'Already have an account?'}{' '}
-                    <Link
-                      to={isSignIn ? '/sign-up' : '/sign-in'}
-                      className="underline underline-offset-4"
-                    >
-                      {isSignIn ? 'Sign up' : 'Login'}
-                    </Link>
+                  <div>
+                    <div className="text-center text-sm">
+                      {isSignIn
+                        ? "Don't have an account?"
+                        : 'Already have an account?'}{' '}
+                      <Link
+                        to={isSignIn ? '/sign-up' : '/sign-in'}
+                        className="underline underline-offset-4"
+                      >
+                        {isSignIn ? 'Sign up' : 'Login'}
+                      </Link>
+                    </div>
+                    <div className="text-center">
+                      {isSignIn && (
+                        <Link
+                          to="/forgot-password"
+                          className="ml-auto text-xs underline-offset-4 hover:underline"
+                        >
+                          Forgot your password?
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </form>

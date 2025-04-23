@@ -2,6 +2,7 @@ import { mutation, query, type MutationCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { moodLiteral } from './schema';
 import type { Infer } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 
 async function createMoodHelper(
   ctx: MutationCtx,
@@ -11,11 +12,12 @@ async function createMoodHelper(
     neonUserId?: string;
   }
 ) {
-  await ctx.db.insert('moods', {
+  const newMoodId = await ctx.db.insert('moods', {
     mood: args.mood,
     note: args.note,
     neonUserId: args.neonUserId,
   });
+  return newMoodId;
 }
 
 export const createMood = mutation({
@@ -294,20 +296,13 @@ export const getMoodTrends = query({
 export const createMoodsFromLocalStorage = mutation({
   args: {
     neonUserId: v.string(),
-    moods: v.array(
-      v.object({
-        mood: moodLiteral,
-        note: v.optional(v.string()),
-      })
-    ),
+    moods: v.array(v.string()),
   },
   handler: async (ctx, args) => {
     const moods = args.moods;
     const neonUserId = args.neonUserId;
-    for (const mood of moods) {
-      await createMoodHelper(ctx, {
-        mood: mood.mood,
-        note: mood.note,
+    for (const moodId of moods) {
+      await ctx.db.patch(moodId as Id<'moods'>, {
         neonUserId,
       });
     }

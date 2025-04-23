@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 
 export function LogMood() {
+  const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
   const { data: session } = authClient.useSession();
   const isLoggedIn = !!session;
   const addMood = useMutation(api.mood.createMood);
@@ -32,7 +35,7 @@ export function LogMood() {
 
   const [note, setNote] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedMood) {
@@ -41,23 +44,16 @@ export function LogMood() {
     }
 
     try {
-      addMood({
+      const moodId = await addMood({
         mood: selectedMood,
         note,
         neonUserId: session?.session.userId,
       });
-      const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
       if (!session) {
         const existingMoods = moods ? JSON.parse(moods) : [];
         localStorage.setItem(
           LOCAL_STORAGE_MOODS_KEY,
-          JSON.stringify([
-            ...existingMoods,
-            {
-              mood: selectedMood,
-              note,
-            },
-          ])
+          JSON.stringify([...existingMoods, moodId])
         );
       }
       toast.success('Mood logged successfully!');

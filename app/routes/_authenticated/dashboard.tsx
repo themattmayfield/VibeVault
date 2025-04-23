@@ -107,9 +107,15 @@ function Home() {
         <Tabs defaultValue="overview" className="space-y-4">
           <div className="flex justify-between">
             <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="overview">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="calendar">
+                Calendar
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="insights">
+                Insights
+              </TabsTrigger>
             </TabsList>
           </div>
 
