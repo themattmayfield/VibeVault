@@ -6,6 +6,12 @@ const signInEmailSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
+
+const signUpEmailSchema = z.object({
+  ...signInEmailSchema.shape,
+  name: z.string().min(1),
+});
+
 export const signInEmail = createServerFn({ method: 'POST' })
   .validator(signInEmailSchema)
   .handler(async ({ data }) => {
@@ -20,11 +26,11 @@ export const signInEmail = createServerFn({ method: 'POST' })
   });
 
 export const signUpEmail = createServerFn({ method: 'POST' })
-  .validator(signInEmailSchema)
+  .validator(signUpEmailSchema)
   .handler(async ({ data }) => {
     const response = await auth.api.signUpEmail({
       body: {
-        name: data.email,
+        name: data.name,
         email: data.email,
         password: data.password,
       },

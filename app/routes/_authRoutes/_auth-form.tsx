@@ -69,6 +69,7 @@ export function AuthForm() {
     defaultValues: {
       email: '',
       password: '',
+      name: '',
     },
     validators: {
       onSubmit: z.object({
@@ -79,6 +80,15 @@ export function AuthForm() {
           .max(100, {
             message: 'Password must be less than 100 characters long',
           }),
+        name: z.string().refine(
+          (val) => {
+            if (isSignIn) {
+              return true;
+            }
+            return val.length > 0;
+          },
+          { message: 'Name is required' }
+        ),
       }),
     },
     onSubmit: async ({ value }) => {
@@ -97,7 +107,11 @@ export function AuthForm() {
           userId = data.user.id;
         } else {
           const id = await signUpEmail({
-            data: { email: value.email, password: value.password },
+            data: {
+              email: value.email,
+              password: value.password,
+              name: value.name,
+            },
           });
 
           userId = id;
@@ -185,6 +199,31 @@ export function AuthForm() {
                     </span>
                   </div>
                   <div className="grid gap-6">
+                    {!isSignIn && (
+                      <div className="grid gap-2">
+                        <Label htmlFor="name">Name</Label>
+                        <form.AppField
+                          name="name"
+                          // biome-ignore lint/correctness/noChildrenProp: what
+                          children={(field) => (
+                            <>
+                              <field.Input
+                                type="text"
+                                placeholder="John Doe"
+                                onChange={(e) =>
+                                  field.handleChange(e.target.value)
+                                }
+                              />
+                              {field.state.meta.errors.map((error, index) => (
+                                <p key={index} className="text-sm text-red-500">
+                                  {error?.message}
+                                </p>
+                              ))}
+                            </>
+                          )}
+                        />
+                      </div>
+                    )}
                     <div className="grid gap-2">
                       <Label htmlFor="email">Email</Label>
                       <form.AppField
@@ -208,6 +247,7 @@ export function AuthForm() {
                         )}
                       />
                     </div>
+
                     <div className="grid gap-2">
                       <div className="flex items-center">
                         <Label htmlFor="password">Password</Label>

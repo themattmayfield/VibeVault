@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/sidebar';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from '@tanstack/react-router';
+import getInitials from '@/lib/getInitials';
+
 export function NavUser() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
@@ -33,6 +35,11 @@ export function NavUser() {
     await authClient.signOut();
     router.navigate({ to: '/sign-in', reloadDocument: true });
   };
+
+  const name = session?.user?.name ?? '';
+  const email = session?.user?.email ?? '';
+  const image = session?.user?.image ?? '';
+  const initials = getInitials(name);
 
   return (
     <SidebarMenu>
@@ -44,18 +51,15 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage
-                  src={session?.user?.image ?? ''}
-                  alt={session?.user?.name ?? ''}
-                />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage src={image} alt={name} />
+                <AvatarFallback className="rounded-lg">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">
-                  {session?.user?.name}
-                </span>
+                <span className="truncate font-medium">{name}</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  {session?.user?.email}
+                  {email}
                 </span>
               </div>
               <MoreVerticalIcon className="ml-auto size-4" />
@@ -70,18 +74,15 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    src={session?.user?.image ?? ''}
-                    alt={session?.user?.name ?? ''}
-                  />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarImage src={image} alt={name} />
+                  <AvatarFallback className="rounded-lg">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">
-                    {session?.user?.name}
-                  </span>
+                  <span className="truncate font-medium">{name}</span>
                   <span className="truncate text-xs text-muted-foreground">
-                    {session?.user?.email}
+                    {email}
                   </span>
                 </div>
               </div>

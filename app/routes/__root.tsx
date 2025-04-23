@@ -10,6 +10,7 @@ import { Toaster } from '@/components/ui/sonner';
 
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import appCss from '@/styles/app.css?url';
+import { APP_INFO } from '@/constants/app-info';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -24,7 +25,7 @@ export const Route = createRootRouteWithContext<{
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: APP_INFO.name,
       },
     ],
     links: [
