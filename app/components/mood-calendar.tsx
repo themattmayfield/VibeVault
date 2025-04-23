@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { convexQuery } from '@convex-dev/react-query';
-
+import { format } from 'date-fns-tz';
 const moodColors: Record<string, string> = {
   happy: 'bg-green-500',
   excited: 'bg-yellow-500',
@@ -35,21 +35,38 @@ export function MoodCalendar() {
   const { user } = useLoaderData({
     from: '/_authenticated',
   });
-  const { data: moodData } = useSuspenseQuery(
+  const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
       neonUserId: user.id,
     })
   );
-  console.log(moodData);
+  type Mood = Omit<(typeof moods)[number], 'time'> & { time: string };
+
+  const moodsByDate = useMemo(() => {
+    const grouped: Record<string, Mood[]> = {};
+    moods.forEach((mood) => {
+      const timestamp = mood.time;
+      const date = new Date(timestamp);
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const formattedTime = format(date, 'p');
+
+      if (!grouped[formattedDate]) {
+        grouped[formattedDate] = [];
+      }
+      grouped[formattedDate].push({
+        ...mood,
+        time: formattedTime,
+      });
+    });
+    return grouped;
+  }, [moods]);
+  const formattedDateStr = format(new Date(), 'yyyy-MM-dd');
+  const dayMoodsDefault = moodsByDate[formattedDateStr] || null;
 
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [selectedMoods, setSelectedMoods] = useState<Array<{
-    id: string;
-    mood: string;
-    note: string;
-    time: string;
-    tags?: string[];
-  }> | null>(null);
+  const [selectedMoods, setSelectedMoods] = useState<Array<Mood> | null>(
+    dayMoodsDefault
+  );
   const [currentMoodIndex, setCurrentMoodIndex] = useState(0);
 
   // Function to handle date selection
@@ -57,8 +74,8 @@ export function MoodCalendar() {
     setDate(newDate);
     if (newDate) {
       const dateStr = newDate.toISOString().split('T')[0];
-      const moods = moodData[dateStr] || null;
-      setSelectedMoods(moods);
+      const dayMoods = moodsByDate[dateStr] || null;
+      setSelectedMoods(dayMoods);
       setCurrentMoodIndex(0); // Reset to first mood when selecting a new date
     } else {
       setSelectedMoods(null);
@@ -80,12 +97,10 @@ export function MoodCalendar() {
 
   // Get the dominant mood for a day (for the calendar indicator)
   const getDominantMood = (dateStr: string) => {
-    const moods = moodData[dateStr];
-    if (!moods || moods.length === 0) return null;
-
+    const dayMoods = moodsByDate[dateStr];
+    if (!dayMoods || dayMoods.length === 0) return null;
     // For simplicity, we'll use the most recent mood as dominant
-    // In a real app, you might use a more sophisticated algorithm
-    return moods[moods.length - 1].mood;
+    return dayMoods[0].mood;
   };
 
   return (
@@ -98,7 +113,7 @@ export function MoodCalendar() {
         modifiers={{
           booked: (date) => {
             const dateStr = date.toISOString().split('T')[0];
-            return dateStr in moodData;
+            return dateStr in moodsByDate;
           },
         }}
         modifiersStyles={{
@@ -107,7 +122,7 @@ export function MoodCalendar() {
         components={{
           DayContent: ({ date, ...props }) => {
             const dateStr = date.toISOString().split('T')[0];
-            const moodEntries = moodData[dateStr];
+            const dayMoods = moodsByDate[dateStr];
             const dominantMood = getDominantMood(dateStr);
 
             return (
@@ -117,7 +132,7 @@ export function MoodCalendar() {
                 className="relative w-full h-full flex items-center justify-center"
               >
                 {date.getDate()}
-                {moodEntries && (
+                {dayMoods && (
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {/* Show a single dot for the dominant mood */}
                     {dominantMood && (
@@ -130,7 +145,7 @@ export function MoodCalendar() {
                     )}
 
                     {/* Show a small indicator if there are multiple entries */}
-                    {moodEntries && moodEntries.length > 1 && (
+                    {dayMoods && dayMoods.length > 1 && (
                       <div className="absolute -right-2 -top-1 w-2 h-2 bg-primary rounded-full" />
                     )}
                   </div>
@@ -190,11 +205,13 @@ export function MoodCalendar() {
                 </div>
               </div>
 
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <p className="text-sm">
-                  {selectedMoods[currentMoodIndex].note}
-                </p>
-              </div>
+              {selectedMoods[currentMoodIndex].note && (
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <p className="text-sm">
+                    {selectedMoods[currentMoodIndex].note}
+                  </p>
+                </div>
+              )}
 
               <p className="text-xs text-muted-foreground">
                 {date?.toLocaleDateString('en-US', {
@@ -207,9 +224,9 @@ export function MoodCalendar() {
 
               {/* Tags */}
               {selectedMoods[currentMoodIndex].tags &&
-                selectedMoods[currentMoodIndex].tags!.length > 0 && (
+                selectedMoods[currentMoodIndex].tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {selectedMoods[currentMoodIndex].tags!.map((tag, i) => (
+                    {selectedMoods[currentMoodIndex].tags.map((tag, i) => (
                       <div
                         key={i}
                         className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full"
