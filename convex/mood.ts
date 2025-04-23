@@ -1,7 +1,6 @@
 import { mutation, query, type MutationCtx } from './_generated/server';
-import { v } from 'convex/values';
+import { v, type Infer } from 'convex/values';
 import { moodLiteral } from './schema';
-import type { Infer } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 
 async function createMoodHelper(
@@ -306,5 +305,71 @@ export const createMoodsFromLocalStorage = mutation({
         neonUserId,
       });
     }
+  },
+});
+
+export const getUserMoods = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  returns: v.record(
+    v.string(),
+    v.array(
+      v.object({
+        id: v.string(),
+        mood: moodLiteral,
+        note: v.optional(v.string()),
+        time: v.string(),
+        tags: v.array(v.string()),
+      })
+    )
+  ),
+  handler: async (ctx, args) => {
+    // Get all moods for the user
+    const moods = await ctx.db
+      .query('moods')
+      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .collect();
+
+    // Group moods by date
+    const moodsByDate: Record<
+      string,
+      Array<{
+        id: string;
+        mood: Infer<typeof moodLiteral>;
+        note?: string;
+        time: string;
+        tags: string[];
+      }>
+    > = {};
+
+    for (const mood of moods) {
+      // Convert timestamp to date string (YYYY-MM-DD)
+      const date = new Date(mood._creationTime);
+      const dateStr = date.toISOString().split('T')[0];
+
+      // Convert timestamp to time string (HH:MM AM/PM)
+      const timeStr = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+
+      // Initialize array for this date if it doesn't exist
+      if (!moodsByDate[dateStr]) {
+        moodsByDate[dateStr] = [];
+      }
+
+      // Add mood entry
+      moodsByDate[dateStr].push({
+        id: mood._id,
+        mood: mood.mood,
+        note: mood.note,
+        time: timeStr,
+        tags: [], // Empty array since we haven't implemented tags yet
+      });
+    }
+
+    return moodsByDate;
   },
 });
