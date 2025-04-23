@@ -13,3 +13,4 @@
 // [] Global trends
 // [] no bad language
 // [] share mood w/ friends outside of app
+// [] feature flags
