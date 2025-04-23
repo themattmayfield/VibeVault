@@ -20,6 +20,7 @@ import type { Infer } from 'convex/values';
 import { authClient } from '@/lib/auth-client';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 
 export function LogMood() {
   const { data: session } = authClient.useSession();
@@ -45,6 +46,20 @@ export function LogMood() {
         note,
         neonUserId: session?.session.userId,
       });
+      const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
+      if (!session) {
+        const existingMoods = moods ? JSON.parse(moods) : [];
+        localStorage.setItem(
+          LOCAL_STORAGE_MOODS_KEY,
+          JSON.stringify([
+            ...existingMoods,
+            {
+              mood: selectedMood,
+              note,
+            },
+          ])
+        );
+      }
       toast.success('Mood logged successfully!');
       setNote('');
     } catch (_error) {
@@ -127,14 +142,16 @@ export function LogMood() {
               Log Mood {isLoggedIn ? '' : ' Anonymously'}
             </Button>
             {!isLoggedIn && (
-              <Button
-                type="submit"
-                variant="outline"
-                className="cursor-pointer w-full"
-                disabled={!selectedMood}
-              >
-                Sign in
-              </Button>
+              <Link to="/sign-up" className="cursor-pointer w-full">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="cursor-pointer w-full"
+                  disabled={!selectedMood}
+                >
+                  Sign up
+                </Button>
+              </Link>
             )}
           </CardFooter>
         </form>

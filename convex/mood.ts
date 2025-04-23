@@ -1,7 +1,22 @@
-import { mutation, query } from './_generated/server';
+import { mutation, query, type MutationCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { moodLiteral } from './schema';
 import type { Infer } from 'convex/values';
+
+async function createMoodHelper(
+  ctx: MutationCtx,
+  args: {
+    mood: Infer<typeof moodLiteral>;
+    note?: string;
+    neonUserId?: string;
+  }
+) {
+  await ctx.db.insert('moods', {
+    mood: args.mood,
+    note: args.note,
+    neonUserId: args.neonUserId,
+  });
+}
 
 export const createMood = mutation({
   args: {
@@ -10,11 +25,7 @@ export const createMood = mutation({
     neonUserId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const newMoodId = await ctx.db.insert('moods', {
-      mood: args.mood,
-      note: args.note,
-      neonUserId: args.neonUserId,
-    });
+    const newMoodId = await createMoodHelper(ctx, args);
     return newMoodId;
   },
 });
@@ -277,5 +288,28 @@ export const getMoodTrends = query({
         end: now.toISOString(),
       },
     };
+  },
+});
+
+export const createMoodsFromLocalStorage = mutation({
+  args: {
+    neonUserId: v.string(),
+    moods: v.array(
+      v.object({
+        mood: moodLiteral,
+        note: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const moods = args.moods;
+    const neonUserId = args.neonUserId;
+    for (const mood of moods) {
+      await createMoodHelper(ctx, {
+        mood: mood.mood,
+        note: mood.note,
+        neonUserId,
+      });
+    }
   },
 });

@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useRouterState } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  useRouterState,
+  useRouter,
+} from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authRoutes/_auth-form')({});
 
@@ -20,13 +25,21 @@ import { signUpEmail } from '@/actions/auth';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { APP_INFO } from '@/constants/app-info';
+import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
+
+const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
 
 export function AuthForm() {
   const location = useRouterState({ select: (s) => s.location });
+  const router = useRouter();
 
   const isSignIn = location.pathname === '/sign-in';
 
   const createUser = useMutation(api.user.createUser);
+  const createMoodsFromLocalStorage = useMutation(
+    api.mood.createMoodsFromLocalStorage
+  );
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -41,15 +54,15 @@ export function AuthForm() {
           rememberMe: true,
         });
       } else {
-        await authClient.signUp.email({
-          email,
-          password,
-          name: email,
-          callbackURL: '/dashboard',
-        });
         const userId = await signUpEmail({ data: { email, password } });
-
         await createUser({ neonUserId: userId });
+        await createMoodsFromLocalStorage({
+          neonUserId: userId,
+          moods: JSON.parse(moods || '[]'),
+        });
+        localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
+
+        router.navigate({ to: '/dashboard' });
         toast.success('Successfully signed in');
       }
     } catch (_) {
@@ -168,11 +181,12 @@ export function AuthForm() {
               </form>
             </CardContent>
           </Card>
-          <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
-            By clicking continue, you agree to our{' '}
-            <a href="##">Terms of Service</a> and{' '}
-            <a href="##">Privacy Policy</a>.
-          </div>
+          <Link
+            to="/"
+            className="cursor-pointer text-balance text-center text-md text-muted-foreground underline underline-offset-4 hover:text-primary animate-bounce"
+          >
+            Log your mood!
+          </Link>
         </div>
       </div>
     </div>
