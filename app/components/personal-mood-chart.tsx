@@ -13,12 +13,12 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
 import { useLoaderData } from '@tanstack/react-router';
 import { moodOptions } from '../lib/getMoodEmoji';
+import { usersTimeZone } from '@/constants/userTimeZone';
 
 export function PersonalMoodChart() {
   const { user } = useLoaderData({
     from: '/_authenticated',
   });
-  const usersTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data: getMoodTrends } = useSuspenseQuery(
     convexQuery(api.mood.getMoodTrends, {
       neonUserId: user.id,

@@ -9,3 +9,4 @@ dist-ssr
 explorations
 node_modules
 .eslintcache
+.env

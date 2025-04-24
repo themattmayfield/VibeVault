@@ -1,4 +1,9 @@
-import { mutation, query, type MutationCtx } from './_generated/server';
+import {
+  mutation,
+  query,
+  type QueryCtx,
+  type MutationCtx,
+} from './_generated/server';
 import { v, type Infer } from 'convex/values';
 import { moodLiteral } from './schema';
 import type { Id } from './_generated/dataModel';
@@ -19,6 +24,36 @@ async function createMoodHelper(
   });
   return newMoodId;
 }
+
+async function getUserLast30DaysMoodsHelper(
+  ctx: QueryCtx,
+  args: { neonUserId: string }
+) {
+  // Get current timestamp and timestamp from 30 days ago
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // Get all moods from the last 30 days
+  const moods = await ctx.db
+    .query('moods')
+    .filter((q) =>
+      q.and(
+        q.eq(q.field('neonUserId'), args.neonUserId),
+        q.gte(q.field('_creationTime'), thirtyDaysAgo.getTime())
+      )
+    )
+    .collect();
+  return moods;
+}
+
+export const getUserLast30DaysMoods = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return getUserLast30DaysMoodsHelper(ctx, args);
+  },
+});
 
 export const createMood = mutation({
   args: {
@@ -105,20 +140,7 @@ export const getMostCommonMoodLast30Days = query({
     neonUserId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Get current timestamp and timestamp from 30 days ago
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    // Get all moods from the last 30 days
-    const moods = await ctx.db
-      .query('moods')
-      .filter((q) =>
-        q.and(
-          q.eq(q.field('neonUserId'), args.neonUserId),
-          q.gte(q.field('_creationTime'), thirtyDaysAgo.getTime())
-        )
-      )
-      .collect();
+    const moods = await getUserLast30DaysMoodsHelper(ctx, args);
 
     if (moods.length === 0) {
       return null;
@@ -278,7 +300,6 @@ export const getMoodTrends = query({
         sad: 0,
         angry: 0,
         anxious: 0,
-        pessimistic: 0,
       };
     }
 
