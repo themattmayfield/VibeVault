@@ -71,14 +71,12 @@ export function MoodCalendar() {
 
   // Function to handle date selection
   const handleSelect = (newDate: Date | undefined) => {
-    setDate(newDate);
     if (newDate) {
+      setDate(newDate);
       const dateStr = newDate.toISOString().split('T')[0];
       const dayMoods = moodsByDate[dateStr] || null;
       setSelectedMoods(dayMoods);
       setCurrentMoodIndex(0); // Reset to first mood when selecting a new date
-    } else {
-      setSelectedMoods(null);
     }
   };
 

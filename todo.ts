@@ -14,3 +14,6 @@
 // [] no bad language
 // [] share mood w/ friends outside of app
 // [] feature flags
+// [] setuo sentry
+// [] setup analytics
+// [] setup stripe

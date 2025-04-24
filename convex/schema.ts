@@ -10,8 +10,7 @@ export const moodLiteral = v.union(
   v.literal('stressed'),
   v.literal('sad'),
   v.literal('angry'),
-  v.literal('anxious'),
-  v.literal('pessimistic')
+  v.literal('anxious')
 );
 
 export default defineSchema({

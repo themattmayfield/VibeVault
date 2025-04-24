@@ -138,7 +138,7 @@ function Home() {
                   <PersonalMoodChart />
                 </CardContent>
               </Card>
-              <Card className="col-span-3">
+              <Card className="col-span-4 md:col-span-3">
                 <CardHeader>
                   <CardTitle>Recent Entries</CardTitle>
                   <CardDescription>Your last 5 mood logs</CardDescription>

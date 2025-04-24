@@ -2,6 +2,7 @@ import { mutation, query, type MutationCtx } from './_generated/server';
 import { v, type Infer } from 'convex/values';
 import { moodLiteral } from './schema';
 import type { Id } from './_generated/dataModel';
+import { format } from 'date-fns-tz';
 
 async function createMoodHelper(
   ctx: MutationCtx,
@@ -222,14 +223,28 @@ export const getLastFiveMoods = query({
 export const getMoodTrends = query({
   args: {
     neonUserId: v.string(),
+    usersTimeZone: v.string(),
   },
   handler: async (ctx, args) => {
-    // Get current timestamp and timestamp from 14 days ago
+    // Get current timestamp in user's timezone
     const now = new Date();
-    now.setHours(23, 59, 59, 999); // End of today
-    const fourteenDaysAgo = new Date(now);
+    const userNow = new Date(
+      now.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+    );
+    userNow.setHours(23, 59, 59, 999); // End of today in user's timezone
+
+    // Calculate 14 days ago in user's timezone
+    const fourteenDaysAgo = new Date(userNow);
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    fourteenDaysAgo.setHours(0, 0, 0, 0); // Start of 14 days ago
+    fourteenDaysAgo.setHours(0, 0, 0, 0); // Start of 14 days ago in user's timezone
+
+    // Convert timezone-adjusted dates back to UTC for database query
+    const startUTC = new Date(
+      fourteenDaysAgo.toLocaleString('en-US', { timeZone: 'UTC' })
+    );
+    const endUTC = new Date(
+      userNow.toLocaleString('en-US', { timeZone: 'UTC' })
+    );
 
     // Get all moods from the last 14 days
     const moods = await ctx.db
@@ -237,8 +252,8 @@ export const getMoodTrends = query({
       .filter((q) =>
         q.and(
           q.eq(q.field('neonUserId'), args.neonUserId),
-          q.gte(q.field('_creationTime'), fourteenDaysAgo.getTime()),
-          q.lte(q.field('_creationTime'), now.getTime())
+          q.gte(q.field('_creationTime'), startUTC.getTime()),
+          q.lte(q.field('_creationTime'), endUTC.getTime())
         )
       )
       .collect();
@@ -246,10 +261,14 @@ export const getMoodTrends = query({
     // Initialize the result object with all dates and empty mood counts
     const trendData: Record<string, Record<string, number>> = {};
     for (let i = 0; i < 14; i++) {
-      const date = new Date(now);
+      const date = new Date(userNow);
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      trendData[dateStr] = {
+      const userMoodDate = new Date(
+        date.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+      );
+      // console.log(userMoodDate);
+      const formattedDate = format(userMoodDate, 'MMM dd');
+      trendData[formattedDate] = {
         happy: 0,
         excited: 0,
         calm: 0,
@@ -260,17 +279,23 @@ export const getMoodTrends = query({
         angry: 0,
         anxious: 0,
         pessimistic: 0,
-      } satisfies Record<Infer<typeof moodLiteral>, number>;
+      };
     }
 
-    // Count moods for each date
+    // Count moods for each date, using the user's timezone
     moods.forEach((mood) => {
-      const date = new Date(mood._creationTime);
-      const dateStr = date.toISOString().split('T')[0];
-      if (trendData[dateStr]) {
-        trendData[dateStr][mood.mood]++;
+      const moodDate = new Date(mood._creationTime);
+      const userMoodDate = new Date(
+        moodDate.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+      );
+      // console.log(userMoodDate);
+      const formattedDate = format(userMoodDate, 'MMM dd');
+      // console.log(formattedDate);
+      if (trendData[formattedDate]) {
+        trendData[formattedDate][mood.mood]++;
       }
     });
+    // console.log(trendData);
 
     // Convert to array format and sort by date
     const result = Object.entries(trendData)
@@ -285,8 +310,8 @@ export const getMoodTrends = query({
       totalDays: 14,
       totalMoods: moods.length,
       dateRange: {
-        start: fourteenDaysAgo.toISOString(),
-        end: now.toISOString(),
+        start: startUTC.toISOString(),
+        end: endUTC.toISOString(),
       },
     };
   },
