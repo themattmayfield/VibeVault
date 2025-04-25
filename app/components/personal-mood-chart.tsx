@@ -16,12 +16,12 @@ import { moodOptions } from '../lib/getMoodEmoji';
 import { usersTimeZone } from '@/constants/userTimeZone';
 
 export function PersonalMoodChart() {
-  const { user } = useLoaderData({
+  const user = useLoaderData({
     from: '/_authenticated',
   });
   const { data: getMoodTrends } = useSuspenseQuery(
     convexQuery(api.mood.getMoodTrends, {
-      neonUserId: user.id,
+      userId: user._id,
       usersTimeZone,
     })
   );

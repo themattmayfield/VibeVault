@@ -8,7 +8,7 @@ export const getTodaysInsight = query({
       v.literal('triggers'),
       v.literal('suggestions')
     ),
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     // Get the start of today in milliseconds (UTC)
@@ -25,7 +25,7 @@ export const getTodaysInsight = query({
       .query(args.table)
       .filter((q) =>
         q.and(
-          q.eq(q.field('neonUserId'), args.neonUserId),
+          q.eq(q.field('userId'), args.userId),
           q.gte(q.field('_creationTime'), startOfToday),
           q.lt(q.field('_creationTime'), endOfToday)
         )
@@ -43,12 +43,12 @@ export const createInsight = mutation({
       v.literal('suggestions')
     ),
     content: v.string(),
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert(args.table, {
       insight: args.content,
-      neonUserId: args.neonUserId,
+      userId: args.userId,
     });
   },
 });

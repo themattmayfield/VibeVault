@@ -8,13 +8,14 @@ import { v, type Infer } from 'convex/values';
 import { moodLiteral } from './schema';
 import type { Id } from './_generated/dataModel';
 import { format } from 'date-fns-tz';
+import { getUserFromNeonUserIdHelper } from './user';
 
 async function createMoodHelper(
   ctx: MutationCtx,
   args: {
     mood: Infer<typeof moodLiteral>;
     note?: string;
-    neonUserId?: string;
+    userId?: Id<'users'>;
     tags?: string[];
     group?: Id<'groups'>;
   }
@@ -22,7 +23,7 @@ async function createMoodHelper(
   const newMoodId = await ctx.db.insert('moods', {
     mood: args.mood,
     note: args.note,
-    neonUserId: args.neonUserId,
+    userId: args.userId,
     tags: args.tags,
     group: args.group,
   });
@@ -31,7 +32,7 @@ async function createMoodHelper(
 
 async function getUserLast30DaysMoodsHelper(
   ctx: QueryCtx,
-  args: { neonUserId: string }
+  args: { userId: Id<'users'> }
 ) {
   // Get current timestamp and timestamp from 30 days ago
   const now = new Date();
@@ -42,7 +43,7 @@ async function getUserLast30DaysMoodsHelper(
     .query('moods')
     .filter((q) =>
       q.and(
-        q.eq(q.field('neonUserId'), args.neonUserId),
+        q.eq(q.field('userId'), args.userId),
         q.gte(q.field('_creationTime'), thirtyDaysAgo.getTime())
       )
     )
@@ -52,7 +53,7 @@ async function getUserLast30DaysMoodsHelper(
 
 export const getUserLast30DaysMoods = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     return getUserLast30DaysMoodsHelper(ctx, args);
@@ -63,7 +64,7 @@ export const createMood = mutation({
   args: {
     mood: moodLiteral,
     note: v.optional(v.string()),
-    neonUserId: v.optional(v.string()),
+    userId: v.optional(v.id('users')),
     tags: v.optional(v.array(v.string())),
     group: v.optional(v.id('groups')),
   },
@@ -75,12 +76,12 @@ export const createMood = mutation({
 
 export const getUsersTotalMoodEntries = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     const totalMoodEntries = await ctx.db
       .query('moods')
-      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .filter((q) => q.eq(q.field('userId'), args.userId))
       .collect();
     return totalMoodEntries.length;
   },
@@ -88,12 +89,12 @@ export const getUsersTotalMoodEntries = query({
 
 export const getUsersCurrentStreak = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     const moods = await ctx.db
       .query('moods')
-      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .filter((q) => q.eq(q.field('userId'), args.userId))
       .order('desc')
       .collect();
 
@@ -143,7 +144,7 @@ export const getUsersCurrentStreak = query({
 
 export const getMostCommonMoodLast30Days = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     const moods = await getUserLast30DaysMoodsHelper(ctx, args);
@@ -177,7 +178,7 @@ export const getMostCommonMoodLast30Days = query({
 
 export const getMoodToday = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     // Get today's date at midnight
@@ -191,7 +192,7 @@ export const getMoodToday = query({
       .query('moods')
       .filter((q) =>
         q.and(
-          q.eq(q.field('neonUserId'), args.neonUserId),
+          q.eq(q.field('userId'), args.userId),
           q.gte(q.field('_creationTime'), today.getTime()),
           q.lt(q.field('_creationTime'), tomorrow.getTime())
         )
@@ -205,12 +206,12 @@ export const getMoodToday = query({
 
 export const getLastFiveMoods = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     const moods = await ctx.db
       .query('moods')
-      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .filter((q) => q.eq(q.field('userId'), args.userId))
       .order('desc')
       .take(5);
 
@@ -250,7 +251,7 @@ export const getLastFiveMoods = query({
 
 export const getMoodTrends = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
     usersTimeZone: v.string(),
   },
   handler: async (ctx, args) => {
@@ -279,7 +280,7 @@ export const getMoodTrends = query({
       .query('moods')
       .filter((q) =>
         q.and(
-          q.eq(q.field('neonUserId'), args.neonUserId),
+          q.eq(q.field('userId'), args.userId),
           q.gte(q.field('_creationTime'), startUTC.getTime()),
           q.lte(q.field('_creationTime'), endUTC.getTime())
         )
@@ -344,17 +345,19 @@ export const getMoodTrends = query({
   },
 });
 
-export const createMoodsFromLocalStorage = mutation({
+export const createMoodsFromLocalStorageUsingNeonUserId = mutation({
   args: {
     neonUserId: v.string(),
     moods: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    const moods = args.moods;
-    const neonUserId = args.neonUserId;
-    for (const moodId of moods) {
+    const user = await getUserFromNeonUserIdHelper(ctx, {
+      neonUserId: args.neonUserId,
+    });
+
+    for (const moodId of args.moods) {
       await ctx.db.patch(moodId as Id<'moods'>, {
-        neonUserId,
+        userId: user._id,
       });
     }
   },
@@ -362,7 +365,7 @@ export const createMoodsFromLocalStorage = mutation({
 
 export const getUserMoods = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   returns: v.array(
     v.object({
@@ -377,7 +380,7 @@ export const getUserMoods = query({
   handler: async (ctx, args) => {
     const moods = await ctx.db
       .query('moods')
-      .filter((q) => q.eq(q.field('neonUserId'), args.neonUserId))
+      .filter((q) => q.eq(q.field('userId'), args.userId))
       .order('desc')
       .collect();
 

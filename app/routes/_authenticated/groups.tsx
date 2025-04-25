@@ -24,17 +24,17 @@ export const Route = createFileRoute('/_authenticated/groups')({
   component: RouteComponent,
 });
 function RouteComponent() {
-  const { user } = useLoaderData({
+  const user = useLoaderData({
     from: '/_authenticated',
   });
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const name = user.name ?? '';
+  const name = user.displayName ?? '';
   const image = user.image ?? '';
   const initials = getInitials(name);
 
@@ -91,9 +91,13 @@ function RouteComponent() {
                       <span className="text-sm font-medium">Activity:</span>
                       <Badge
                         variant={
-                          true === 'High'
+                          // 'High' === 'High'
+                          // biome-ignore lint/correctness/noConstantCondition: nice
+                          true
                             ? 'default'
-                            : false === 'Medium'
+                            : // 'Medium' === 'Medium'
+                              // biome-ignore lint/correctness/noConstantCondition: nice
+                              true
                               ? 'secondary'
                               : 'outline'
                         }

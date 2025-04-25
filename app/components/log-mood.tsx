@@ -19,8 +19,7 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
-import { authClient } from '@/lib/auth-client';
-import { Link } from '@tanstack/react-router';
+import { Link, useLoaderData } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import {
@@ -40,9 +39,11 @@ import {
 } from '@/constants/internal-group-ids';
 
 export function LogMood() {
-  const { data: session } = authClient.useSession();
+  const user = useLoaderData({
+    from: '/_authenticated',
+  });
 
-  const isLoggedIn = !!session;
+  const isLoggedIn = !!user;
 
   const addMood = useMutation(api.mood.createMood);
 
@@ -51,7 +52,7 @@ export function LogMood() {
       api.user.getUserGroups,
       isLoggedIn
         ? {
-            neonUserId: session?.session.userId,
+            userId: user._id,
           }
         : 'skip'
     )
@@ -81,12 +82,12 @@ export function LogMood() {
       const moodId = await addMood({
         mood: selectedMood,
         note,
-        neonUserId: session?.session.userId,
+        userId: user._id,
         tags: tags.split(',').map((tag) => tag.trim()),
         ...(isLoggedIn &&
           group !== PERSONAL_GROUP_ID && { group: group as Id<'groups'> }),
       });
-      if (!session) {
+      if (!isLoggedIn) {
         const existingMoods = moods ? JSON.parse(moods) : [];
         localStorage.setItem(
           LOCAL_STORAGE_MOODS_KEY,

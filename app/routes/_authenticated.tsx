@@ -3,16 +3,28 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { api } from 'convex/_generated/api';
+import { convexQuery } from '@convex-dev/react-query';
 
 export const Route = createFileRoute('/_authenticated')({
   component: RouteComponent,
-  loader: async () => {
-    const user = await getAuthUser();
+  loader: async ({ context }) => {
+    const authUser = await getAuthUser();
+
+    if (!authUser) {
+      throw redirect({ to: '/sign-in' });
+    }
+    const user = await context.queryClient.fetchQuery(
+      convexQuery(api.user.getUserFromNeonUserId, {
+        neonUserId: authUser?.id ?? '',
+      })
+    );
+
     if (!user) {
       throw redirect({ to: '/sign-in' });
     }
 
-    return { user };
+    return user;
   },
 });
 

@@ -28,7 +28,7 @@ interface CreateGroupModalProps {
 }
 
 export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
-  const { user } = useLoaderData({
+  const user = useLoaderData({
     from: '/_authenticated',
   });
 
@@ -56,7 +56,7 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
         description,
         isPrivate: privacy === 'private',
         image: image || undefined,
-        neonUserId: user.id,
+        userId: user._id,
       });
 
       toast.success(`Your group "${name}" has been created successfully.`);

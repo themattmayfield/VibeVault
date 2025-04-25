@@ -25,22 +25,18 @@ export const createGroup = mutation({
     isPrivate: v.boolean(),
     description: v.optional(v.string()),
     image: v.optional(v.string()),
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
-    const user = await getUserHelper(ctx, { neonUserId: args.neonUserId });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
+    const user = await getUserHelper(ctx, { userId: args.userId });
 
     const group = await ctx.db.insert('groups', {
       name: args.name,
       description: args.description,
       isPrivate: args.isPrivate,
       image: args.image,
-      members: [args.neonUserId],
-      admins: [args.neonUserId],
+      members: [user._id],
+      admins: [user._id],
       removedMembers: [],
     });
 
@@ -56,10 +52,10 @@ export const createGroup = mutation({
 
 export const getUsersGroups = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
-    const user = await getUserHelper(ctx, { neonUserId: args.neonUserId });
+    const user = await getUserHelper(ctx, { userId: args.userId });
 
     if (!user) {
       throw new Error('User not found');

@@ -7,13 +7,14 @@ import {
   getTriggers,
   getSuggestions,
 } from '../actions/getInsights';
+import type { Id } from 'convex/_generated/dataModel';
 
-export function useMoodInsights({ userId }: { userId: string }) {
+export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
   const createInsight = useConvexMutation(api.insights.createInsight);
 
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserLast30DaysMoods, {
-      neonUserId: userId,
+      userId,
     })
   );
 
@@ -21,7 +22,7 @@ export function useMoodInsights({ userId }: { userId: string }) {
   const { data: todaysPatterns } = useSuspenseQuery(
     convexQuery(api.insights.getTodaysInsight, {
       table: 'patterns' as const,
-      neonUserId: userId,
+      userId,
     })
   );
 
@@ -41,7 +42,7 @@ export function useMoodInsights({ userId }: { userId: string }) {
           await createInsight({
             table: 'patterns',
             content: JSON.stringify(result),
-            neonUserId: userId,
+            userId,
           });
         }
 
@@ -55,7 +56,7 @@ export function useMoodInsights({ userId }: { userId: string }) {
   const { data: todaysTriggers } = useSuspenseQuery(
     convexQuery(api.insights.getTodaysInsight, {
       table: 'triggers' as const,
-      neonUserId: userId,
+      userId,
     })
   );
 
@@ -75,7 +76,7 @@ export function useMoodInsights({ userId }: { userId: string }) {
           await createInsight({
             table: 'triggers',
             content: JSON.stringify(result),
-            neonUserId: userId,
+            userId,
           });
         }
 
@@ -89,7 +90,7 @@ export function useMoodInsights({ userId }: { userId: string }) {
   const { data: todaysSuggestions } = useSuspenseQuery(
     convexQuery(api.insights.getTodaysInsight, {
       table: 'suggestions' as const,
-      neonUserId: userId,
+      userId,
     })
   );
 
@@ -109,7 +110,7 @@ export function useMoodInsights({ userId }: { userId: string }) {
           await createInsight({
             table: 'suggestions',
             content: JSON.stringify(result),
-            neonUserId: userId,
+            userId,
           });
         }
 

@@ -16,8 +16,8 @@ export const moodLiteral = v.union(
 export default defineSchema({
   users: defineTable({
     neonUserId: v.string(),
-    // displayName: v.optional(v.string()),
-    // image: v.optional(v.string()),
+    displayName: v.optional(v.string()),
+    image: v.optional(v.string()),
     availableGroups: v.optional(v.array(v.id('groups'))),
   }).index('by_neon_user_id', ['neonUserId']),
   groups: defineTable({
@@ -25,27 +25,27 @@ export default defineSchema({
     isPrivate: v.boolean(),
     description: v.optional(v.string()),
     image: v.optional(v.string()),
-    members: v.array(v.string()),
-    admins: v.array(v.string()),
-    removedMembers: v.array(v.string()),
+    members: v.array(v.id('users')),
+    admins: v.array(v.id('users')),
+    removedMembers: v.array(v.id('users')),
   }),
   moods: defineTable({
     mood: moodLiteral,
     note: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
     group: v.optional(v.id('groups')),
-    neonUserId: v.optional(v.string()),
-  }).index('by_neon_user_id', ['neonUserId']),
+    userId: v.optional(v.id('users')),
+  }).index('by_user_id', ['userId']),
   patterns: defineTable({
     insight: v.string(),
-    neonUserId: v.optional(v.string()),
-  }).index('by_neon_user_id', ['neonUserId']),
+    userId: v.optional(v.id('users')),
+  }).index('by_user_id', ['userId']),
   triggers: defineTable({
     insight: v.string(),
-    neonUserId: v.optional(v.string()),
-  }).index('by_neon_user_id', ['neonUserId']),
+    userId: v.optional(v.id('users')),
+  }).index('by_user_id', ['userId']),
   suggestions: defineTable({
     insight: v.string(),
-    neonUserId: v.optional(v.string()),
-  }).index('by_neon_user_id', ['neonUserId']),
+    userId: v.optional(v.id('users')),
+  }).index('by_user_id', ['userId']),
 });

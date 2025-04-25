@@ -22,34 +22,34 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
 });
 
 function Home() {
-  const { user } = useLoaderData({
+  const user = useLoaderData({
     from: '/_authenticated',
   });
   const { data: totalMoodEntries } = useSuspenseQuery(
     convexQuery(api.mood.getUsersTotalMoodEntries, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
   const { data: currentStreak } = useSuspenseQuery(
     convexQuery(api.mood.getUsersCurrentStreak, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
   const { data: mostCommonMood } = useSuspenseQuery(
     convexQuery(api.mood.getMostCommonMoodLast30Days, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
 
   const { data: moodToday } = useSuspenseQuery(
     convexQuery(api.mood.getMoodToday, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
 
   const { data: lastFiveMoods } = useSuspenseQuery(
     convexQuery(api.mood.getLastFiveMoods, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
 

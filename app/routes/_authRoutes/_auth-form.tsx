@@ -28,11 +28,7 @@ import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { APP_INFO } from '@/constants/app-info';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
-import {
-  createFormHook,
-  createFormHookContexts,
-  useStore,
-} from '@tanstack/react-form';
+import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 import { z } from 'zod';
 import { useSubmittingDots } from '@/hooks/useSubmittingDots';
 
@@ -58,8 +54,8 @@ export function AuthForm() {
   const isSignIn = location.pathname === '/sign-in';
 
   const createUser = useMutation(api.user.createUser);
-  const createMoodsFromLocalStorage = useMutation(
-    api.mood.createMoodsFromLocalStorage
+  const createMoodsFromLocalStorageUsingNeonUserId = useMutation(
+    api.mood.createMoodsFromLocalStorageUsingNeonUserId
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,7 +90,7 @@ export function AuthForm() {
     onSubmit: async ({ value }) => {
       try {
         setIsSubmitting(true);
-        let userId: string;
+        let neonUserId: string;
         if (isSignIn) {
           const { data, error } = await authClient.signIn.email({
             email: value.email,
@@ -104,9 +100,9 @@ export function AuthForm() {
           if (error) {
             throw new Error(error.message);
           }
-          userId = data.user.id;
+          neonUserId = data.user.id;
         } else {
-          const id = await signUpEmail({
+          neonUserId = await signUpEmail({
             data: {
               email: value.email,
               password: value.password,
@@ -114,11 +110,10 @@ export function AuthForm() {
             },
           });
 
-          userId = id;
-          await createUser({ neonUserId: userId });
+          await createUser({ neonUserId });
         }
-        await createMoodsFromLocalStorage({
-          neonUserId: userId,
+        await createMoodsFromLocalStorageUsingNeonUserId({
+          neonUserId,
           moods: JSON.parse(moods || '[]'),
         });
         localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
@@ -133,8 +128,7 @@ export function AuthForm() {
       }
     },
   });
-  const errors = useStore(form.store, (state) => state.errorMap);
-  console.log(errors);
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">

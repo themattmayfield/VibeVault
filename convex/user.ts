@@ -1,7 +1,9 @@
 import { mutation, query, type QueryCtx } from './_generated/server';
 import { v } from 'convex/values';
 import { getGroupHelper } from './groups';
-export const getUserHelper = async (
+import type { Id } from './_generated/dataModel';
+
+export const getUserFromNeonUserIdHelper = async (
   ctx: QueryCtx,
   args: { neonUserId: string }
 ) => {
@@ -16,6 +18,37 @@ export const getUserHelper = async (
 
   return user;
 };
+
+export const getUserHelper = async (
+  ctx: QueryCtx,
+  args: { userId: Id<'users'> }
+) => {
+  const user = await ctx.db.get(args.userId);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return user;
+};
+
+export const getUser = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await getUserFromNeonUserIdHelper(ctx, args);
+  },
+});
+
+export const getUserFromNeonUserId = query({
+  args: {
+    neonUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await getUserFromNeonUserIdHelper(ctx, args);
+  },
+});
 
 export const createUser = mutation({
   args: {
@@ -32,7 +65,7 @@ export const createUser = mutation({
 
 export const getUserGroups = query({
   args: {
-    neonUserId: v.string(),
+    userId: v.id('users'),
   },
   handler: async (ctx, args) => {
     const user = await getUserHelper(ctx, args);

@@ -64,12 +64,12 @@ const InsightTabContent = ({
 );
 
 export function MoodInsights() {
-  const { user } = useLoaderData({
+  const user = useLoaderData({
     from: '/_authenticated',
   });
 
   const { patterns, triggers, suggestions } = useMoodInsights({
-    userId: user.id,
+    userId: user._id,
   });
 
   return (

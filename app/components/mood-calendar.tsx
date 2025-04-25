@@ -32,12 +32,12 @@ const moodEmojis: Record<string, string> = {
 };
 
 export function MoodCalendar() {
-  const { user } = useLoaderData({
+  const user = useLoaderData({
     from: '/_authenticated',
   });
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
-      neonUserId: user.id,
+      userId: user._id,
     })
   );
   type Mood = Omit<(typeof moods)[number], 'time'> & { time: string };
