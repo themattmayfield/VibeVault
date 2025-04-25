@@ -23,17 +23,51 @@ import { authClient } from '@/lib/auth-client';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import { Input } from './ui/input';
+import type { Id } from 'convex/_generated/dataModel';
+import { useQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import {
+  PUBLIC_GROUP_ID,
+  PERSONAL_GROUP_ID,
+} from '@/constants/internal-group-ids';
 
 export function LogMood() {
-  const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
   const { data: session } = authClient.useSession();
+
   const isLoggedIn = !!session;
+
   const addMood = useMutation(api.mood.createMood);
+
+  const { data: getUserGroups } = useQuery(
+    convexQuery(
+      api.user.getUserGroups,
+      isLoggedIn
+        ? {
+            neonUserId: session?.session.userId,
+          }
+        : 'skip'
+    )
+  );
 
   const [selectedMood, setSelectedMood] =
     useState<Infer<typeof moodLiteral>>('happy');
 
   const [note, setNote] = useState('');
+
+  const [tags, setTags] = useState('');
+  const [group, setGroup] = useState(
+    isLoggedIn ? getUserGroups?.[0]?._id || PUBLIC_GROUP_ID : PUBLIC_GROUP_ID
+  );
+
+  const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +82,9 @@ export function LogMood() {
         mood: selectedMood,
         note,
         neonUserId: session?.session.userId,
+        tags: tags.split(',').map((tag) => tag.trim()),
+        ...(isLoggedIn &&
+          group !== PERSONAL_GROUP_ID && { group: group as Id<'groups'> }),
       });
       if (!session) {
         const existingMoods = moods ? JSON.parse(moods) : [];
@@ -91,7 +128,7 @@ export function LogMood() {
               />
             </div>
 
-            <div className="space-y-2 mb-2">
+            <div className="space-y-2">
               <Label htmlFor="note">Add a note (optional)</Label>
               <Textarea
                 id="note"
@@ -102,7 +139,7 @@ export function LogMood() {
               />
             </div>
 
-            {/* <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="tags">Tags (comma separated)</Label>
               <Input
                 id="tags"
@@ -110,31 +147,36 @@ export function LogMood() {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
-            </div> */}
+            </div>
 
-            {/* <div className="space-y-2">
+            <div className="space-y-2 w-full">
               <Label htmlFor="group">Share with group (optional)</Label>
-              <Select value={group} onValueChange={setGroup}>
-                <SelectTrigger>
+              <Select
+                disabled={!isLoggedIn}
+                value={group}
+                onValueChange={setGroup}
+              >
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a group" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="personal">Personal (Private)</SelectItem>
-                  <SelectItem value="friends">Friends Group</SelectItem>
-                  <SelectItem value="work">Work Team</SelectItem>
-                  <SelectItem value="public">Public</SelectItem>
+                  <SelectItem value={PERSONAL_GROUP_ID}>
+                    Personal (Private)
+                  </SelectItem>
+                  {getUserGroups?.map((group) => (
+                    <SelectItem key={group._id} value={group._id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={PUBLIC_GROUP_ID}>Public</SelectItem>
                 </SelectContent>
               </Select>
-            </div> */}
+            </div>
           </CardContent>
           <CardFooter
             className={cn(!isLoggedIn && 'grid sm:grid-cols-2 gap-2')}
           >
-            <Button
-              type="submit"
-              className="cursor-pointer w-full"
-              disabled={!selectedMood}
-            >
+            <Button type="submit" className="w-full" disabled={!selectedMood}>
               Log Mood {isLoggedIn ? '' : ' Anonymously'}
             </Button>
             {!isLoggedIn && (

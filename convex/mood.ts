@@ -15,12 +15,16 @@ async function createMoodHelper(
     mood: Infer<typeof moodLiteral>;
     note?: string;
     neonUserId?: string;
+    tags?: string[];
+    group?: Id<'groups'>;
   }
 ) {
   const newMoodId = await ctx.db.insert('moods', {
     mood: args.mood,
     note: args.note,
     neonUserId: args.neonUserId,
+    tags: args.tags,
+    group: args.group,
   });
   return newMoodId;
 }
@@ -60,6 +64,8 @@ export const createMood = mutation({
     mood: moodLiteral,
     note: v.optional(v.string()),
     neonUserId: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    group: v.optional(v.id('groups')),
   },
   handler: async (ctx, args) => {
     const newMoodId = await createMoodHelper(ctx, args);
@@ -364,7 +370,8 @@ export const getUserMoods = query({
       mood: moodLiteral,
       note: v.optional(v.string()),
       time: v.number(),
-      tags: v.array(v.string()),
+      tags: v.optional(v.array(v.string())),
+      group: v.optional(v.string()),
     })
   ),
   handler: async (ctx, args) => {
@@ -380,7 +387,8 @@ export const getUserMoods = query({
         mood: mood.mood,
         note: mood.note,
         time: mood._creationTime,
-        tags: [],
+        tags: mood.tags,
+        group: mood.group,
       };
     });
   },
