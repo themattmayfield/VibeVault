@@ -110,7 +110,7 @@ export function AuthForm() {
             },
           });
 
-          await createUser({ neonUserId });
+          await createUser({ neonUserId, displayName: value.name });
         }
         await createMoodsFromLocalStorageUsingNeonUserId({
           neonUserId,

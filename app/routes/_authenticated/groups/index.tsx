@@ -20,7 +20,7 @@ import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 
-export const Route = createFileRoute('/_authenticated/groups')({
+export const Route = createFileRoute('/_authenticated/groups/')({
   component: RouteComponent,
 });
 function RouteComponent() {
@@ -32,11 +32,15 @@ function RouteComponent() {
       userId: user._id,
     })
   );
+  const { data: activityLevel } = useSuspenseQuery(
+    convexQuery(api.groups.getGroupActivityQuery, {
+      groupId: groups[0]._id,
+    })
+  );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const name = user.displayName ?? '';
   const image = user.image ?? '';
-  const initials = getInitials(name);
 
   return (
     <div className="flex flex-col">
@@ -73,13 +77,18 @@ function RouteComponent() {
                   <CardContent>
                     <div className="flex items-center gap-4">
                       <div className="flex -space-x-2">
-                        {[...Array(3)].map((_, i) => (
+                        {group.members.map((member, index) => (
                           <Avatar
-                            key={i}
+                            key={index}
                             className="border-2 border-background"
                           >
-                            <AvatarImage src={image} alt={name} />
-                            <AvatarFallback>{initials}</AvatarFallback>
+                            <AvatarImage
+                              src={member.image}
+                              alt={member.displayName}
+                            />
+                            <AvatarFallback>
+                              {getInitials(member.displayName ?? '')}
+                            </AvatarFallback>
                           </Avatar>
                         ))}
                       </div>
@@ -91,24 +100,25 @@ function RouteComponent() {
                       <span className="text-sm font-medium">Activity:</span>
                       <Badge
                         variant={
-                          // 'High' === 'High'
-                          // biome-ignore lint/correctness/noConstantCondition: nice
-                          true
+                          activityLevel === 'High'
                             ? 'default'
-                            : // 'Medium' === 'Medium'
-                              // biome-ignore lint/correctness/noConstantCondition: nice
-                              true
+                            : activityLevel === 'Medium'
                               ? 'secondary'
                               : 'outline'
                         }
                       >
-                        {'High'}
+                        {activityLevel}
                       </Badge>
                     </div>
                   </CardContent>
                   <CardFooter>
                     <Button asChild className="w-full">
-                      <Link to="/">View Group</Link>
+                      <Link
+                        to="/groups/$groupId"
+                        params={{ groupId: group._id }}
+                      >
+                        View Group
+                      </Link>
                     </Button>
                   </CardFooter>
                 </Card>

@@ -20,7 +20,7 @@ function HomeRoute() {
         <h1 className="text-3xl font-extrabold font-serif tracking-tight lg:text-5xl text-center mb-12">
           MoodSync
         </h1>
-        <LogMood />
+        <LogMood user={null} />
       </div>
     </>
   );

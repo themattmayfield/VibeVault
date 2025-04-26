@@ -19,7 +19,7 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
-import { Link, useLoaderData } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import {
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from './ui/select';
 import { Input } from './ui/input';
-import type { Id } from 'convex/_generated/dataModel';
+import type { Doc, Id } from 'convex/_generated/dataModel';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import {
@@ -38,11 +38,7 @@ import {
   PERSONAL_GROUP_ID,
 } from '@/constants/internal-group-ids';
 
-export function LogMood() {
-  const user = useLoaderData({
-    from: '/_authenticated',
-  });
-
+export function LogMood({ user }: { user: Doc<'users'> | null }) {
   const isLoggedIn = !!user;
 
   const addMood = useMutation(api.mood.createMood);
@@ -82,7 +78,7 @@ export function LogMood() {
       const moodId = await addMood({
         mood: selectedMood,
         note,
-        userId: user._id,
+        userId: user?._id,
         tags: tags.split(',').map((tag) => tag.trim()),
         ...(isLoggedIn &&
           group !== PERSONAL_GROUP_ID && { group: group as Id<'groups'> }),

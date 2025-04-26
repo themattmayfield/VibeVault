@@ -40,6 +40,12 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
   const [image, setImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setPrivacy('private');
+    setImage(null);
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -58,15 +64,13 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
         image: image || undefined,
         userId: user._id,
       });
+      onClose();
 
       toast.success(`Your group "${name}" has been created successfully.`);
     } catch (_) {
       toast.error('Failed to create group');
     } finally {
-      setName('');
-      setDescription('');
-      setPrivacy('private');
-      setImage(null);
+      resetForm();
       setIsSubmitting(false);
     }
   };

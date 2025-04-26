@@ -15,12 +15,13 @@ import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthenticatedTrendsImport } from './routes/_authenticated/trends'
 import { Route as AuthenticatedLogImport } from './routes/_authenticated/log'
-import { Route as AuthenticatedGroupsImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedDashboardImport } from './routes/_authenticated/dashboard'
 import { Route as AuthRoutesSignUpImport } from './routes/_authRoutes/sign-up'
 import { Route as AuthRoutesSignInImport } from './routes/_authRoutes/sign-in'
 import { Route as AuthRoutesForgotPasswordImport } from './routes/_authRoutes/forgot-password'
 import { Route as AuthRoutesAuthFormImport } from './routes/_authRoutes/_auth-form'
+import { Route as AuthenticatedGroupsIndexImport } from './routes/_authenticated/groups/index'
+import { Route as AuthenticatedGroupsGroupIdImport } from './routes/_authenticated/groups/$groupId'
 
 // Create/Update Routes
 
@@ -44,12 +45,6 @@ const AuthenticatedTrendsRoute = AuthenticatedTrendsImport.update({
 const AuthenticatedLogRoute = AuthenticatedLogImport.update({
   id: '/log',
   path: '/log',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const AuthenticatedGroupsRoute = AuthenticatedGroupsImport.update({
-  id: '/groups',
-  path: '/groups',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
@@ -81,6 +76,20 @@ const AuthRoutesAuthFormRoute = AuthRoutesAuthFormImport.update({
   id: '/_authRoutes/_auth-form',
   getParentRoute: () => rootRoute,
 } as any)
+
+const AuthenticatedGroupsIndexRoute = AuthenticatedGroupsIndexImport.update({
+  id: '/groups/',
+  path: '/groups/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+
+const AuthenticatedGroupsGroupIdRoute = AuthenticatedGroupsGroupIdImport.update(
+  {
+    id: '/groups/$groupId',
+    path: '/groups/$groupId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any,
+)
 
 // Populate the FileRoutesByPath interface
 
@@ -135,13 +144,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardImport
       parentRoute: typeof AuthenticatedImport
     }
-    '/_authenticated/groups': {
-      id: '/_authenticated/groups'
-      path: '/groups'
-      fullPath: '/groups'
-      preLoaderRoute: typeof AuthenticatedGroupsImport
-      parentRoute: typeof AuthenticatedImport
-    }
     '/_authenticated/log': {
       id: '/_authenticated/log'
       path: '/log'
@@ -156,6 +158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrendsImport
       parentRoute: typeof AuthenticatedImport
     }
+    '/_authenticated/groups/$groupId': {
+      id: '/_authenticated/groups/$groupId'
+      path: '/groups/$groupId'
+      fullPath: '/groups/$groupId'
+      preLoaderRoute: typeof AuthenticatedGroupsGroupIdImport
+      parentRoute: typeof AuthenticatedImport
+    }
+    '/_authenticated/groups/': {
+      id: '/_authenticated/groups/'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof AuthenticatedGroupsIndexImport
+      parentRoute: typeof AuthenticatedImport
+    }
   }
 }
 
@@ -163,16 +179,18 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
   AuthenticatedLogRoute: typeof AuthenticatedLogRoute
   AuthenticatedTrendsRoute: typeof AuthenticatedTrendsRoute
+  AuthenticatedGroupsGroupIdRoute: typeof AuthenticatedGroupsGroupIdRoute
+  AuthenticatedGroupsIndexRoute: typeof AuthenticatedGroupsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
   AuthenticatedLogRoute: AuthenticatedLogRoute,
   AuthenticatedTrendsRoute: AuthenticatedTrendsRoute,
+  AuthenticatedGroupsGroupIdRoute: AuthenticatedGroupsGroupIdRoute,
+  AuthenticatedGroupsIndexRoute: AuthenticatedGroupsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -186,9 +204,10 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof AuthRoutesSignInRoute
   '/sign-up': typeof AuthRoutesSignUpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/groups': typeof AuthenticatedGroupsRoute
   '/log': typeof AuthenticatedLogRoute
   '/trends': typeof AuthenticatedTrendsRoute
+  '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/groups': typeof AuthenticatedGroupsIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -198,9 +217,10 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AuthRoutesSignInRoute
   '/sign-up': typeof AuthRoutesSignUpRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/groups': typeof AuthenticatedGroupsRoute
   '/log': typeof AuthenticatedLogRoute
   '/trends': typeof AuthenticatedTrendsRoute
+  '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/groups': typeof AuthenticatedGroupsIndexRoute
 }
 
 export interface FileRoutesById {
@@ -212,9 +232,10 @@ export interface FileRoutesById {
   '/_authRoutes/sign-in': typeof AuthRoutesSignInRoute
   '/_authRoutes/sign-up': typeof AuthRoutesSignUpRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/groups': typeof AuthenticatedGroupsRoute
   '/_authenticated/log': typeof AuthenticatedLogRoute
   '/_authenticated/trends': typeof AuthenticatedTrendsRoute
+  '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/_authenticated/groups/': typeof AuthenticatedGroupsIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -226,9 +247,10 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/dashboard'
-    | '/groups'
     | '/log'
     | '/trends'
+    | '/groups/$groupId'
+    | '/groups'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -237,9 +259,10 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/dashboard'
-    | '/groups'
     | '/log'
     | '/trends'
+    | '/groups/$groupId'
+    | '/groups'
   id:
     | '__root__'
     | '/'
@@ -249,9 +272,10 @@ export interface FileRouteTypes {
     | '/_authRoutes/sign-in'
     | '/_authRoutes/sign-up'
     | '/_authenticated/dashboard'
-    | '/_authenticated/groups'
     | '/_authenticated/log'
     | '/_authenticated/trends'
+    | '/_authenticated/groups/$groupId'
+    | '/_authenticated/groups/'
   fileRoutesById: FileRoutesById
 }
 
@@ -298,9 +322,10 @@ export const routeTree = rootRoute
       "filePath": "_authenticated.tsx",
       "children": [
         "/_authenticated/dashboard",
-        "/_authenticated/groups",
         "/_authenticated/log",
-        "/_authenticated/trends"
+        "/_authenticated/trends",
+        "/_authenticated/groups/$groupId",
+        "/_authenticated/groups/"
       ]
     },
     "/_authRoutes/_auth-form": {
@@ -319,16 +344,20 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/dashboard.tsx",
       "parent": "/_authenticated"
     },
-    "/_authenticated/groups": {
-      "filePath": "_authenticated/groups.tsx",
-      "parent": "/_authenticated"
-    },
     "/_authenticated/log": {
       "filePath": "_authenticated/log.tsx",
       "parent": "/_authenticated"
     },
     "/_authenticated/trends": {
       "filePath": "_authenticated/trends.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/groups/$groupId": {
+      "filePath": "_authenticated/groups/$groupId.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/groups/": {
+      "filePath": "_authenticated/groups/index.tsx",
       "parent": "/_authenticated"
     }
   }

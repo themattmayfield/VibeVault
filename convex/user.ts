@@ -53,10 +53,12 @@ export const getUserFromNeonUserId = query({
 export const createUser = mutation({
   args: {
     neonUserId: v.string(),
+    displayName: v.string(),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.insert('users', {
       neonUserId: args.neonUserId,
+      displayName: args.displayName,
       availableGroups: [],
     });
     return user;

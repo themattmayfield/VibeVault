@@ -16,7 +16,7 @@ export const moodLiteral = v.union(
 export default defineSchema({
   users: defineTable({
     neonUserId: v.string(),
-    displayName: v.optional(v.string()),
+    displayName: v.string(),
     image: v.optional(v.string()),
     availableGroups: v.optional(v.array(v.id('groups'))),
   }).index('by_neon_user_id', ['neonUserId']),
@@ -28,6 +28,7 @@ export default defineSchema({
     members: v.array(v.id('users')),
     admins: v.array(v.id('users')),
     removedMembers: v.array(v.id('users')),
+    creator: v.id('users'),
   }),
   moods: defineTable({
     mood: moodLiteral,
