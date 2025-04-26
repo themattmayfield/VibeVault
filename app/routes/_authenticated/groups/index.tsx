@@ -32,11 +32,7 @@ function RouteComponent() {
       userId: user._id,
     })
   );
-  const { data: activityLevel } = useSuspenseQuery(
-    convexQuery(api.groups.getGroupActivityQuery, {
-      groupId: groups[0]._id,
-    })
-  );
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const name = user.displayName ?? '';
@@ -100,14 +96,14 @@ function RouteComponent() {
                       <span className="text-sm font-medium">Activity:</span>
                       <Badge
                         variant={
-                          activityLevel === 'High'
+                          group.activityLevel === 'High'
                             ? 'default'
-                            : activityLevel === 'Medium'
+                            : group.activityLevel === 'Medium'
                               ? 'secondary'
                               : 'outline'
                         }
                       >
-                        {activityLevel}
+                        {group.activityLevel}
                       </Badge>
                     </div>
                   </CardContent>

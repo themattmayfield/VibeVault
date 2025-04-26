@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useLoaderData } from '@tanstack/react-router';
+import { createFileRoute, useLoaderData } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,6 +22,7 @@ import { moodOptions } from '@/lib/getMoodEmoji';
 import { format, formatRelative } from 'date-fns';
 import getInitials from '@/lib/getInitials';
 import capitalize from 'lodash-es/capitalize';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 export const Route = createFileRoute('/_authenticated/groups/$groupId')({
   beforeLoad: async ({ params, context }) => {
@@ -67,6 +68,12 @@ function RouteComponent() {
     from: '/_authenticated/groups/$groupId',
   });
 
+  const { data: members } = useSuspenseQuery(
+    convexQuery(api.groups.getActiveGroupMembers, {
+      groupId: group._id,
+    })
+  );
+
   const groupCreationDate = new Date(group._creationTime);
   const groupCreationDateFormatted = format(groupCreationDate, 'MMMM d, yyyy');
 
@@ -83,12 +90,7 @@ function RouteComponent() {
             </div>
             <p className="text-muted-foreground">{group.description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button asChild>
-              <Link to="/log">Log Mood in group</Link>
-            </Button>
-            <Button variant="outline">Invite Members</Button>
-          </div>
+          <Button variant="outline">Invite Members</Button>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
@@ -107,9 +109,7 @@ function RouteComponent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {group.members.length}
-                  </div>
+                  <div className="text-2xl font-bold">{members.length}</div>
                   <p className="text-xs text-muted-foreground">
                     +{numberOfNewMembersInLastMonth} in the last month
                   </p>
@@ -243,77 +243,57 @@ function RouteComponent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    {
-                      name: 'Alex Johnson',
-                      role: 'Owner',
-                      joinedAt: 'Mar 15, 2023',
-                      status: 'online',
-                    },
-                    {
-                      name: 'Sam Taylor',
-                      role: 'Admin',
-                      joinedAt: 'Mar 16, 2023',
-                      status: 'offline',
-                    },
-                    {
-                      name: 'Jamie Lee',
-                      role: 'Member',
-                      joinedAt: 'Mar 20, 2023',
-                      status: 'online',
-                    },
-                    {
-                      name: 'Taylor Rodriguez',
-                      role: 'Member',
-                      joinedAt: 'Apr 2, 2023',
-                      status: 'offline',
-                    },
-                    {
-                      name: 'Jordan Smith',
-                      role: 'Member',
-                      joinedAt: 'Apr 10, 2023',
-                      status: 'online',
-                    },
-                  ].map((member, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar>
-                          <AvatarImage src={undefined} alt={member.name} />
-                          <AvatarFallback>
-                            {member.name.split(' ')[0][0]}
-                            {member.name.split(' ')[1][0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                member.role === 'Owner'
-                                  ? 'default'
-                                  : member.role === 'Admin'
-                                    ? 'secondary'
-                                    : 'outline'
-                              }
-                            >
-                              {member.role}
-                            </Badge>
-                            <p className="text-sm text-muted-foreground">
-                              Joined {member.joinedAt}
-                            </p>
+                  {members.map((member, i) => {
+                    const role = member?.role;
+                    const createdAt = `Joined ${formatRelative(
+                      member?._creationTime ?? new Date(),
+                      new Date()
+                    )}`;
+                    const status = 'online';
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarImage
+                              src={member?.image}
+                              alt={member?.displayName}
+                            />
+                            <AvatarFallback>
+                              {getInitials(member?.displayName ?? '')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{member?.displayName}</p>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={
+                                  role === 'owner'
+                                    ? 'default'
+                                    : role === 'admin'
+                                      ? 'secondary'
+                                      : 'outline'
+                                }
+                              >
+                                {capitalize(role)}
+                              </Badge>
+                              <p className="text-sm text-muted-foreground">
+                                {createdAt}
+                              </p>
+                            </div>
                           </div>
                         </div>
+                        <Badge
+                          variant={status === 'online' ? 'default' : 'outline'}
+                          className="capitalize"
+                        >
+                          {status}
+                        </Badge>
                       </div>
-                      <Badge
-                        variant={
-                          member.status === 'online' ? 'default' : 'outline'
-                        }
-                        className="capitalize"
-                      >
-                        {member.status}
-                      </Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

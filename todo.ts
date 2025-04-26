@@ -27,3 +27,5 @@
 // [] group roles: owner, admin, member
 // [] app roles: owner, admin, user
 // [] people should be able to join multiple white label apps
+// [] is group member online
+// [] pagination for groups and members inside a group

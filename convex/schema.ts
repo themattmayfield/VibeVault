@@ -13,6 +13,21 @@ export const moodLiteral = v.union(
   v.literal('anxious')
 );
 
+export const groupRoleLiteral = v.union(
+  v.literal('owner'),
+  v.literal('admin'),
+  v.literal('member')
+);
+
+export const groupMemberStatus = v.union(
+  v.literal('active'),
+  v.literal('invited'),
+  v.literal('left'),
+  v.literal('requested'),
+  v.literal('removed'),
+  v.literal('banned')
+);
+
 export default defineSchema({
   users: defineTable({
     neonUserId: v.string(),
@@ -25,11 +40,14 @@ export default defineSchema({
     isPrivate: v.boolean(),
     description: v.optional(v.string()),
     image: v.optional(v.string()),
-    members: v.array(v.id('users')),
-    admins: v.array(v.id('users')),
-    removedMembers: v.array(v.id('users')),
     creator: v.id('users'),
   }),
+  groupMemberInfo: defineTable({
+    userId: v.id('users'),
+    groupId: v.id('groups'),
+    role: groupRoleLiteral,
+    status: groupMemberStatus,
+  }).index('by_user_id_and_group_id', ['userId', 'groupId']),
   moods: defineTable({
     mood: moodLiteral,
     note: v.optional(v.string()),

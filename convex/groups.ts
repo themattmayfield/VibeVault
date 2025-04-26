@@ -21,12 +21,28 @@ export const getGroupHelper = async (
   return group;
 };
 
+export const getActiveGroupMembersHelper = async (
+  ctx: QueryCtx,
+  args: { groupId: Id<'groups'> }
+) => {
+  const activeMembers = await ctx.db
+    .query('groupMemberInfo')
+    .filter((q) => q.eq(q.field('groupId'), args.groupId))
+    .filter((q) => q.eq(q.field('status'), 'active'))
+    .collect();
+
+  return activeMembers;
+};
+
 export const getGroupMemberIdsHelper = async (
   ctx: QueryCtx,
   args: { groupId: Id<'groups'> }
 ) => {
-  const group = await getGroupHelper(ctx, { groupId: args.groupId });
-  return group.members;
+  const members = await getActiveGroupMembersHelper(ctx, {
+    groupId: args.groupId,
+  });
+
+  return members.map((member) => member.userId);
 };
 
 export const getGroupMoodsTodayHelper = async (
@@ -137,10 +153,14 @@ export const createGroup = mutation({
       description: args.description,
       isPrivate: args.isPrivate,
       image: args.image,
-      members: [user._id],
-      admins: [user._id],
-      removedMembers: [],
       creator: user._id,
+    });
+
+    await ctx.db.insert('groupMemberInfo', {
+      userId: user._id,
+      groupId: group,
+      role: 'owner',
+      status: 'active',
     });
 
     const usersCurrentGroups = user.availableGroups ?? [];
@@ -170,21 +190,32 @@ export const getUsersGroups = query({
       availableGroups.map(async (groupId) => {
         const group = await getGroupHelper(ctx, { groupId });
 
-        const firstThreeMembers = group.members.slice(0, 3);
+        const activeMembers = await getActiveGroupMembersHelper(ctx, {
+          groupId,
+        });
+
+        const firstThreeMembers = activeMembers.slice(0, 3);
         const getMembers = await Promise.all(
-          firstThreeMembers.map(async (memberId) => {
-            const member = await getUserHelper(ctx, { userId: memberId });
+          firstThreeMembers.map(async (member) => {
+            const memberUser = await getUserHelper(ctx, {
+              userId: member.userId,
+            });
 
             return {
-              image: member?.image,
-              displayName: member?.displayName,
+              image: memberUser.image,
+              displayName: memberUser.displayName,
             };
           })
         );
 
+        const activityLevel = await getGroupActivityLevelHelper(ctx, {
+          groupId,
+        });
+
         return {
           ...group,
           members: getMembers,
+          activityLevel,
         };
       })
     );
@@ -227,9 +258,13 @@ export const getGroupPageContent = query({
       mostCommonMood: mostCommonMood || null,
     };
 
+    const activeMembers = await getActiveGroupMembersHelper(ctx, {
+      groupId: args.groupId,
+    });
+
     const memberDetails = await Promise.all(
-      group.members.map(async (memberId) => {
-        const user = await getUserHelper(ctx, { userId: memberId });
+      activeMembers.map(async (member) => {
+        const user = await getUserHelper(ctx, { userId: member.userId });
         return user;
       })
     );
@@ -274,19 +309,6 @@ export const getGroupPageContent = query({
       activityLevel,
       lastFourMoodsWithUser,
     };
-  },
-});
-
-export const getGroupActivityQuery = query({
-  args: {
-    groupId: v.id('groups'),
-  },
-  handler: async (ctx, args) => {
-    const activityLevel = await getGroupActivityLevelHelper(ctx, {
-      groupId: args.groupId,
-    });
-
-    return activityLevel;
   },
 });
 
@@ -386,5 +408,28 @@ export const getGroupTimelineLast7Days = query({
       .sort((a, b) => a.date.localeCompare(b.date));
 
     return result;
+  },
+});
+
+export const getActiveGroupMembers = query({
+  args: {
+    groupId: v.id('groups'),
+  },
+  handler: async (ctx, args) => {
+    const activeMembers = await getActiveGroupMembersHelper(ctx, {
+      groupId: args.groupId,
+    });
+
+    const members = await Promise.all(
+      activeMembers.map(async (member) => {
+        const user = await getUserHelper(ctx, { userId: member.userId });
+        return {
+          ...member,
+          displayName: user.displayName,
+          image: user.image,
+        };
+      })
+    );
+    return members;
   },
 });
