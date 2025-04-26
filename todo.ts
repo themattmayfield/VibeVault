@@ -8,10 +8,12 @@
 // [] Setup mood trends
 // [] public should probably just be a field on the mood level and not a group
 // [] pinned groups
+// [] edit group name
 
 // [] Logo
 // [] Theming
 // [] Groups
+// [] truncate mood notes
 // [] Global trends
 // [] no bad language
 // [] share mood w/ friends outside of app

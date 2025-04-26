@@ -2,7 +2,8 @@ import { mutation, query, type QueryCtx } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { v } from 'convex/values';
 import { getUserHelper } from './user';
-import { oneDayAgo, oneMonthAgo } from './dateHelpers';
+import { oneDayAgo, oneMonthAgo, oneWeekAgo } from './dateHelpers';
+import { format } from 'date-fns-tz';
 
 export const getGroupHelper = async (
   ctx: QueryCtx,
@@ -42,13 +43,42 @@ export const getGroupMoodsTodayHelper = async (
   return moods;
 };
 
+export const getGroupMoodsLast30DaysHelper = async (
+  ctx: QueryCtx,
+  args: { groupId: Id<'groups'> }
+) => {
+  // Get all moods from the last 30 days
+  const moods = await ctx.db
+    .query('moods')
+    .filter((q) => q.eq(q.field('group'), args.groupId))
+    .filter((q) => q.gte(q.field('_creationTime'), oneMonthAgo.getTime()))
+    .collect();
+
+  return moods;
+};
+
+export const getGroupTimelineLast7DaysHelper = async (
+  ctx: QueryCtx,
+  args: { groupId: Id<'groups'> }
+) => {
+  // Get all moods from the last 7 days
+  const moods = await ctx.db
+    .query('moods')
+    .filter((q) => q.eq(q.field('group'), args.groupId))
+    .filter((q) => q.gte(q.field('_creationTime'), oneWeekAgo.getTime()))
+    .collect();
+
+  return moods;
+};
+
 export const getGroupMoodsHelper = async (
   ctx: QueryCtx,
   args: { groupId: Id<'groups'>; limit?: number }
 ) => {
   const query = ctx.db
     .query('moods')
-    .filter((q) => q.eq(q.field('group'), args.groupId));
+    .filter((q) => q.eq(q.field('group'), args.groupId))
+    .order('desc');
 
   if (args.limit !== undefined) {
     return await query.take(args.limit);
@@ -83,6 +113,14 @@ export const getGroupActivityLevelHelper = async (
   return activityLevel;
 };
 
+export const getGroupQuery = query({
+  args: {
+    groupId: v.id('groups'),
+  },
+  handler: async (ctx, args) => {
+    return await getGroupHelper(ctx, { groupId: args.groupId });
+  },
+});
 export const createGroup = mutation({
   args: {
     name: v.string(),
@@ -210,27 +248,32 @@ export const getGroupPageContent = query({
       groupId: args.groupId,
     });
 
+    const lastFourMoods = await getGroupMoodsHelper(ctx, {
+      groupId: args.groupId,
+      limit: 4,
+    });
+
+    const lastFourMoodsWithUser = await Promise.all(
+      lastFourMoods.map(async (mood) => {
+        if (!mood.userId) {
+          return null;
+        }
+        const user = await getUserHelper(ctx, { userId: mood.userId });
+        return {
+          ...mood,
+          user,
+        };
+      })
+    );
+
     return {
       group,
       moodSummaryToday,
       numberOfNewMembersInLastMonth,
       creatorDisplayName,
       activityLevel,
+      lastFourMoodsWithUser,
     };
-  },
-});
-
-export const getGroupsLastFourMoods = query({
-  args: {
-    groupId: v.id('groups'),
-  },
-  handler: async (ctx, args) => {
-    const lastFourMoods = await getGroupMoodsHelper(ctx, {
-      groupId: args.groupId,
-      limit: 4,
-    });
-
-    return lastFourMoods;
   },
 });
 
@@ -244,5 +287,104 @@ export const getGroupActivityQuery = query({
     });
 
     return activityLevel;
+  },
+});
+
+export const getGroupMoodDistributionLast30Days = query({
+  args: {
+    groupId: v.id('groups'),
+  },
+  handler: async (ctx, args) => {
+    const moods = await getGroupMoodsLast30DaysHelper(ctx, {
+      groupId: args.groupId,
+    });
+
+    const moodDistribution = moods.map((mood) => {
+      return {
+        name: mood.mood,
+        value: 1,
+      };
+    });
+
+    return moodDistribution;
+  },
+});
+
+export const getGroupTimelineLast7Days = query({
+  args: {
+    groupId: v.id('groups'),
+    usersTimeZone: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get current timestamp in user's timezone
+    const now = new Date();
+    const userNow = new Date(
+      now.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+    );
+    userNow.setHours(23, 59, 59, 999); // End of today in user's timezone
+
+    // Calculate 7 days ago in user's timezone
+    const sevenDaysAgo = new Date(userNow);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0); // Start of 7 days ago in user's timezone
+
+    // Convert timezone-adjusted dates back to UTC for database query
+    const startUTC = new Date(
+      sevenDaysAgo.toLocaleString('en-US', { timeZone: 'UTC' })
+    );
+    const endUTC = new Date(
+      userNow.toLocaleString('en-US', { timeZone: 'UTC' })
+    );
+
+    const moods = await ctx.db
+      .query('moods')
+      .filter((q) => q.eq(q.field('group'), args.groupId))
+      .filter((q) => q.gte(q.field('_creationTime'), startUTC.getTime()))
+      .filter((q) => q.lte(q.field('_creationTime'), endUTC.getTime()))
+      .collect();
+
+    // Initialize the result object with all dates and empty mood counts
+    const trendData: Record<string, Record<string, number>> = {};
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(userNow);
+      date.setDate(date.getDate() - i);
+      const userMoodDate = new Date(
+        date.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+      );
+      const formattedDate = format(userMoodDate, 'MMM dd');
+      trendData[formattedDate] = {
+        happy: 0,
+        excited: 0,
+        calm: 0,
+        neutral: 0,
+        tired: 0,
+        stressed: 0,
+        sad: 0,
+        angry: 0,
+        anxious: 0,
+      };
+    }
+
+    // Count moods for each date, using the user's timezone
+    moods.forEach((mood) => {
+      const moodDate = new Date(mood._creationTime);
+      const userMoodDate = new Date(
+        moodDate.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+      );
+      const formattedDate = format(userMoodDate, 'MMM dd');
+      if (trendData[formattedDate]) {
+        trendData[formattedDate][mood.mood]++;
+      }
+    });
+
+    // Convert to array format and sort by date
+    const result = Object.entries(trendData)
+      .map(([date, moodCounts]) => ({
+        date,
+        ...moodCounts,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return result;
   },
 });

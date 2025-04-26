@@ -1,3 +1,8 @@
+import { moodOptions } from '@/lib/getMoodEmoji';
+import { convexQuery } from '@convex-dev/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { api } from 'convex/_generated/api';
+import type { Id } from 'convex/_generated/dataModel';
 import {
   PieChart,
   Pie,
@@ -7,23 +12,26 @@ import {
   Tooltip,
 } from 'recharts';
 
-const data = [
-  { name: 'Happy', value: 5, color: '#4ade80' },
-  { name: 'Excited', value: 2, color: '#facc15' },
-  { name: 'Calm', value: 3, color: '#60a5fa' },
-  { name: 'Neutral', value: 1, color: '#94a3b8' },
-  { name: 'Tired', value: 1, color: '#c084fc' },
-  { name: 'Stressed', value: 2, color: '#fb923c' },
-  { name: 'Sad', value: 0, color: '#818cf8' },
-];
+export function GroupMoodChart({ groupId }: { groupId: Id<'groups'> }) {
+  const { data: moods } = useSuspenseQuery(
+    convexQuery(api.groups.getGroupMoodDistributionLast30Days, {
+      groupId,
+    })
+  );
 
-export function GroupMoodChart() {
+  const moodDistributionWithColors = moods.map((mood) => {
+    return {
+      ...mood,
+      color: moodOptions.find((m) => m.value === mood.name)?.hexColor,
+    };
+  });
+
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
+            data={moodDistributionWithColors}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -34,7 +42,7 @@ export function GroupMoodChart() {
               `${name} ${(percent * 100).toFixed(0)}%`
             }
           >
-            {data.map((entry, index) => (
+            {moodDistributionWithColors.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>

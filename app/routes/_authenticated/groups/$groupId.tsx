@@ -19,7 +19,9 @@ import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import pluralize from 'pluralize';
 import { moodOptions } from '@/lib/getMoodEmoji';
-import { format } from 'date-fns';
+import { format, formatRelative } from 'date-fns';
+import getInitials from '@/lib/getInitials';
+import capitalize from 'lodash-es/capitalize';
 
 export const Route = createFileRoute('/_authenticated/groups/$groupId')({
   beforeLoad: async ({ params, context }) => {
@@ -60,6 +62,7 @@ function RouteComponent() {
     creatorDisplayName,
     moodSummaryToday,
     numberOfNewMembersInLastMonth,
+    lastFourMoodsWithUser,
   } = useLoaderData({
     from: '/_authenticated/groups/$groupId',
   });
@@ -69,7 +72,7 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="flex-1 space-y-4 px-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -82,7 +85,7 @@ function RouteComponent() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild>
-              <Link to="/log">Log Mood</Link>
+              <Link to="/log">Log Mood in group</Link>
             </Button>
             <Button variant="outline">Invite Members</Button>
           </div>
@@ -173,7 +176,7 @@ function RouteComponent() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pl-2">
-                  <GroupMoodChart />
+                  <GroupMoodChart groupId={group._id} />
                 </CardContent>
               </Card>
               <Card className="col-span-3">
@@ -185,49 +188,31 @@ function RouteComponent() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      {
-                        user: 'Alex J.',
-                        mood: 'Happy',
-                        time: 'Today, 10:30 AM',
-                        note: 'Great team meeting!',
-                      },
-                      {
-                        user: 'Sam T.',
-                        mood: 'Stressed',
-                        time: 'Today, 9:15 AM',
-                        note: 'Deadline approaching',
-                      },
-                      {
-                        user: 'Jamie L.',
-                        mood: 'Excited',
-                        time: 'Yesterday, 4:45 PM',
-                        note: 'New project kickoff',
-                      },
-                      {
-                        user: 'Taylor R.',
-                        mood: 'Calm',
-                        time: 'Yesterday, 11:20 AM',
-                        note: 'Finished major task',
-                      },
-                    ].map((entry, i) => (
+                    {lastFourMoodsWithUser.map((mood, i) => (
                       <div key={i} className="flex items-start space-x-4">
                         <Avatar>
-                          <AvatarImage src={undefined} alt={entry.user} />
+                          <AvatarImage
+                            src={mood?.user?.image}
+                            alt={mood?.user?.displayName}
+                          />
                           <AvatarFallback>
-                            {entry.user.split(' ')[0][0]}
-                            {entry.user.split(' ')[1][0]}
+                            {getInitials(mood?.user.displayName ?? '')}
                           </AvatarFallback>
                         </Avatar>
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {entry.user} felt {entry.mood}
+                            {mood?.user?.displayName} felt {mood?.mood}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {entry.note}
+                            {mood?.note}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {entry.time}
+                            {capitalize(
+                              formatRelative(
+                                mood?._creationTime ?? new Date(),
+                                new Date()
+                              )
+                            )}
                           </p>
                         </div>
                       </div>
@@ -245,7 +230,7 @@ function RouteComponent() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <GroupMoodTimeline />
+                <GroupMoodTimeline groupId={group._id} />
               </CardContent>
             </Card>
           </TabsContent>
