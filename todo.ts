@@ -29,3 +29,8 @@
 // [] people should be able to join multiple white label apps
 // [] is group member online
 // [] pagination for groups and members inside a group
+// [] ban member, remove member
+// [] shouldn't be able to leave a group if you are the only owner
+// [] admin dashboard feature: Only allow public and personal moods.
+// [] admin dashboard feature: no groups
+// [] admin dashboard feature: no global trends
