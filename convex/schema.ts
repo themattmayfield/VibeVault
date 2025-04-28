@@ -13,13 +13,13 @@ export const moodLiteral = v.union(
   v.literal('anxious')
 );
 
-export const groupRoleLiteral = v.union(
+const groupRoleLiteral = v.union(
   v.literal('owner'),
   v.literal('admin'),
   v.literal('member')
 );
 
-export const groupMemberStatus = v.union(
+const groupMemberStatus = v.union(
   v.literal('active'),
   v.literal('invited'),
   v.literal('left'),
@@ -29,6 +29,16 @@ export const groupMemberStatus = v.union(
 );
 
 export default defineSchema({
+  organizations: defineTable({
+    name: v.string(),
+    subdomain: v.string(),
+    creator: v.id('users'),
+    branding: v.optional(
+      v.object({
+        logo: v.optional(v.string()),
+      })
+    ),
+  }),
   users: defineTable({
     neonUserId: v.string(),
     displayName: v.string(),

@@ -203,3 +203,7 @@
     height: 100dvh;
     pointer-events: none;}
 }
+
+@utility container {
+  @apply mx-auto;
+}

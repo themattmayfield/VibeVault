@@ -1,4 +1,9 @@
-import { mutation, query, type QueryCtx } from './_generated/server';
+import {
+  mutation,
+  type MutationCtx,
+  query,
+  type QueryCtx,
+} from './_generated/server';
 import { v } from 'convex/values';
 import { getGroupHelper } from './groups';
 import type { Id } from './_generated/dataModel';
@@ -17,6 +22,17 @@ export const getUserFromNeonUserIdHelper = async (
   }
 
   return user;
+};
+
+export const createUserHelper = async (
+  ctx: MutationCtx,
+  args: { neonUserId: string; displayName: string }
+) => {
+  return await ctx.db.insert('users', {
+    neonUserId: args.neonUserId,
+    displayName: args.displayName,
+    availableGroups: [],
+  });
 };
 
 export const getUserHelper = async (
@@ -56,11 +72,7 @@ export const createUser = mutation({
     displayName: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await ctx.db.insert('users', {
-      neonUserId: args.neonUserId,
-      displayName: args.displayName,
-      availableGroups: [],
-    });
+    const user = await createUserHelper(ctx, args);
     return user;
   },
 });

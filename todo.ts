@@ -34,3 +34,4 @@
 // [] admin dashboard feature: Only allow public and personal moods.
 // [] admin dashboard feature: no groups
 // [] admin dashboard feature: no global trends
+// [] incentive to sign up by makin donations to health charities. x% goes to charity and we've raises x amount!!!

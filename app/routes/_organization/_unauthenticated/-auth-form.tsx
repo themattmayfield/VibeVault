@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createFileRoute,
-  Link,
-  useRouterState,
-  useRouter,
-} from '@tanstack/react-router';
-
-export const Route = createFileRoute('/_authRoutes/_auth-form')({});
+import { Link, useRouterState, useRouter } from '@tanstack/react-router';
 
 import { GalleryVerticalEnd } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,7 +18,7 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { signUpEmail } from '@/actions/auth';
 import { toast } from 'sonner';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from 'auth-client';
 import { APP_INFO } from '@/constants/app-info';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';

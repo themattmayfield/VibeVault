@@ -33,6 +33,10 @@ export function createRouter() {
         </ConvexProvider>
       ),
       scrollRestoration: true,
+      scrollRestorationBehavior: 'smooth',
+      defaultHashScrollIntoView: {
+        behavior: 'smooth',
+      },
     }),
     queryClient
   );

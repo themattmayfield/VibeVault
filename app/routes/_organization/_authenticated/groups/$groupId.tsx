@@ -24,7 +24,7 @@ import getInitials from '@/lib/getInitials';
 import capitalize from 'lodash-es/capitalize';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-export const Route = createFileRoute('/_authenticated/groups/$groupId')({
+export const Route = createFileRoute('/_organization/_authenticated/groups/$groupId')({
   beforeLoad: async ({ params, context }) => {
     const authUser = await getAuthUser();
     if (!authUser) {

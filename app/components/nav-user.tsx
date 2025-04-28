@@ -22,7 +22,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from 'auth-client';
 import { useRouter } from '@tanstack/react-router';
 import getInitials from '@/lib/getInitials';
 

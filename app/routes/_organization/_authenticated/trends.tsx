@@ -12,7 +12,7 @@ import { MoodPieChart } from '@/components/mood-pie-chart';
 import { MoodWordCloud } from '@/components/mood-word-cloud';
 import { MoodTimeline } from '@/components/mood-timeline';
 
-export const Route = createFileRoute('/_authenticated/trends')({
+export const Route = createFileRoute('/_organization/_authenticated/trends')({
   component: Trends,
 });
 

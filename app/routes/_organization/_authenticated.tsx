@@ -6,10 +6,11 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { api } from 'convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 
-export const Route = createFileRoute('/_authenticated')({
+export const Route = createFileRoute('/_organization/_authenticated')({
   component: RouteComponent,
   loader: async ({ context }) => {
     const authUser = await getAuthUser();
+    console.log('authUser', authUser);
 
     if (!authUser) {
       throw redirect({ to: '/sign-in' });

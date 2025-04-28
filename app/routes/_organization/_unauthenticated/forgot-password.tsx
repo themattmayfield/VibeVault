@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { APP_INFO } from '@/constants/app-info';
-export const Route = createFileRoute('/_authRoutes/forgot-password')({
+export const Route = createFileRoute('/_organization/_unauthenticated/forgot-password')({
   component: ForgotPassword,
 });
 

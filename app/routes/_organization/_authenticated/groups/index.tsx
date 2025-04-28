@@ -20,12 +20,12 @@ import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 
-export const Route = createFileRoute('/_authenticated/groups/')({
+export const Route = createFileRoute('/_organization/_authenticated/groups/')({
   component: RouteComponent,
 });
 function RouteComponent() {
   const user = useLoaderData({
-    from: '/_authenticated',
+    from: '/_organization/_authenticated',
   });
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {

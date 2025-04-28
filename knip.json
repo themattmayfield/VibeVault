@@ -1,0 +1,25 @@
+{
+  "project": ["**/*.{js,ts,jsx,tsx}"],
+  "entry": [
+    "app/api.ts",
+    "app/client.tsx",
+    "app/routeTree.gen.ts",
+    "app/router.tsx",
+    "app/ssr.tsx"
+  ],
+  "ignore": [
+    "app/components/ui/*",
+    "convex/_generated/*",
+    "app.config.timestamp_1745096214202.js",
+    "app.config.ts",
+    "auth.ts",
+    "todo.ts",
+    "app/api.ts",
+    "app/client.tsx",
+    "app/routeTree.gen.ts",
+    "app/router.tsx",
+    "app/ssr.tsx",
+    "auth-schema.ts",
+    "app/routes/api/auth/$.ts"
+  ]
+}

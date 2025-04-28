@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
+import { authClient } from 'auth-client';
 import { useRouter } from '@tanstack/react-router';
 
 const LogoutButton = () => {

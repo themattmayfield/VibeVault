@@ -1,6 +1,8 @@
 export const APP_INFO = {
   name: 'MoodSync',
-  description: 'A moodboard for your mood',
+  domain: 'moodsync.com',
+  description:
+    'Analyze, and improve mental health with real-time mood tracking and powerful analytics',
   version: '1.0.0',
   author: 'theMattMayfield',
 };
