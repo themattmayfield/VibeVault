@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { Link } from '@tanstack/react-router';
 import { APP_INFO } from '@/constants/app-info';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
-import { createPolarCheckoutSession } from '@/actions/createPolarCheckoutSession';
+import { createPolarCheckoutSession } from '@/actions/polar';
 import { signUpEmail } from '@/actions/auth';
 
 export const Route = createFileRoute('/_public/join')({
@@ -37,7 +37,6 @@ export const Route = createFileRoute('/_public/join')({
 });
 
 function RouteComponent() {
-  const router = useRouter();
   const handleOrganizationOnboard = useMutation(
     api.organization.handleOrganizationOnboard
   );
@@ -226,7 +225,6 @@ function RouteComponent() {
         name,
       },
     });
-    return;
 
     await handleOrganizationOnboard({
       neonUserId,
@@ -234,15 +232,11 @@ function RouteComponent() {
       subdomain: formData.subdomain,
     });
 
-    router.navigate({ to: '/dashboard' });
-
-    return;
-
     const result = await createPolarCheckoutSession({
       data: {
         country: 'US',
         product: '07d39ccf-11d5-4993-bb36-c5892f49d252',
-        successUrl: `http://${formData.subdomain}.localhost:3000/sign-in?checkout_id={CHECKOUT_ID}&email=${formData.email}`,
+        successUrl: `https://localhost:3000/welcome?checkout_id={CHECKOUT_ID}&email=${formData.email}&subdomain=${formData.subdomain}`,
         customerEmail: formData.email,
         customerName: name,
       },

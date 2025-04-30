@@ -29,3 +29,17 @@ export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
 
     return response;
   });
+
+export const getPolarCheckoutSession = createServerFn({ method: 'GET' })
+  .validator(z.object({ checkoutId: z.string() }))
+  .handler(async ({ data }) => {
+    const response = await polarClient.checkouts.get({ id: data.checkoutId });
+    return response;
+  });
+
+export const getPolarCustomer = createServerFn({ method: 'GET' })
+  .validator(z.object({ customerId: z.string() }))
+  .handler(async ({ data }) => {
+    const response = await polarClient.customers.get({ id: data.customerId });
+    return response;
+  });

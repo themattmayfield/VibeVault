@@ -10,3 +10,6 @@ explorations
 node_modules
 .eslintcache
 *.env
+
+# sst
+.sst

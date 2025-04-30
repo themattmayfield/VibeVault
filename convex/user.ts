@@ -48,15 +48,6 @@ export const getUserHelper = async (
   return user;
 };
 
-export const getUser = query({
-  args: {
-    neonUserId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    return await getUserFromNeonUserIdHelper(ctx, args);
-  },
-});
-
 export const getUserFromNeonUserId = query({
   args: {
     neonUserId: v.string(),

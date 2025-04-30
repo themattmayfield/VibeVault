@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,30 +11,54 @@ import {
 import { ArrowLeft, CheckCircle, Globe } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { APP_INFO } from '@/constants/app-info';
-import { authClient } from 'auth-client';
+import { z } from 'zod';
+import { verifyEmail } from '@/actions/auth';
+import { getPolarCheckoutSession, getPolarCustomer } from '@/actions/polar';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const Route = createFileRoute('/_public/welcome')({
   component: RouteComponent,
-  beforeLoad: async ({ context }) => {
-    // check that a checkout exists from polar
-    // check that email exists in url
-    // verify it.
+  beforeLoad: async ({ search }) => {
+    if (!search.email || !search.checkout_id || !search.subdomain) {
+      throw redirect({
+        to: '/',
+      });
+    }
   },
+
+  validateSearch: z.object({
+    email: z.string(),
+    checkout_id: z.any(),
+    subdomain: z.string(),
+  }),
 });
 // For the subdomain and the email, we can know what link to sent the user.
 
 function RouteComponent() {
-  const { email, checkout_id } = Route.useSearch();
-  console.log(email, checkout_id);
-  // const { subdomain } = useLoaderData({
-  //   from: '/_organization',
-  // });
-  const subdomain = 'test';
+  const { email, subdomain, checkout_id } = Route.useSearch();
+  const queryClient = useQueryClient();
 
   const sendVerificationEmail = async () => {
-    await authClient.sendVerificationEmail({
-      email: email,
-      callbackURL: '/admin',
+    const checkoutSession = await getPolarCheckoutSession({
+      data: {
+        checkoutId: checkout_id,
+      },
+    });
+    const customerId = checkoutSession.customerId;
+    if (!customerId) {
+      throw new Error('Customer ID not found');
+    }
+    const customer = await getPolarCustomer({
+      data: {
+        customerId: customerId,
+      },
+    });
+
+    await verifyEmail({
+      data: {
+        email: customer.email,
+        callbackURL: `https://${subdomain}.localhost:3000/admin`,
+      },
     });
   };
 
@@ -48,30 +72,7 @@ function RouteComponent() {
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to home
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
-            Already have an account?
-          </span>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/sign-in">Log in</Link>
-          </Button>
-        </div>
       </div>
-      {/* 
-      <div className="flex flex-col items-center mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-            MB
-          </div>
-          <span className="font-bold text-xl">{APP_INFO.name}</span>
-        </div>
-        <h1 className="text-3xl font-bold text-center">
-          Create Your {APP_INFO.name} Account
-        </h1>
-        <p className="text-muted-foreground text-center mt-2">
-          Set up your organization and start your 14-day free trial
-        </p>
-      </div> */}
 
       <Card className="mx-auto max-w-3xl">
         <CardHeader className="text-center">

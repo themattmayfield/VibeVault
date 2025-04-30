@@ -19,6 +19,7 @@ export const signInEmail = createServerFn({ method: 'POST' })
       body: {
         email: data.email,
         password: data.password,
+        rememberMe: true,
       },
     });
 
@@ -37,4 +38,12 @@ export const signUpEmail = createServerFn({ method: 'POST' })
     });
 
     return response.user.id;
+  });
+
+export const verifyEmail = createServerFn({ method: 'POST' })
+  .validator(z.object({ email: z.string().email(), callbackURL: z.string() }))
+  .handler(async ({ data }) => {
+    await auth.api.sendVerificationEmail({
+      body: { email: data.email, callbackURL: data.callbackURL },
+    });
   });

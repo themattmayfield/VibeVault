@@ -16,9 +16,8 @@ import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
-import { signUpEmail } from '@/actions/auth';
+import { signInEmail, signUpEmail } from '@/actions/auth';
 import { toast } from 'sonner';
-import { authClient } from 'auth-client';
 import { APP_INFO } from '@/constants/app-info';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
@@ -85,15 +84,12 @@ export function AuthForm() {
         setIsSubmitting(true);
         let neonUserId: string;
         if (isSignIn) {
-          const { data, error } = await authClient.signIn.email({
-            email: value.email,
-            password: value.password,
-            rememberMe: true,
+          neonUserId = await signInEmail({
+            data: {
+              email: value.email,
+              password: value.password,
+            },
           });
-          if (error) {
-            throw new Error(error.message);
-          }
-          neonUserId = data.user.id;
         } else {
           neonUserId = await signUpEmail({
             data: {
