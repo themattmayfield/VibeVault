@@ -11,13 +11,14 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TempRedirectImport } from './routes/temp-redirect'
 import { Route as NewLogImport } from './routes/new-log'
 import { Route as PublicImport } from './routes/_public'
 import { Route as OrganizationImport } from './routes/_organization'
 import { Route as PublicIndexImport } from './routes/_public.index'
-import { Route as PublicWelcomeImport } from './routes/_public.welcome'
 import { Route as PublicJoinImport } from './routes/_public.join'
 import { Route as OrganizationAuthenticatedImport } from './routes/_organization/_authenticated'
+import { Route as OrganizationUnauthenticatedWelcomeImport } from './routes/_organization/_unauthenticated/welcome'
 import { Route as OrganizationUnauthenticatedSignUpImport } from './routes/_organization/_unauthenticated/sign-up'
 import { Route as OrganizationUnauthenticatedSignInImport } from './routes/_organization/_unauthenticated/sign-in'
 import { Route as OrganizationUnauthenticatedForgotPasswordImport } from './routes/_organization/_unauthenticated/forgot-password'
@@ -29,6 +30,12 @@ import { Route as OrganizationAuthenticatedGroupsIndexImport } from './routes/_o
 import { Route as OrganizationAuthenticatedGroupsGroupIdImport } from './routes/_organization/_authenticated/groups/$groupId'
 
 // Create/Update Routes
+
+const TempRedirectRoute = TempRedirectImport.update({
+  id: '/temp-redirect',
+  path: '/temp-redirect',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const NewLogRoute = NewLogImport.update({
   id: '/new-log',
@@ -52,12 +59,6 @@ const PublicIndexRoute = PublicIndexImport.update({
   getParentRoute: () => PublicRoute,
 } as any)
 
-const PublicWelcomeRoute = PublicWelcomeImport.update({
-  id: '/welcome',
-  path: '/welcome',
-  getParentRoute: () => PublicRoute,
-} as any)
-
 const PublicJoinRoute = PublicJoinImport.update({
   id: '/join',
   path: '/join',
@@ -68,6 +69,13 @@ const OrganizationAuthenticatedRoute = OrganizationAuthenticatedImport.update({
   id: '/_authenticated',
   getParentRoute: () => OrganizationRoute,
 } as any)
+
+const OrganizationUnauthenticatedWelcomeRoute =
+  OrganizationUnauthenticatedWelcomeImport.update({
+    id: '/_unauthenticated/welcome',
+    path: '/welcome',
+    getParentRoute: () => OrganizationRoute,
+  } as any)
 
 const OrganizationUnauthenticatedSignUpRoute =
   OrganizationUnauthenticatedSignUpImport.update({
@@ -157,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewLogImport
       parentRoute: typeof rootRoute
     }
+    '/temp-redirect': {
+      id: '/temp-redirect'
+      path: '/temp-redirect'
+      fullPath: '/temp-redirect'
+      preLoaderRoute: typeof TempRedirectImport
+      parentRoute: typeof rootRoute
+    }
     '/_organization/_authenticated': {
       id: '/_organization/_authenticated'
       path: ''
@@ -169,13 +184,6 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof PublicJoinImport
-      parentRoute: typeof PublicImport
-    }
-    '/_public/welcome': {
-      id: '/_public/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof PublicWelcomeImport
       parentRoute: typeof PublicImport
     }
     '/_public/': {
@@ -234,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizationUnauthenticatedSignUpImport
       parentRoute: typeof OrganizationImport
     }
+    '/_organization/_unauthenticated/welcome': {
+      id: '/_organization/_unauthenticated/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof OrganizationUnauthenticatedWelcomeImport
+      parentRoute: typeof OrganizationImport
+    }
     '/_organization/_authenticated/groups/$groupId': {
       id: '/_organization/_authenticated/groups/$groupId'
       path: '/groups/$groupId'
@@ -285,6 +300,7 @@ interface OrganizationRouteChildren {
   OrganizationUnauthenticatedForgotPasswordRoute: typeof OrganizationUnauthenticatedForgotPasswordRoute
   OrganizationUnauthenticatedSignInRoute: typeof OrganizationUnauthenticatedSignInRoute
   OrganizationUnauthenticatedSignUpRoute: typeof OrganizationUnauthenticatedSignUpRoute
+  OrganizationUnauthenticatedWelcomeRoute: typeof OrganizationUnauthenticatedWelcomeRoute
 }
 
 const OrganizationRouteChildren: OrganizationRouteChildren = {
@@ -295,6 +311,8 @@ const OrganizationRouteChildren: OrganizationRouteChildren = {
     OrganizationUnauthenticatedSignInRoute,
   OrganizationUnauthenticatedSignUpRoute:
     OrganizationUnauthenticatedSignUpRoute,
+  OrganizationUnauthenticatedWelcomeRoute:
+    OrganizationUnauthenticatedWelcomeRoute,
 }
 
 const OrganizationRouteWithChildren = OrganizationRoute._addFileChildren(
@@ -303,13 +321,11 @@ const OrganizationRouteWithChildren = OrganizationRoute._addFileChildren(
 
 interface PublicRouteChildren {
   PublicJoinRoute: typeof PublicJoinRoute
-  PublicWelcomeRoute: typeof PublicWelcomeRoute
   PublicIndexRoute: typeof PublicIndexRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
   PublicJoinRoute: PublicJoinRoute,
-  PublicWelcomeRoute: PublicWelcomeRoute,
   PublicIndexRoute: PublicIndexRoute,
 }
 
@@ -319,8 +335,8 @@ const PublicRouteWithChildren =
 export interface FileRoutesByFullPath {
   '': typeof OrganizationAuthenticatedRouteWithChildren
   '/new-log': typeof NewLogRoute
+  '/temp-redirect': typeof TempRedirectRoute
   '/join': typeof PublicJoinRoute
-  '/welcome': typeof PublicWelcomeRoute
   '/': typeof PublicIndexRoute
   '/admin': typeof OrganizationAuthenticatedAdminRoute
   '/dashboard': typeof OrganizationAuthenticatedDashboardRoute
@@ -329,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof OrganizationUnauthenticatedForgotPasswordRoute
   '/sign-in': typeof OrganizationUnauthenticatedSignInRoute
   '/sign-up': typeof OrganizationUnauthenticatedSignUpRoute
+  '/welcome': typeof OrganizationUnauthenticatedWelcomeRoute
   '/groups/$groupId': typeof OrganizationAuthenticatedGroupsGroupIdRoute
   '/groups': typeof OrganizationAuthenticatedGroupsIndexRoute
 }
@@ -336,8 +353,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '': typeof OrganizationAuthenticatedRouteWithChildren
   '/new-log': typeof NewLogRoute
+  '/temp-redirect': typeof TempRedirectRoute
   '/join': typeof PublicJoinRoute
-  '/welcome': typeof PublicWelcomeRoute
   '/': typeof PublicIndexRoute
   '/admin': typeof OrganizationAuthenticatedAdminRoute
   '/dashboard': typeof OrganizationAuthenticatedDashboardRoute
@@ -346,6 +363,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof OrganizationUnauthenticatedForgotPasswordRoute
   '/sign-in': typeof OrganizationUnauthenticatedSignInRoute
   '/sign-up': typeof OrganizationUnauthenticatedSignUpRoute
+  '/welcome': typeof OrganizationUnauthenticatedWelcomeRoute
   '/groups/$groupId': typeof OrganizationAuthenticatedGroupsGroupIdRoute
   '/groups': typeof OrganizationAuthenticatedGroupsIndexRoute
 }
@@ -355,9 +373,9 @@ export interface FileRoutesById {
   '/_organization': typeof OrganizationRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/new-log': typeof NewLogRoute
+  '/temp-redirect': typeof TempRedirectRoute
   '/_organization/_authenticated': typeof OrganizationAuthenticatedRouteWithChildren
   '/_public/join': typeof PublicJoinRoute
-  '/_public/welcome': typeof PublicWelcomeRoute
   '/_public/': typeof PublicIndexRoute
   '/_organization/_authenticated/admin': typeof OrganizationAuthenticatedAdminRoute
   '/_organization/_authenticated/dashboard': typeof OrganizationAuthenticatedDashboardRoute
@@ -366,6 +384,7 @@ export interface FileRoutesById {
   '/_organization/_unauthenticated/forgot-password': typeof OrganizationUnauthenticatedForgotPasswordRoute
   '/_organization/_unauthenticated/sign-in': typeof OrganizationUnauthenticatedSignInRoute
   '/_organization/_unauthenticated/sign-up': typeof OrganizationUnauthenticatedSignUpRoute
+  '/_organization/_unauthenticated/welcome': typeof OrganizationUnauthenticatedWelcomeRoute
   '/_organization/_authenticated/groups/$groupId': typeof OrganizationAuthenticatedGroupsGroupIdRoute
   '/_organization/_authenticated/groups/': typeof OrganizationAuthenticatedGroupsIndexRoute
 }
@@ -375,8 +394,8 @@ export interface FileRouteTypes {
   fullPaths:
     | ''
     | '/new-log'
+    | '/temp-redirect'
     | '/join'
-    | '/welcome'
     | '/'
     | '/admin'
     | '/dashboard'
@@ -385,14 +404,15 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/sign-in'
     | '/sign-up'
+    | '/welcome'
     | '/groups/$groupId'
     | '/groups'
   fileRoutesByTo: FileRoutesByTo
   to:
     | ''
     | '/new-log'
+    | '/temp-redirect'
     | '/join'
-    | '/welcome'
     | '/'
     | '/admin'
     | '/dashboard'
@@ -401,6 +421,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/sign-in'
     | '/sign-up'
+    | '/welcome'
     | '/groups/$groupId'
     | '/groups'
   id:
@@ -408,9 +429,9 @@ export interface FileRouteTypes {
     | '/_organization'
     | '/_public'
     | '/new-log'
+    | '/temp-redirect'
     | '/_organization/_authenticated'
     | '/_public/join'
-    | '/_public/welcome'
     | '/_public/'
     | '/_organization/_authenticated/admin'
     | '/_organization/_authenticated/dashboard'
@@ -419,6 +440,7 @@ export interface FileRouteTypes {
     | '/_organization/_unauthenticated/forgot-password'
     | '/_organization/_unauthenticated/sign-in'
     | '/_organization/_unauthenticated/sign-up'
+    | '/_organization/_unauthenticated/welcome'
     | '/_organization/_authenticated/groups/$groupId'
     | '/_organization/_authenticated/groups/'
   fileRoutesById: FileRoutesById
@@ -428,12 +450,14 @@ export interface RootRouteChildren {
   OrganizationRoute: typeof OrganizationRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
   NewLogRoute: typeof NewLogRoute
+  TempRedirectRoute: typeof TempRedirectRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   OrganizationRoute: OrganizationRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
   NewLogRoute: NewLogRoute,
+  TempRedirectRoute: TempRedirectRoute,
 }
 
 export const routeTree = rootRoute
@@ -448,7 +472,8 @@ export const routeTree = rootRoute
       "children": [
         "/_organization",
         "/_public",
-        "/new-log"
+        "/new-log",
+        "/temp-redirect"
       ]
     },
     "/_organization": {
@@ -457,19 +482,22 @@ export const routeTree = rootRoute
         "/_organization/_authenticated",
         "/_organization/_unauthenticated/forgot-password",
         "/_organization/_unauthenticated/sign-in",
-        "/_organization/_unauthenticated/sign-up"
+        "/_organization/_unauthenticated/sign-up",
+        "/_organization/_unauthenticated/welcome"
       ]
     },
     "/_public": {
       "filePath": "_public.tsx",
       "children": [
         "/_public/join",
-        "/_public/welcome",
         "/_public/"
       ]
     },
     "/new-log": {
       "filePath": "new-log.tsx"
+    },
+    "/temp-redirect": {
+      "filePath": "temp-redirect.tsx"
     },
     "/_organization/_authenticated": {
       "filePath": "_organization/_authenticated.tsx",
@@ -485,10 +513,6 @@ export const routeTree = rootRoute
     },
     "/_public/join": {
       "filePath": "_public.join.tsx",
-      "parent": "/_public"
-    },
-    "/_public/welcome": {
-      "filePath": "_public.welcome.tsx",
       "parent": "/_public"
     },
     "/_public/": {
@@ -521,6 +545,10 @@ export const routeTree = rootRoute
     },
     "/_organization/_unauthenticated/sign-up": {
       "filePath": "_organization/_unauthenticated/sign-up.tsx",
+      "parent": "/_organization"
+    },
+    "/_organization/_unauthenticated/welcome": {
+      "filePath": "_organization/_unauthenticated/welcome.tsx",
       "parent": "/_organization"
     },
     "/_organization/_authenticated/groups/$groupId": {

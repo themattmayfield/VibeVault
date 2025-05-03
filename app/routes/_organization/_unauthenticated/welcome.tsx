@@ -16,22 +16,24 @@ import { verifyEmail } from '@/actions/auth';
 import { getPolarCheckoutSession, getPolarCustomer } from '@/actions/polar';
 import { useQueryClient } from '@tanstack/react-query';
 
-export const Route = createFileRoute('/_public/welcome')({
-  component: RouteComponent,
-  beforeLoad: async ({ search }) => {
-    if (!search.email || !search.checkout_id || !search.subdomain) {
-      throw redirect({
-        to: '/',
-      });
-    }
-  },
+export const Route = createFileRoute('/_organization/_unauthenticated/welcome')(
+  {
+    component: RouteComponent,
+    beforeLoad: async ({ search }) => {
+      if (!search.email || !search.checkout_id || !search.subdomain) {
+        throw redirect({
+          to: '/',
+        });
+      }
+    },
 
-  validateSearch: z.object({
-    email: z.string(),
-    checkout_id: z.any(),
-    subdomain: z.string(),
-  }),
-});
+    validateSearch: z.object({
+      email: z.string(),
+      checkout_id: z.any(),
+      subdomain: z.string(),
+    }),
+  }
+);
 // For the subdomain and the email, we can know what link to sent the user.
 
 function RouteComponent() {
@@ -57,7 +59,7 @@ function RouteComponent() {
     await verifyEmail({
       data: {
         email: customer.email,
-        callbackURL: `https://${subdomain}.localhost:3000/admin`,
+        callbackURL: `/temp-redirect?subdomain=${subdomain}`,
       },
     });
   };

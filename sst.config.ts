@@ -15,17 +15,6 @@ export default $config({
     };
   },
   async run() {
-    new sst.aws.TanStackStart('MyWeb', {
-      // dev: {
-      //   url: 'noice.themattmayfield.com',
-      // },
-      domain: {
-        name:
-          process.env.SST_STAGE === 'matthewmayfield'
-            ? 'noice.themattmayfield.com'
-            : 'noice.themattmayfield.com',
-        dns: sst.cloudflare.dns(),
-      },
-    });
+    new sst.aws.TanStackStart('MyWeb');
   },
 });
