@@ -23,17 +23,24 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { authClient } from 'auth-client';
-import { useRouter } from '@tanstack/react-router';
+import { useParams, useRouter } from '@tanstack/react-router';
 import getInitials from '@/lib/getInitials';
 
 export function NavUser() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const { isMobile } = useSidebar();
+  const { orgId } = useParams({
+    from: '/o/$orgId',
+  });
 
   const handleLogout = async () => {
     await authClient.signOut();
-    router.navigate({ to: '/sign-in', reloadDocument: true });
+    router.navigate({
+      to: '/o/$orgId/sign-in',
+      params: { orgId },
+      reloadDocument: true,
+    });
   };
 
   const name = session?.user?.name ?? '';

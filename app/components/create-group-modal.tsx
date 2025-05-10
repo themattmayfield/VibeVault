@@ -29,7 +29,7 @@ interface CreateGroupModalProps {
 
 export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
   const user = useLoaderData({
-    from: '/_organization/_authenticated',
+    from: '/o/$orgId/_authenticated',
   });
 
   const createGroup = useMutation(api.groups.createGroup);

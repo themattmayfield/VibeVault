@@ -16,7 +16,7 @@ import { verifyEmail } from '@/actions/auth';
 import { getPolarCheckoutSession, getPolarCustomer } from '@/actions/polar';
 import { useQueryClient } from '@tanstack/react-query';
 
-export const Route = createFileRoute('/_organization/_authenticated/welcome')({
+export const Route = createFileRoute('/o/$orgId/_authenticated/welcome')({
   component: RouteComponent,
   beforeLoad: async ({ search }) => {
     if (!search.email || !search.checkout_id || !search.subdomain) {

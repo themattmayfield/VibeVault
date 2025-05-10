@@ -6,16 +6,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { ROUTES } from '@/constants/routes';
 
 export function NavMain() {
+  const { orgId } = useParams({
+    from: '/o/$orgId',
+  });
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
-            <Link to="/log" className="w-full">
+            <Link to="/o/$orgId/log" params={{ orgId }} className="w-full">
               <SidebarMenuButton
                 tooltip="Log Mood"
                 className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground cursor-pointer"
@@ -31,7 +34,7 @@ export function NavMain() {
             if (item.ignoreInSidebar) return null;
             return (
               <SidebarMenuItem key={item.label}>
-                <Link to={item.href} key={item.label}>
+                <Link to={item.href} key={item.label} params={{ orgId }}>
                   <SidebarMenuButton
                     tooltip={item.label}
                     className="cursor-pointer"

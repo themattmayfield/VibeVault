@@ -1,7 +1,7 @@
 import { getSubdomainAction } from '@/actions/subdomain';
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_organization')({
+export const Route = createFileRoute('/o/$orgId')({
   component: RouteComponent,
   loader: async () => {
     const subdomain = await getSubdomainAction();

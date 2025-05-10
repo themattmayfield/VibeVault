@@ -8,7 +8,7 @@ export const Route = createFileRoute('/new-log')({
   beforeLoad: async () => {
     const user = await getAuthUser();
     if (user) {
-      throw redirect({ to: '/dashboard' });
+      throw redirect({ to: '/o/$orgId/dashboard' });
     }
   },
 });

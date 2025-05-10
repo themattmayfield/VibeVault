@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,11 +12,14 @@ import { MoodPieChart } from '@/components/mood-pie-chart';
 import { MoodWordCloud } from '@/components/mood-word-cloud';
 import { MoodTimeline } from '@/components/mood-timeline';
 
-export const Route = createFileRoute('/_organization/_authenticated/trends')({
+export const Route = createFileRoute('/o/$orgId/_authenticated/trends')({
   component: Trends,
 });
 
 function Trends() {
+  const { orgId } = useParams({
+    from: '/o/$orgId',
+  });
   return (
     <div className="flex flex-col">
       <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -31,7 +34,9 @@ function Trends() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild>
-              <Link to="/log">Log Your Mood</Link>
+              <Link to="/o/$orgId/log" params={{ orgId }}>
+                Log Your Mood
+              </Link>
             </Button>
           </div>
         </div>

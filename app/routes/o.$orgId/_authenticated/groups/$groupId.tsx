@@ -24,11 +24,16 @@ import getInitials from '@/lib/getInitials';
 import capitalize from 'lodash-es/capitalize';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-export const Route = createFileRoute('/_organization/_authenticated/groups/$groupId')({
+export const Route = createFileRoute(
+  '/o/$orgId/_authenticated/groups/$groupId'
+)({
   beforeLoad: async ({ params, context }) => {
     const authUser = await getAuthUser();
     if (!authUser) {
-      throw redirect({ to: '/sign-in' });
+      throw redirect({
+        to: '/o/$orgId/sign-in',
+        params: { orgId: params.orgId },
+      });
     }
     const user = await context.queryClient.fetchQuery(
       convexQuery(api.user.getUserFromNeonUserId, {
@@ -37,11 +42,17 @@ export const Route = createFileRoute('/_organization/_authenticated/groups/$grou
     );
 
     if (!user) {
-      throw redirect({ to: '/sign-in' });
+      throw redirect({
+        to: '/o/$orgId/sign-in',
+        params: { orgId: params.orgId },
+      });
     }
 
     if (!user.availableGroups?.includes(params.groupId as Id<'groups'>)) {
-      throw redirect({ to: '/groups' });
+      throw redirect({
+        to: '/o/$orgId/groups',
+        params: { orgId: params.orgId },
+      });
     }
     return { groupId: params.groupId };
   },
@@ -65,7 +76,7 @@ function RouteComponent() {
     numberOfNewMembersInLastMonth,
     lastFourMoodsWithUser,
   } = useLoaderData({
-    from: '/_authenticated/groups/$groupId',
+    from: '/o/$orgId/_authenticated/groups/$groupId',
   });
 
   const { data: members } = useSuspenseQuery(

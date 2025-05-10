@@ -1,4 +1,8 @@
-import { createFileRoute, useLoaderData } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  useLoaderData,
+  useParams,
+} from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,12 +24,15 @@ import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 
-export const Route = createFileRoute('/_organization/_authenticated/groups/')({
+export const Route = createFileRoute('/o/$orgId/_authenticated/groups/')({
   component: RouteComponent,
 });
 function RouteComponent() {
+  const { orgId } = useParams({
+    from: '/o/$orgId',
+  });
   const user = useLoaderData({
-    from: '/_organization/_authenticated',
+    from: '/o/$orgId/_authenticated',
   });
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {
@@ -110,8 +117,8 @@ function RouteComponent() {
                   <CardFooter>
                     <Button asChild className="w-full">
                       <Link
-                        to="/groups/$groupId"
-                        params={{ groupId: group._id }}
+                        to="/o/$orgId/groups/$groupId"
+                        params={{ groupId: group._id, orgId: orgId }}
                       >
                         View Group
                       </Link>

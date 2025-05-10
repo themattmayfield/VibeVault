@@ -1,6 +1,11 @@
 'use client';
 
-import { Link, useRouterState, useRouter } from '@tanstack/react-router';
+import {
+  Link,
+  useRouterState,
+  useRouter,
+  useParams,
+} from '@tanstack/react-router';
 
 import { GalleryVerticalEnd } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,12 +43,15 @@ const { useAppForm } = createFormHook({
 });
 
 export function AuthForm() {
+  const { orgId } = useParams({
+    from: '/o/$orgId',
+  });
   const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
 
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
 
-  const isSignIn = location.pathname === '/sign-in';
+  const isSignIn = location.pathname === `/o/${orgId}/sign-in`;
 
   const createUser = useMutation(api.user.createUser);
   const createMoodsFromLocalStorageUsingNeonUserId = useMutation(
@@ -107,7 +115,10 @@ export function AuthForm() {
         });
         localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
 
-        router.navigate({ to: '/dashboard' });
+        router.navigate({
+          to: '/o/$orgId/dashboard',
+          params: { orgId },
+        });
         toast.success(
           isSignIn ? 'Successfully signed in' : 'Successfully signed up'
         );
@@ -276,7 +287,10 @@ export function AuthForm() {
                         ? "Don't have an account?"
                         : 'Already have an account?'}{' '}
                       <Link
-                        to={isSignIn ? '/sign-up' : '/sign-in'}
+                        to={
+                          isSignIn ? '/o/$orgId/sign-up' : '/o/$orgId/sign-in'
+                        }
+                        params={{ orgId }}
                         className="underline underline-offset-4"
                       >
                         {isSignIn ? 'Sign up' : 'Login'}
@@ -285,7 +299,8 @@ export function AuthForm() {
                     <div className="text-center">
                       {isSignIn && (
                         <Link
-                          to="/forgot-password"
+                          to="/o/$orgId/forgot-password"
+                          params={{ orgId }}
                           className="ml-auto text-xs underline-offset-4 hover:underline"
                         >
                           Forgot your password?

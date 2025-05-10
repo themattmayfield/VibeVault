@@ -6,25 +6,25 @@ export const ROUTES = [
   {
     label: 'Dashboard',
     icon: LayoutDashboardIcon,
-    href: '/dashboard',
+    href: '/o/$orgId/dashboard',
     ignoreInSidebar: false,
   },
   {
     label: 'Log Your Mood',
     icon: PlusCircle,
-    href: '/log',
+    href: '/o/$orgId/log',
     ignoreInSidebar: true,
   },
   {
     label: 'Groups',
     icon: Users,
-    href: '/groups',
+    href: '/o/$orgId/groups',
     ignoreInSidebar: false,
   },
   {
     label: 'Global Trends',
     icon: Activity,
-    href: '/trends',
+    href: '/o/$orgId/trends',
     ignoreInSidebar: false,
   },
 ] as const;

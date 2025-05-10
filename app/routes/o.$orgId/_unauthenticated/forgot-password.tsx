@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { GalleryVerticalEnd } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,11 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { APP_INFO } from '@/constants/app-info';
-export const Route = createFileRoute('/_organization/_unauthenticated/forgot-password')({
+export const Route = createFileRoute(
+  '/o/$orgId/_unauthenticated/forgot-password'
+)({
   component: ForgotPassword,
 });
 
 function ForgotPassword() {
+  const { orgId } = useParams({
+    from: '/o/$orgId',
+  });
   const isSignIn = location.pathname === '/sign-in';
 
   const [_email, setEmail] = useState('');
@@ -75,7 +80,8 @@ function ForgotPassword() {
                       ? "Don't have an account?"
                       : 'Already have an account?'}{' '}
                     <Link
-                      to="/sign-in"
+                      to="/o/$orgId/sign-in"
+                      params={{ orgId }}
                       className="underline underline-offset-4"
                     >
                       Login

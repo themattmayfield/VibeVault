@@ -17,15 +17,13 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import numeral from 'numeral';
 import pluralize from 'pluralize';
 
-export const Route = createFileRoute('/_organization/_authenticated/dashboard')(
-  {
-    component: Home,
-  }
-);
+export const Route = createFileRoute('/o/$orgId/_authenticated/dashboard')({
+  component: Home,
+});
 
 function Home() {
   const user = useLoaderData({
-    from: '/_organization/_authenticated',
+    from: '/o/$orgId/_authenticated',
   });
   const { data: totalMoodEntries } = useSuspenseQuery(
     convexQuery(api.mood.getUsersTotalMoodEntries, {

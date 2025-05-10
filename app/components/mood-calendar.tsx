@@ -33,7 +33,7 @@ const moodEmojis: Record<string, string> = {
 
 export function MoodCalendar() {
   const user = useLoaderData({
-    from: '/_organization/_authenticated',
+    from: '/o/$orgId/_authenticated',
   });
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
