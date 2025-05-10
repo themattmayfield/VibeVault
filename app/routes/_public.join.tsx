@@ -236,7 +236,8 @@ function RouteComponent() {
       data: {
         country: 'US',
         product: '07d39ccf-11d5-4993-bb36-c5892f49d252',
-        successUrl: `https://localhost:3000/welcome?checkout_id={CHECKOUT_ID}&email=${formData.email}&subdomain=${formData.subdomain}`,
+        successUrl: `http://localhost:3000/d/${formData.subdomain}/admin?checkout_id={CHECKOUT_ID}&email=${formData.email}&subdomain=${formData.subdomain}`,
+        // successUrl: `http://localhost:3000/welcome?checkout_id={CHECKOUT_ID}&email=${formData.email}&subdomain=${formData.subdomain}`,
         customerEmail: formData.email,
         customerName: name,
       },

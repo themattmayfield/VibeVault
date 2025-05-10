@@ -2,7 +2,7 @@
 
 import { defineConfig } from '@tanstack/react-start/config';
 import viteTsConfigPaths from 'vite-tsconfig-paths';
-import mkcert from 'vite-plugin-mkcert';
+// import mkcert from 'vite-plugin-mkcert';
 
 export default defineConfig({
   server: {
@@ -10,11 +10,14 @@ export default defineConfig({
     awsLambda: {
       streaming: true,
     },
-    https: true,
+    // routeRules: {
+    //   '/d/**': { proxy: { to: '/**' } },
+    // },
+    // https: true,
   },
   vite: {
     plugins: [
-      mkcert(),
+      // mkcert(),
       // this is the plugin that enables path aliases
       viteTsConfigPaths({
         projects: ['./tsconfig.json'],

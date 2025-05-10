@@ -6,6 +6,10 @@ export const Route = createFileRoute('/_organization')({
   loader: async () => {
     const subdomain = await getSubdomainAction();
 
+    if (process.env.NODE_ENV === 'development') {
+      return { subdomain: 'development' };
+    }
+
     if (!subdomain) {
       throw redirect({
         to: '/',
