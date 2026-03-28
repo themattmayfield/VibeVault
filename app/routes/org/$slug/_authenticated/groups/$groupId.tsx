@@ -24,12 +24,15 @@ import getInitials from '@/lib/getInitials';
 import capitalize from 'lodash-es/capitalize';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-export const Route = createFileRoute('/tenant/_authenticated/groups/$groupId')({
+export const Route = createFileRoute(
+  '/org/$slug/_authenticated/groups/$groupId'
+)({
   beforeLoad: async ({ params, context }) => {
     const authUser = await getAuthUser();
     if (!authUser) {
       throw redirect({
-        to: '/tenant/sign-in',
+        to: '/org/$slug/sign-in',
+        params: { slug: params.slug },
       });
     }
     const user = await context.queryClient.fetchQuery(
@@ -40,13 +43,15 @@ export const Route = createFileRoute('/tenant/_authenticated/groups/$groupId')({
 
     if (!user) {
       throw redirect({
-        to: '/tenant/sign-in',
+        to: '/org/$slug/sign-in',
+        params: { slug: params.slug },
       });
     }
 
     if (!user.availableGroups?.includes(params.groupId as Id<'groups'>)) {
       throw redirect({
-        to: '/tenant/groups',
+        to: '/org/$slug/groups',
+        params: { slug: params.slug },
       });
     }
     return { groupId: params.groupId };
@@ -71,7 +76,7 @@ function RouteComponent() {
     numberOfNewMembersInLastMonth,
     lastFourMoodsWithUser,
   } = useLoaderData({
-    from: '/tenant/_authenticated/groups/$groupId',
+    from: '/org/$slug/_authenticated/groups/$groupId',
   });
 
   const { data: members } = useSuspenseQuery(

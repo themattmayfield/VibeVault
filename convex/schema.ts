@@ -33,7 +33,7 @@ export default defineSchema({
   // org/membership/invitation data. This table stores org config for the app.
   orgSettings: defineTable({
     betterAuthOrgId: v.string(), // links to Better Auth organization.id
-    subdomain: v.string(),
+    slug: v.string(), // org URL slug, e.g. "acme" -> /org/acme
     branding: v.optional(
       v.object({
         logo: v.optional(v.string()),
@@ -47,7 +47,7 @@ export default defineSchema({
       })
     ),
   })
-    .index('by_subdomain', ['subdomain'])
+    .index('by_slug', ['slug'])
     .index('by_better_auth_org_id', ['betterAuthOrgId']),
   users: defineTable({
     neonUserId: v.string(),

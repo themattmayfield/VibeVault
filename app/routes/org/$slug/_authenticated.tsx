@@ -6,13 +6,16 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { api } from 'convex/_generated/api';
 import { convexQuery } from '@convex-dev/react-query';
 
-export const Route = createFileRoute('/tenant/_authenticated')({
+export const Route = createFileRoute('/org/$slug/_authenticated')({
   component: RouteComponent,
   loader: async ({ context }) => {
     const authUser = await getAuthUser();
 
     if (!authUser) {
-      throw redirect({ to: '/tenant/sign-in' });
+      throw redirect({
+        to: '/org/$slug/sign-in',
+        params: { slug: context.slug },
+      });
     }
 
     const user = await context.queryClient.fetchQuery(
@@ -22,7 +25,10 @@ export const Route = createFileRoute('/tenant/_authenticated')({
     );
 
     if (!user) {
-      throw redirect({ to: '/tenant/sign-in' });
+      throw redirect({
+        to: '/org/$slug/sign-in',
+        params: { slug: context.slug },
+      });
     }
 
     return user;

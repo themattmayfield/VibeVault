@@ -12,7 +12,7 @@ import { MoodPieChart } from '@/components/mood-pie-chart';
 import { MoodWordCloud } from '@/components/mood-word-cloud';
 import { MoodTimeline } from '@/components/mood-timeline';
 
-export const Route = createFileRoute('/tenant/_authenticated/trends')({
+export const Route = createFileRoute('/org/$slug/_authenticated/trends')({
   component: Trends,
 });
 
@@ -31,7 +31,12 @@ function Trends() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild>
-              <Link to="/tenant/log">Log Your Mood</Link>
+              <Link
+                to="/org/$slug/log"
+                params={{ slug: Route.useParams().slug }}
+              >
+                Log Your Mood
+              </Link>
             </Button>
           </div>
         </div>

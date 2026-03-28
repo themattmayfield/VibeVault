@@ -10,7 +10,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoodInsights } from '@/components/mood-insights';
 
-export const Route = createFileRoute('/tenant/_authenticated/insights')({
+export const Route = createFileRoute('/org/$slug/_authenticated/insights')({
   component: () => (
     <Suspense fallback={<InsightsSkeleton />}>
       <InsightsPage />

@@ -23,7 +23,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { authClient } from 'auth-client';
-import { useRouter } from '@tanstack/react-router';
+import { useRouter, useParams } from '@tanstack/react-router';
 import getInitials from '@/lib/getInitials';
 import { signOutAction } from '@/actions/auth';
 
@@ -31,19 +31,34 @@ export function NavUser() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const { isMobile } = useSidebar();
+  const { slug } = useParams({ strict: false }) as { slug?: string };
 
   const handleLogout = async () => {
     await signOutAction();
-    router.navigate({
-      to: '/tenant/sign-in',
-      reloadDocument: true,
-    });
+    if (slug) {
+      router.navigate({
+        to: '/org/$slug/sign-in',
+        params: { slug },
+        reloadDocument: true,
+      });
+    } else {
+      router.navigate({
+        to: '/',
+        reloadDocument: true,
+      });
+    }
   };
 
   const name = session?.user?.name ?? '';
   const email = session?.user?.email ?? '';
   const image = session?.user?.image ?? '';
   const initials = getInitials(name);
+
+  const navigateToSettings = () => {
+    if (slug) {
+      router.navigate({ to: '/org/$slug/settings', params: { slug } });
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -95,21 +110,21 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onClick={() => router.navigate({ to: '/tenant/settings' })}
+                onClick={navigateToSettings}
               >
                 <UserCircleIcon />
                 Account
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onClick={() => router.navigate({ to: '/tenant/settings' })}
+                onClick={navigateToSettings}
               >
                 <CreditCardIcon />
                 Billing
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onClick={() => router.navigate({ to: '/tenant/settings' })}
+                onClick={navigateToSettings}
               >
                 <BellIcon />
                 Notifications

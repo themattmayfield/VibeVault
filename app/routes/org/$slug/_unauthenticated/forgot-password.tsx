@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { APP_INFO } from '@/constants/app-info';
 
 export const Route = createFileRoute(
-  '/tenant/_unauthenticated/forgot-password'
+  '/org/$slug/_unauthenticated/forgot-password'
 )({
   component: ForgotPassword,
 });
@@ -70,7 +70,8 @@ function ForgotPassword() {
                   <div className="text-center text-sm">
                     Remember your password?{' '}
                     <Link
-                      to="/tenant/sign-in"
+                      to="/org/$slug/sign-in"
+                      params={{ slug: Route.useParams().slug }}
                       className="underline underline-offset-4"
                     >
                       Login

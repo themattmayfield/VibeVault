@@ -103,7 +103,7 @@ export function OrganizationSettings({
         <CardHeader>
           <CardTitle>Organization Details</CardTitle>
           <CardDescription>
-            Update your organization name and subdomain.
+            Update your organization name and URL slug.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -118,17 +118,17 @@ export function OrganizationSettings({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="orgSlug">Subdomain</Label>
+              <Label htmlFor="orgSlug">URL Slug</Label>
               <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  moodsync.com/org/
+                </span>
                 <Input
                   id="orgSlug"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
                   placeholder="acme"
                 />
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  .moodsync.com
-                </span>
               </div>
             </div>
             <Button type="submit" disabled={orgLoading}>

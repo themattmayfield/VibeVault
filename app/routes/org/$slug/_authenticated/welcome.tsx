@@ -15,10 +15,10 @@ import { z } from 'zod';
 import { verifyEmail } from '@/actions/auth';
 import { getPolarCheckoutSession, getPolarCustomer } from '@/actions/polar';
 
-export const Route = createFileRoute('/tenant/_authenticated/welcome')({
+export const Route = createFileRoute('/org/$slug/_authenticated/welcome')({
   component: RouteComponent,
   beforeLoad: async ({ search }) => {
-    if (!search.email || !search.checkout_id || !search.subdomain) {
+    if (!search.email || !search.checkout_id) {
       throw redirect({
         to: '/',
       });
@@ -28,12 +28,12 @@ export const Route = createFileRoute('/tenant/_authenticated/welcome')({
   validateSearch: z.object({
     email: z.string(),
     checkout_id: z.any(),
-    subdomain: z.string(),
   }),
 });
 
 function RouteComponent() {
-  const { email, subdomain, checkout_id } = Route.useSearch();
+  const { slug } = Route.useParams();
+  const { checkout_id } = Route.useSearch();
 
   const sendVerificationEmail = async () => {
     const checkoutSession = await getPolarCheckoutSession({
@@ -54,7 +54,7 @@ function RouteComponent() {
     await verifyEmail({
       data: {
         email: customer.email,
-        callbackURL: `/dashboard`,
+        callbackURL: `/org/${slug}/dashboard`,
       },
     });
   };
@@ -86,7 +86,7 @@ function RouteComponent() {
               <div className="bg-background border rounded-md px-4 py-2 flex items-center gap-2">
                 <Globe className="h-4 w-4 text-primary" />
                 <span className="font-medium">
-                  {subdomain}.{APP_INFO.domain}
+                  {APP_INFO.domain}/org/{slug}
                 </span>
               </div>
             </div>

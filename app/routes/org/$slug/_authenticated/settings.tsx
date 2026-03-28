@@ -24,7 +24,7 @@ import {
   Shield,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/tenant/_authenticated/settings')({
+export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
   component: () => (
     <Suspense fallback={<SettingsSkeleton />}>
       <SettingsPage />
@@ -33,8 +33,8 @@ export const Route = createFileRoute('/tenant/_authenticated/settings')({
 });
 
 function SettingsPage() {
-  const user = useLoaderData({ from: '/tenant/_authenticated' });
-  const { orgSettings } = useLoaderData({ from: '/tenant' });
+  const user = useLoaderData({ from: '/org/$slug/_authenticated' });
+  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
   const { data: session } = authClient.useSession();
 
   const [memberRole, setMemberRole] = useState<string | null>(null);

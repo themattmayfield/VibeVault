@@ -34,7 +34,7 @@ export function CreateGroupModal({
   organizationId,
 }: CreateGroupModalProps) {
   const user = useLoaderData({
-    from: '/tenant/_authenticated',
+    from: '/org/$slug/_authenticated',
   });
 
   const createGroup = useMutation(api.groups.createGroup);

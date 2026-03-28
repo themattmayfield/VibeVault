@@ -19,7 +19,7 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import {
@@ -45,6 +45,7 @@ export function LogMood({
   user: Doc<'users'> | null;
   organizationId?: string;
 }) {
+  const { slug } = useParams({ strict: false }) as { slug?: string };
   const isLoggedIn = !!user;
 
   const addMood = useMutation(api.mood.createMood);
@@ -116,7 +117,11 @@ export function LogMood({
             <CardTitle>Log Your Mood</CardTitle>
             {!isLoggedIn && (
               <CardDescription>
-                <Link to="/tenant/sign-in" className="underline">
+                <Link
+                  to={slug ? '/org/$slug/sign-in' : '/'}
+                  params={slug ? { slug } : undefined}
+                  className="underline"
+                >
                   Sign in
                 </Link>{' '}
                 to track your emotional state and see patterns over time
@@ -184,7 +189,11 @@ export function LogMood({
               Log Mood {isLoggedIn ? '' : ' Anonymously'}
             </Button>
             {!isLoggedIn && (
-              <Link to="/tenant/sign-up" className="cursor-pointer w-full">
+              <Link
+                to={slug ? '/org/$slug/sign-up' : '/'}
+                params={slug ? { slug } : undefined}
+                className="cursor-pointer w-full"
+              >
                 <Button
                   type="submit"
                   variant="outline"

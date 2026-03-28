@@ -1,16 +1,24 @@
 import { Button } from '@/components/ui/button';
 import { authClient } from 'auth-client';
-import { useRouter } from '@tanstack/react-router';
+import { useRouter, useParams } from '@tanstack/react-router';
 
 const LogoutButton = () => {
   const router = useRouter();
+  const { slug } = useParams({ strict: false }) as { slug?: string };
   return (
     <Button
       className="cursor-pointer"
       variant="default"
       onClick={async () => {
         await authClient.signOut();
-        router.navigate({ to: '/tenant/sign-in' });
+        if (slug) {
+          router.navigate({
+            to: '/org/$slug/sign-in',
+            params: { slug },
+          });
+        } else {
+          router.navigate({ to: '/' });
+        }
       }}
     >
       Logout

@@ -1,31 +1,20 @@
-import {
-  createFileRoute,
-  Outlet,
-  notFound,
-  redirect,
-} from '@tanstack/react-router';
+import { createFileRoute, Outlet, notFound } from '@tanstack/react-router';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
 import { APP_INFO } from '@/constants/app-info';
-import { buildRootUrl } from '@/lib/domain';
 import { Button } from '@/components/ui/button';
+import { Link } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/tenant')({
+export const Route = createFileRoute('/org/$slug')({
   component: RouteComponent,
-  beforeLoad: async ({ context }) => {
-    // Tenant routes require a subdomain
-    if (!context.subdomain) {
-      throw redirect({ to: '/' });
-    }
-    return { subdomain: context.subdomain };
+  beforeLoad: async ({ params }) => {
+    return { slug: params.slug };
   },
-  loader: async ({ context }) => {
-    if (!context.subdomain) throw redirect({ to: '/' });
-
-    // Resolve the org settings from the subdomain
+  loader: async ({ context, params }) => {
+    // Resolve the org settings from the URL slug
     const orgSettings = await context.queryClient.fetchQuery(
-      convexQuery(api.organization.getOrgSettingsBySubdomain, {
-        subdomain: context.subdomain,
+      convexQuery(api.organization.getOrgSettingsBySlug, {
+        slug: params.slug,
       })
     );
 
@@ -39,8 +28,7 @@ export const Route = createFileRoute('/tenant')({
 });
 
 function OrgNotFound() {
-  const { subdomain } = Route.useRouteContext();
-  const rootUrl = buildRootUrl();
+  const { slug } = Route.useRouteContext();
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
@@ -50,9 +38,9 @@ function OrgNotFound() {
           Organization not found
         </h1>
         <p className="text-muted-foreground">
-          The organization at{' '}
+          The organization{' '}
           <span className="font-medium text-foreground">
-            {subdomain}.{APP_INFO.domain}
+            {APP_INFO.domain}/org/{slug}
           </span>{' '}
           doesn't exist or has been removed.
         </p>
@@ -61,10 +49,10 @@ function OrgNotFound() {
         </p>
         <div className="flex gap-3 pt-2">
           <Button asChild>
-            <a href={rootUrl}>Go to {APP_INFO.name}</a>
+            <Link to="/">Go to {APP_INFO.name}</Link>
           </Button>
           <Button variant="outline" asChild>
-            <a href={`${rootUrl}/join`}>Create an organization</a>
+            <Link to="/join">Create an organization</Link>
           </Button>
         </div>
       </div>

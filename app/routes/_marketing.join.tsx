@@ -31,7 +31,6 @@ import { useMutation } from 'convex/react';
 import { createPolarCheckoutSession } from '@/actions/polar';
 import { signUpEmail, createOrganization } from '@/actions/auth';
 import { checkSubdomainAvailable } from '@/actions/organization';
-import { buildTenantUrl } from '@/lib/domain';
 import { useRef, useCallback } from 'react';
 
 export const Route = createFileRoute('/_marketing/join')({
@@ -263,7 +262,7 @@ function RouteComponent() {
       await handleOrganizationOnboard({
         neonUserId,
         displayName: name,
-        subdomain: formData.subdomain,
+        slug: formData.subdomain,
         betterAuthOrgId,
         role: formData.role,
       });
@@ -274,7 +273,7 @@ function RouteComponent() {
           country: 'US',
           plan: formData.plan as 'small' | 'medium' | 'enterprise',
           billingCycle: formData.billingCycle as 'annual' | 'monthly',
-          successUrl: `${buildTenantUrl(formData.subdomain)}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}&subdomain=${formData.subdomain}`,
+          successUrl: `${window.location.origin}/org/${formData.subdomain}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}`,
           customerEmail: formData.email,
           customerName: name,
         },
@@ -475,8 +474,11 @@ function RouteComponent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subdomain">Choose Your Subdomain</Label>
+              <Label htmlFor="subdomain">Choose Your URL</Label>
               <div className="flex">
+                <div className="flex items-center bg-muted px-3 border border-r-0 rounded-l-md text-muted-foreground">
+                  {APP_INFO.domain}/org/
+                </div>
                 <div className="relative flex-1">
                   <Input
                     id="subdomain"
@@ -484,7 +486,7 @@ function RouteComponent() {
                     value={formData.subdomain}
                     onChange={handleChange}
                     placeholder="your-organization"
-                    className="pr-10"
+                    className="pr-10 rounded-l-none"
                     required
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -499,31 +501,26 @@ function RouteComponent() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center bg-muted px-3 border border-l-0 rounded-r-md text-muted-foreground">
-                  .{APP_INFO.domain}
-                </div>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 {isCheckingSubdomain && 'Checking availability...'}
                 {!isCheckingSubdomain &&
                   isSubdomainAvailable === true &&
                   formData.subdomain && (
-                    <span className="text-green-500">
-                      Subdomain is available!
-                    </span>
+                    <span className="text-green-500">URL is available!</span>
                   )}
                 {!isCheckingSubdomain &&
                   isSubdomainAvailable === false &&
                   formData.subdomain && (
                     <span className="text-red-500">
                       {SUBDOMAIN_REGEX.test(formData.subdomain.toLowerCase())
-                        ? 'This subdomain is already taken. Please choose another.'
+                        ? 'This URL slug is already taken. Please choose another.'
                         : 'Only lowercase letters, numbers, and hyphens allowed. Must start and end with a letter or number.'}
                     </span>
                   )}
                 {!isCheckingSubdomain &&
                   isSubdomainAvailable === null &&
-                  `Your subdomain will be used to access your ${APP_INFO.name} instance.`}
+                  `This will be your organization's URL on ${APP_INFO.name}.`}
               </div>
             </div>
           </CardContent>

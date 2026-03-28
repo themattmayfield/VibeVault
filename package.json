@@ -8,7 +8,7 @@
     "build": "vite build && tsc --noEmit",
     "dev": "npx convex dev --once && npm-run-all --parallel dev:convex dev:start",
     "dev:convex": "convex dev",
-    "dev:start": "portless run --name moodsync vite dev",
+    "dev:start": "vite dev",
     "format": "biome format . --write && biome check . --write --unsafe",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",

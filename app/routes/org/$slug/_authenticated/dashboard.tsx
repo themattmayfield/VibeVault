@@ -17,7 +17,7 @@ import { CalendarDays, Lightbulb, ArrowRight } from 'lucide-react';
 import numeral from 'numeral';
 import pluralize from 'pluralize';
 
-export const Route = createFileRoute('/tenant/_authenticated/dashboard')({
+export const Route = createFileRoute('/org/$slug/_authenticated/dashboard')({
   component: () => (
     <Suspense fallback={<DashboardSkeleton />}>
       <Home />
@@ -26,8 +26,9 @@ export const Route = createFileRoute('/tenant/_authenticated/dashboard')({
 });
 
 function Home() {
+  const { slug } = Route.useParams();
   const user = useLoaderData({
-    from: '/tenant/_authenticated',
+    from: '/org/$slug/_authenticated',
   });
   const { data: totalMoodEntries } = useSuspenseQuery(
     convexQuery(api.mood.getUsersTotalMoodEntries, {
@@ -163,7 +164,7 @@ function Home() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Link to="/tenant/calendar" className="group">
+          <Link to="/org/$slug/calendar" params={{ slug }} className="group">
             <Card className="transition-colors hover:border-primary/50">
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="rounded-lg bg-primary/10 p-2">
@@ -179,7 +180,7 @@ function Home() {
               </CardHeader>
             </Card>
           </Link>
-          <Link to="/tenant/insights" className="group">
+          <Link to="/org/$slug/insights" params={{ slug }} className="group">
             <Card className="transition-colors hover:border-primary/50">
               <CardHeader className="flex flex-row items-center gap-3">
                 <div className="rounded-lg bg-primary/10 p-2">

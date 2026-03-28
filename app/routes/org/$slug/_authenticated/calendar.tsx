@@ -10,7 +10,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoodCalendar } from '@/components/mood-calendar';
 
-export const Route = createFileRoute('/tenant/_authenticated/calendar')({
+export const Route = createFileRoute('/org/$slug/_authenticated/calendar')({
   component: () => (
     <Suspense fallback={<CalendarSkeleton />}>
       <CalendarPage />

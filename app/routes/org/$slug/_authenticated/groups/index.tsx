@@ -20,15 +20,16 @@ import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 
-export const Route = createFileRoute('/tenant/_authenticated/groups/')({
+export const Route = createFileRoute('/org/$slug/_authenticated/groups/')({
   component: RouteComponent,
 });
 function RouteComponent() {
+  const { slug } = Route.useParams();
   const user = useLoaderData({
-    from: '/tenant/_authenticated',
+    from: '/org/$slug/_authenticated',
   });
   const { orgSettings } = useLoaderData({
-    from: '/tenant',
+    from: '/org/$slug',
   });
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {
@@ -113,8 +114,8 @@ function RouteComponent() {
                   <CardFooter>
                     <Button asChild className="w-full">
                       <Link
-                        to="/tenant/groups/$groupId"
-                        params={{ groupId: group._id }}
+                        to="/org/$slug/groups/$groupId"
+                        params={{ slug, groupId: group._id }}
                       >
                         View Group
                       </Link>

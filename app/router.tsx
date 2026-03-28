@@ -5,7 +5,6 @@ import { ConvexQueryClient } from '@convex-dev/react-query';
 import { ConvexProvider } from 'convex/react';
 import { routeTree } from './routeTree.gen';
 import type { RootRouteContext } from './routes/__root';
-import { getAppDomain } from './lib/domain';
 
 export function getRouter() {
   const CONVEX_URL = import.meta.env.VITE_CONVEX_URL;
@@ -24,13 +23,11 @@ export function getRouter() {
   });
   convexQueryClient.connect(queryClient);
 
-  const appDomain = getAppDomain();
-
   const router = routerWithQueryClient(
     createTanStackRouter({
       routeTree,
       defaultPreload: 'intent',
-      context: { queryClient, subdomain: null } satisfies RootRouteContext,
+      context: { queryClient } satisfies RootRouteContext,
       Wrap: ({ children }) => (
         <ConvexProvider client={convexQueryClient.convexClient}>
           {children}
@@ -40,26 +37,6 @@ export function getRouter() {
       scrollRestorationBehavior: 'smooth',
       defaultHashScrollIntoView: {
         behavior: 'smooth',
-      },
-      rewrite: {
-        input: ({ url }) => {
-          const hostname = url.hostname;
-
-          // If hostname is a subdomain of appDomain, prefix path with /tenant
-          // e.g. acme.moodsync.localhost/dashboard -> /tenant/dashboard
-          if (hostname !== appDomain && hostname.endsWith(`.${appDomain}`)) {
-            url.pathname = `/tenant${url.pathname}`;
-          }
-          return url;
-        },
-        output: ({ url }) => {
-          // Strip /tenant prefix for browser display
-          // e.g. /tenant/dashboard -> /dashboard (subdomain carries the context)
-          if (url.pathname.startsWith('/tenant')) {
-            url.pathname = url.pathname.replace(/^\/tenant/, '') || '/';
-          }
-          return url;
-        },
       },
     }),
     queryClient

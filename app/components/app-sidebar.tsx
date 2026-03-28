@@ -27,7 +27,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { APP_INFO } from '@/constants/app-info';
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 
 const data = {
   navClouds: [
@@ -78,10 +78,10 @@ const data = {
       ],
     },
   ],
-  navSecondary: [
+  navSecondary: (slug: string) => [
     {
       title: 'Settings',
-      url: '/tenant/settings',
+      url: `/org/${slug}/settings`,
       icon: SettingsIcon,
     },
     {
@@ -115,6 +115,8 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { slug } = useParams({ strict: false }) as { slug?: string };
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -135,7 +137,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain />
         <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary
+          items={data.navSecondary(slug ?? '')}
+          className="mt-auto"
+        />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

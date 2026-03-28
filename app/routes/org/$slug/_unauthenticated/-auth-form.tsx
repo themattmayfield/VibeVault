@@ -48,7 +48,7 @@ export function AuthForm() {
 
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
-  const { orgSettings } = useLoaderData({ from: '/tenant' });
+  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
 
   const isSignIn = location.pathname.endsWith('/sign-in');
 
@@ -124,8 +124,10 @@ export function AuthForm() {
         });
         localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
 
+        const slug = new URL(window.location.href).pathname.split('/')[2];
         router.navigate({
-          to: '/tenant/dashboard',
+          to: '/org/$slug/dashboard',
+          params: { slug },
         });
         toast.success(
           isSignIn ? 'Successfully signed in' : 'Successfully signed up'
@@ -295,7 +297,14 @@ export function AuthForm() {
                         ? "Don't have an account?"
                         : 'Already have an account?'}{' '}
                       <Link
-                        to={isSignIn ? '/tenant/sign-up' : '/tenant/sign-in'}
+                        to={
+                          isSignIn ? '/org/$slug/sign-up' : '/org/$slug/sign-in'
+                        }
+                        params={{
+                          slug: new URL(window.location.href).pathname.split(
+                            '/'
+                          )[2],
+                        }}
                         className="underline underline-offset-4"
                       >
                         {isSignIn ? 'Sign up' : 'Login'}
@@ -304,7 +313,12 @@ export function AuthForm() {
                     <div className="text-center">
                       {isSignIn && (
                         <Link
-                          to="/tenant/forgot-password"
+                          to="/org/$slug/forgot-password"
+                          params={{
+                            slug: new URL(window.location.href).pathname.split(
+                              '/'
+                            )[2],
+                          }}
                           className="ml-auto text-xs underline-offset-4 hover:underline"
                         >
                           Forgot your password?

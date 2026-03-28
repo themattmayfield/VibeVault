@@ -6,12 +6,12 @@ const createOrgSettings = async (
   ctx: MutationCtx,
   args: {
     betterAuthOrgId: string;
-    subdomain: string;
+    slug: string;
   }
 ) => {
   return await ctx.db.insert('orgSettings', {
     betterAuthOrgId: args.betterAuthOrgId,
-    subdomain: args.subdomain,
+    slug: args.slug,
   });
 };
 
@@ -19,7 +19,7 @@ export const handleOrganizationOnboard = mutation({
   args: {
     neonUserId: v.string(),
     displayName: v.string(),
-    subdomain: v.string(),
+    slug: v.string(),
     betterAuthOrgId: v.string(),
     role: v.optional(v.string()),
   },
@@ -47,18 +47,18 @@ export const handleOrganizationOnboard = mutation({
     if (!existingOrg) {
       await createOrgSettings(ctx, {
         betterAuthOrgId: args.betterAuthOrgId,
-        subdomain: args.subdomain,
+        slug: args.slug,
       });
     }
   },
 });
 
-export const getOrgSettingsBySubdomain = query({
-  args: { subdomain: v.string() },
+export const getOrgSettingsBySlug = query({
+  args: { slug: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query('orgSettings')
-      .withIndex('by_subdomain', (q) => q.eq('subdomain', args.subdomain))
+      .withIndex('by_slug', (q) => q.eq('slug', args.slug))
       .first();
   },
 });

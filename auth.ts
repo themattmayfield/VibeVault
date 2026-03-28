@@ -7,7 +7,6 @@ import { schema } from './auth-schema';
 import { polar, checkout, webhooks, portal } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { Resend } from 'resend';
-import { getCookieDomain, isSecure, getAppDomain } from './app/lib/domain';
 
 if (!process.env.POLAR_ACCESS_TOKEN) {
   throw new Error('POLAR_ACCESS_TOKEN is not set');
@@ -23,9 +22,7 @@ export const polarClient = new Polar({
 });
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const cookieDomain = getCookieDomain(); // e.g. ".moodsync.localhost" or ".moodsync.com"
-const appDomain = getAppDomain(); // e.g. "moodsync.localhost" or "moodsync.com"
-const secure = isSecure();
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const auth = betterAuth({
   emailAndPassword: {
@@ -50,44 +47,11 @@ export const auth = betterAuth({
   }),
 
   advanced: {
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: cookieDomain,
-    },
     defaultCookieAttributes: {
-      secure,
+      secure: isProduction,
       httpOnly: true,
-      sameSite: 'lax', // 'lax' works for same-site subdomains (safer than 'none')
-      domain: cookieDomain,
+      sameSite: 'lax',
     },
-  },
-
-  // Dynamically trust any origin on our app domain (all tenant subdomains)
-  trustedOrigins: (req) => {
-    const origin = req?.headers.get('origin');
-
-    if (!origin) {
-      return [`${secure ? 'https' : 'http'}://${appDomain}`];
-    }
-
-    try {
-      const originUrl = new URL(origin);
-      const hostname = originUrl.hostname;
-
-      // Trust the root domain and any subdomain of the app domain
-      if (hostname === appDomain || hostname.endsWith(`.${appDomain}`)) {
-        return [origin];
-      }
-
-      // Also trust plain localhost for dev tooling
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return [origin];
-      }
-
-      return [];
-    } catch {
-      return [];
-    }
   },
 
   plugins: [

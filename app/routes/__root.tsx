@@ -12,18 +12,12 @@ import { Toaster } from '@/components/ui/sonner';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import appCss from '@/styles/app.css?url';
 import { APP_INFO } from '@/constants/app-info';
-import { getSubdomainAction } from '@/actions/subdomain';
 
 export interface RootRouteContext {
   queryClient: QueryClient;
-  subdomain: string | null;
 }
 
 export const Route = createRootRouteWithContext<RootRouteContext>()({
-  beforeLoad: async () => {
-    const subdomain = await getSubdomainAction();
-    return { subdomain };
-  },
   head: () => ({
     meta: [
       {

@@ -8,7 +8,9 @@ export const Route = createFileRoute('/new-log')({
   beforeLoad: async () => {
     const user = await getAuthUser();
     if (user) {
-      throw redirect({ to: '/tenant/dashboard' });
+      // Authenticated users should access their org's dashboard.
+      // Since we don't know the slug here, redirect to root.
+      throw redirect({ to: '/' });
     }
   },
 });
