@@ -49,32 +49,39 @@ The `CONVEX_DEPLOYMENT` env var in `.env.local` determines which deployment comm
 ### Run a function (query, mutation, or action)
 
 ```bash
-# Run a query
-npx convex run mood:getUserMoods '{"neonUserId": "user_abc123"}'
+# Run a query (userId is a Convex document ID, e.g. "j57b3...")
+npx convex run mood:getUserMoods '{"userId": "j57b3..."}'
 
 # Run a mutation
 npx convex run mood:createMood '{"mood": "happy", "note": "Great day!"}'
 
 # Run against production
-npx convex run mood:getUserMoods '{"neonUserId": "user_abc123"}' --prod
+npx convex run mood:getUserMoods '{"userId": "j57b3..."}' --prod
 ```
 
 **Arguments are JSON strings.** Convex document IDs look like `"j57b3..."`. Reference IDs use the table name prefix: `{"userId": "j57b3..."}`.
+
+**To look up a user by their Neon (Better Auth) ID first:**
+
+```bash
+npx convex run user:getUserFromNeonUserId '{"neonUserId": "user_abc123"}'
+# Returns the Convex user doc with _id you can use in other queries
+```
 
 **Common functions in this project:**
 
 | Function | Type | Args | Purpose |
 |----------|------|------|---------|
-| `mood:getUserMoods` | query | `{neonUserId}` | All moods for a user |
-| `mood:getMoodToday` | query | `{neonUserId, timezoneOffsetMinutes}` | Today's mood |
-| `mood:getUserLast30DaysMoods` | query | `{neonUserId}` | 30-day history |
-| `mood:getMoodTrends` | query | `{neonUserId, timezoneOffsetMinutes}` | 14-day trends |
+| `mood:getUserMoods` | query | `{userId}` (Convex ID) | All moods for a user |
+| `mood:getMoodToday` | query | `{userId}` (Convex ID) | Today's mood |
+| `mood:getUserLast30DaysMoods` | query | `{userId}` (Convex ID) | 30-day history |
+| `mood:getMoodTrends` | query | `{userId, usersTimeZone}` | 14-day trends |
 | `mood:createMood` | mutation | `{mood, note?, tags?, userId?, organizationId?}` | Log a mood |
-| `groups:getUsersGroups` | query | `{neonUserId}` | User's groups |
-| `groups:createGroup` | mutation | `{name, isPrivate, neonUserId, organizationId?}` | Create group |
-| `user:getUserFromNeonUserId` | query | `{neonUserId}` | Lookup user |
-| `organization:getOrgSettingsBySubdomain` | query | `{subdomain}` | Org config |
-| `insights:getTodaysInsight` | query | `{userId, tableName, timezoneOffsetMinutes}` | Daily insight |
+| `groups:getUsersGroups` | query | `{userId}` (Convex ID) | User's groups |
+| `groups:createGroup` | mutation | `{name, isPrivate, userId, description?, image?, organizationId?}` | Create group |
+| `user:getUserFromNeonUserId` | query | `{neonUserId}` | Lookup user by Neon ID |
+| `organization:getOrgSettingsBySlug` | query | `{slug}` | Org config by URL slug |
+| `insights:getTodaysInsight` | query | `{table, userId}` | Daily insight (`table`: "patterns", "triggers", or "suggestions") |
 
 ### Inspect table data
 
@@ -192,7 +199,7 @@ npx convex dashboard
    ```
 3. Run the query directly to reproduce:
    ```bash
-   npx convex run mood:getUserMoods '{"neonUserId": "..."}' --prod
+   npx convex run mood:getUserMoods '{"userId": "j57b3..."}' --prod
    ```
 4. Check insights for systemic issues:
    ```bash

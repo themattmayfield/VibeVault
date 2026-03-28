@@ -68,9 +68,24 @@ export function MoodInsights() {
     from: '/org/$slug/_authenticated',
   });
 
-  const { patterns, triggers, suggestions } = useMoodInsights({
+  const { hasMoods, patterns, triggers, suggestions } = useMoodInsights({
     userId: user._id,
   });
+
+  if (!hasMoods) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              No mood entries in the last 30 days. Start logging your moods to
+              unlock insights.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Tabs defaultValue="patterns">

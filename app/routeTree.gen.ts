@@ -13,7 +13,10 @@ import { Route as NewLogRouteImport } from './routes/new-log'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing.index'
 import { Route as OrgSlugRouteImport } from './routes/org/$slug'
+import { Route as MarketingSignupRouteImport } from './routes/_marketing.signup'
+import { Route as MarketingLoginRouteImport } from './routes/_marketing.login'
 import { Route as MarketingJoinRouteImport } from './routes/_marketing.join'
+import { Route as MarketingGetStartedRouteImport } from './routes/_marketing.get-started'
 import { Route as OrgSlugIndexRouteImport } from './routes/org/$slug/index'
 import { Route as OrgSlugAuthenticatedRouteImport } from './routes/org/$slug/_authenticated'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -50,9 +53,24 @@ const OrgSlugRoute = OrgSlugRouteImport.update({
   path: '/org/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarketingSignupRoute = MarketingSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => MarketingRoute,
+} as any)
+const MarketingLoginRoute = MarketingLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => MarketingRoute,
+} as any)
 const MarketingJoinRoute = MarketingJoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => MarketingRoute,
+} as any)
+const MarketingGetStartedRoute = MarketingGetStartedRouteImport.update({
+  id: '/get-started',
+  path: '/get-started',
   getParentRoute: () => MarketingRoute,
 } as any)
 const OrgSlugIndexRoute = OrgSlugIndexRouteImport.update({
@@ -150,7 +168,10 @@ const OrgSlugAuthenticatedGroupsGroupIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/new-log': typeof NewLogRoute
+  '/get-started': typeof MarketingGetStartedRoute
   '/join': typeof MarketingJoinRoute
+  '/login': typeof MarketingLoginRoute
+  '/signup': typeof MarketingSignupRoute
   '/org/$slug': typeof OrgSlugAuthenticatedRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
@@ -170,7 +191,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/new-log': typeof NewLogRoute
+  '/get-started': typeof MarketingGetStartedRoute
   '/join': typeof MarketingJoinRoute
+  '/login': typeof MarketingLoginRoute
+  '/signup': typeof MarketingSignupRoute
   '/': typeof MarketingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/$slug': typeof OrgSlugIndexRoute
@@ -192,7 +216,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_marketing': typeof MarketingRouteWithChildren
   '/new-log': typeof NewLogRoute
+  '/_marketing/get-started': typeof MarketingGetStartedRoute
   '/_marketing/join': typeof MarketingJoinRoute
+  '/_marketing/login': typeof MarketingLoginRoute
+  '/_marketing/signup': typeof MarketingSignupRoute
   '/org/$slug': typeof OrgSlugRouteWithChildren
   '/_marketing/': typeof MarketingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -217,7 +244,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/new-log'
+    | '/get-started'
     | '/join'
+    | '/login'
+    | '/signup'
     | '/org/$slug'
     | '/api/auth/$'
     | '/org/$slug/'
@@ -237,7 +267,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/new-log'
+    | '/get-started'
     | '/join'
+    | '/login'
+    | '/signup'
     | '/'
     | '/api/auth/$'
     | '/org/$slug'
@@ -258,7 +291,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_marketing'
     | '/new-log'
+    | '/_marketing/get-started'
     | '/_marketing/join'
+    | '/_marketing/login'
+    | '/_marketing/signup'
     | '/org/$slug'
     | '/_marketing/'
     | '/api/auth/$'
@@ -316,11 +352,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_marketing/signup': {
+      id: '/_marketing/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof MarketingSignupRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/login': {
+      id: '/_marketing/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof MarketingLoginRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/join': {
       id: '/_marketing/join'
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof MarketingJoinRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/get-started': {
+      id: '/_marketing/get-started'
+      path: '/get-started'
+      fullPath: '/get-started'
+      preLoaderRoute: typeof MarketingGetStartedRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/org/$slug/': {
@@ -439,12 +496,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface MarketingRouteChildren {
+  MarketingGetStartedRoute: typeof MarketingGetStartedRoute
   MarketingJoinRoute: typeof MarketingJoinRoute
+  MarketingLoginRoute: typeof MarketingLoginRoute
+  MarketingSignupRoute: typeof MarketingSignupRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
+  MarketingGetStartedRoute: MarketingGetStartedRoute,
   MarketingJoinRoute: MarketingJoinRoute,
+  MarketingLoginRoute: MarketingLoginRoute,
+  MarketingSignupRoute: MarketingSignupRoute,
   MarketingIndexRoute: MarketingIndexRoute,
 }
 

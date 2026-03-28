@@ -49,7 +49,7 @@ export const getPatterns = createServerFn({
     const response = await anthropic.messages.create({
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
-      model: 'claude-3-5-sonnet-latest',
+      model: 'claude-sonnet-4-6',
     });
 
     // Get the assistant's response content
@@ -84,7 +84,7 @@ export const getTriggers = createServerFn({
     const response = await anthropic.messages.create({
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
-      model: 'claude-3-5-sonnet-latest',
+      model: 'claude-sonnet-4-6',
     });
 
     // Get the assistant's response content
@@ -120,7 +120,7 @@ export const getSuggestions = createServerFn({
     const response = await anthropic.messages.create({
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
-      model: 'claude-3-5-sonnet-latest',
+      model: 'claude-sonnet-4-6',
     });
 
     // Get the assistant's response content

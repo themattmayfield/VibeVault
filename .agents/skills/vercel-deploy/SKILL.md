@@ -68,8 +68,7 @@ All of these must be set in Vercel for the app to function:
 | `POLAR_WEBHOOK_SECRET` | Yes | Polar webhook secret |
 | `ANTHROPIC_API_KEY` | Yes | Claude AI API key |
 | `RESEND_API_KEY` | Yes | Resend email API key |
-| `APP_DOMAIN` | Yes | e.g. `moodsync.com` (server-side) |
-| `VITE_APP_DOMAIN` | Yes | e.g. `moodsync.com` (client-side) |
+| `VITE_APP_DOMAIN` | No | e.g. `moodsync.com` (client-side, used for URL display only) |
 
 ## Command Reference
 
@@ -155,9 +154,6 @@ npx vercel domains ls --token $VERCEL_TOKEN
 
 # Add a domain
 npx vercel domains add moodsync.com --token $VERCEL_TOKEN
-
-# Add a wildcard subdomain (for multi-tenancy)
-npx vercel domains add "*.moodsync.com" --token $VERCEL_TOKEN
 ```
 
 ### Projects

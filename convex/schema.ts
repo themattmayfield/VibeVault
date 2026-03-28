@@ -34,6 +34,7 @@ export default defineSchema({
   orgSettings: defineTable({
     betterAuthOrgId: v.string(), // links to Better Auth organization.id
     slug: v.string(), // org URL slug, e.g. "acme" -> /org/acme
+    isPersonal: v.optional(v.boolean()), // true for auto-created personal orgs
     branding: v.optional(
       v.object({
         logo: v.optional(v.string()),

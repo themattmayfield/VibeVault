@@ -7,11 +7,13 @@ const createOrgSettings = async (
   args: {
     betterAuthOrgId: string;
     slug: string;
+    isPersonal?: boolean;
   }
 ) => {
   return await ctx.db.insert('orgSettings', {
     betterAuthOrgId: args.betterAuthOrgId,
     slug: args.slug,
+    ...(args.isPersonal !== undefined && { isPersonal: args.isPersonal }),
   });
 };
 
@@ -22,6 +24,7 @@ export const handleOrganizationOnboard = mutation({
     slug: v.string(),
     betterAuthOrgId: v.string(),
     role: v.optional(v.string()),
+    isPersonal: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     // Idempotency: skip if user already exists
@@ -48,6 +51,7 @@ export const handleOrganizationOnboard = mutation({
       await createOrgSettings(ctx, {
         betterAuthOrgId: args.betterAuthOrgId,
         slug: args.slug,
+        isPersonal: args.isPersonal,
       });
     }
   },

@@ -30,7 +30,7 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { createPolarCheckoutSession } from '@/actions/polar';
 import { signUpEmail, createOrganization } from '@/actions/auth';
-import { checkSubdomainAvailable } from '@/actions/organization';
+import { checkSlugAvailable } from '@/actions/organization';
 import { useRef, useCallback } from 'react';
 
 export const Route = createFileRoute('/_marketing/join')({
@@ -44,10 +44,8 @@ function RouteComponent() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
-  const [isSubdomainAvailable, setIsSubdomainAvailable] = useState<
-    boolean | null
-  >(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
 
   const [formData, setFormData] = useState({
     // Plan selection
@@ -56,7 +54,7 @@ function RouteComponent() {
 
     // Organization details
     organizationName: '',
-    subdomain: '',
+    slug: '',
 
     // Personal details
     firstName: '',
@@ -107,8 +105,8 @@ function RouteComponent() {
     const { name, type, checked } = e.target;
     let { value } = e.target;
 
-    // Normalize subdomain to lowercase, strip invalid chars
-    if (name === 'subdomain') {
+    // Normalize slug to lowercase, strip invalid chars
+    if (name === 'slug') {
       value = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     }
 
@@ -117,12 +115,12 @@ function RouteComponent() {
       [name]: type === 'checkbox' ? checked : value,
     });
 
-    // Check subdomain availability when typing
-    if (name === 'subdomain') {
+    // Check slug availability when typing
+    if (name === 'slug') {
       if (value) {
-        checkSubdomainAvailability(value);
+        checkSlugAvailability(value);
       } else {
-        setIsSubdomainAvailable(null);
+        setIsSlugAvailable(null);
       }
     }
   };
@@ -141,42 +139,40 @@ function RouteComponent() {
     });
   };
 
-  const subdomainCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-  const SUBDOMAIN_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+  const slugCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const SLUG_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 
-  const checkSubdomainAvailability = useCallback((subdomain: string) => {
+  const checkSlugAvailability = useCallback((value: string) => {
     // Clear any pending debounced check
-    if (subdomainCheckTimeout.current) {
-      clearTimeout(subdomainCheckTimeout.current);
+    if (slugCheckTimeout.current) {
+      clearTimeout(slugCheckTimeout.current);
     }
 
-    const slug = subdomain.toLowerCase();
+    const normalized = value.toLowerCase();
 
-    if (slug.length < 3) {
-      setIsSubdomainAvailable(null);
+    if (normalized.length < 3) {
+      setIsSlugAvailable(null);
       return;
     }
 
-    if (!SUBDOMAIN_REGEX.test(slug)) {
-      setIsSubdomainAvailable(false);
+    if (!SLUG_REGEX.test(normalized)) {
+      setIsSlugAvailable(false);
       return;
     }
 
-    setIsCheckingSubdomain(true);
+    setIsCheckingSlug(true);
 
     // Debounce the API call to avoid hammering on every keystroke
-    subdomainCheckTimeout.current = setTimeout(async () => {
+    slugCheckTimeout.current = setTimeout(async () => {
       try {
-        const isAvailable = await checkSubdomainAvailable({
-          data: { subdomain: slug },
+        const isAvailable = await checkSlugAvailable({
+          data: { slug: normalized },
         });
-        setIsSubdomainAvailable(isAvailable);
+        setIsSlugAvailable(isAvailable);
       } catch {
-        setIsSubdomainAvailable(null);
+        setIsSlugAvailable(null);
       } finally {
-        setIsCheckingSubdomain(false);
+        setIsCheckingSlug(false);
       }
     }, 400);
   }, []);
@@ -186,11 +182,7 @@ function RouteComponent() {
       case 1: // Plan selection
         return true;
       case 2: // Organization details
-        return (
-          formData.organizationName &&
-          formData.subdomain &&
-          isSubdomainAvailable
-        );
+        return formData.organizationName && formData.slug && isSlugAvailable;
       case 3: {
         // Personal details
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -253,7 +245,7 @@ function RouteComponent() {
       const betterAuthOrgId = await createOrganization({
         data: {
           name: formData.organizationName,
-          slug: formData.subdomain,
+          slug: formData.slug,
           userId: neonUserId,
         },
       });
@@ -262,7 +254,7 @@ function RouteComponent() {
       await handleOrganizationOnboard({
         neonUserId,
         displayName: name,
-        slug: formData.subdomain,
+        slug: formData.slug,
         betterAuthOrgId,
         role: formData.role,
       });
@@ -273,7 +265,7 @@ function RouteComponent() {
           country: 'US',
           plan: formData.plan as 'small' | 'medium' | 'enterprise',
           billingCycle: formData.billingCycle as 'annual' | 'monthly',
-          successUrl: `${window.location.origin}/org/${formData.subdomain}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}`,
+          successUrl: `${window.location.origin}/org/${formData.slug}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}`,
           customerEmail: formData.email,
           customerName: name,
         },
@@ -327,10 +319,20 @@ function RouteComponent() {
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to home
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
-            Already have an account? Sign in at your organization&apos;s URL
-          </span>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/signup"
+            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4"
+          >
+            Just want a personal account?
+          </Link>
+          <Link
+            to="/login"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Already have an account?{' '}
+            <span className="underline underline-offset-4">Sign in</span>
+          </Link>
         </div>
       </div>
 
@@ -474,52 +476,52 @@ function RouteComponent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subdomain">Choose Your URL</Label>
+              <Label htmlFor="slug">Choose Your URL</Label>
               <div className="flex">
                 <div className="flex items-center bg-muted px-3 border border-r-0 rounded-l-md text-muted-foreground">
                   {APP_INFO.domain}/org/
                 </div>
                 <div className="relative flex-1">
                   <Input
-                    id="subdomain"
-                    name="subdomain"
-                    value={formData.subdomain}
+                    id="slug"
+                    name="slug"
+                    value={formData.slug}
                     onChange={handleChange}
                     placeholder="your-organization"
                     className="pr-10 rounded-l-none"
                     required
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {isCheckingSubdomain && (
+                    {isCheckingSlug && (
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                     )}
-                    {!isCheckingSubdomain && isSubdomainAvailable === true && (
+                    {!isCheckingSlug && isSlugAvailable === true && (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     )}
-                    {!isCheckingSubdomain && isSubdomainAvailable === false && (
+                    {!isCheckingSlug && isSlugAvailable === false && (
                       <span className="text-red-500 text-sm">✕</span>
                     )}
                   </div>
                 </div>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {isCheckingSubdomain && 'Checking availability...'}
-                {!isCheckingSubdomain &&
-                  isSubdomainAvailable === true &&
-                  formData.subdomain && (
+                {isCheckingSlug && 'Checking availability...'}
+                {!isCheckingSlug &&
+                  isSlugAvailable === true &&
+                  formData.slug && (
                     <span className="text-green-500">URL is available!</span>
                   )}
-                {!isCheckingSubdomain &&
-                  isSubdomainAvailable === false &&
-                  formData.subdomain && (
+                {!isCheckingSlug &&
+                  isSlugAvailable === false &&
+                  formData.slug && (
                     <span className="text-red-500">
-                      {SUBDOMAIN_REGEX.test(formData.subdomain.toLowerCase())
+                      {SLUG_REGEX.test(formData.slug.toLowerCase())
                         ? 'This URL slug is already taken. Please choose another.'
                         : 'Only lowercase letters, numbers, and hyphens allowed. Must start and end with a letter or number.'}
                     </span>
                   )}
-                {!isCheckingSubdomain &&
-                  isSubdomainAvailable === null &&
+                {!isCheckingSlug &&
+                  isSlugAvailable === null &&
                   `This will be your organization's URL on ${APP_INFO.name}.`}
               </div>
             </div>
@@ -531,9 +533,7 @@ function RouteComponent() {
             <Button
               onClick={nextStep}
               disabled={
-                !formData.organizationName ||
-                !formData.subdomain ||
-                !isSubdomainAvailable
+                !formData.organizationName || !formData.slug || !isSlugAvailable
               }
             >
               Continue <ArrowRight className="ml-2 h-4 w-4" />

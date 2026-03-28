@@ -3,7 +3,7 @@ import { getRequestHeaders } from '@tanstack/react-start/server';
 import { auth } from 'auth';
 import { z } from 'zod';
 import { db } from '../../drizzle';
-import { organization } from '../../auth-schema';
+import { organization, member } from '../../auth-schema';
 import { eq } from 'drizzle-orm';
 
 /** Set the active organization on the user's session based on org ID */
@@ -160,21 +160,47 @@ export const updateMemberRole = createServerFn({ method: 'POST' })
     });
   });
 
-/** Check if a subdomain/slug is available for a new organization */
-export const checkSubdomainAvailable = createServerFn({ method: 'GET' })
-  .inputValidator(z.object({ subdomain: z.string().min(3).max(63) }))
+/** Check if a slug is available for a new organization */
+export const checkSlugAvailable = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ slug: z.string().min(3).max(63) }))
   .handler(async ({ data }) => {
-    const slug = data.subdomain.toLowerCase();
+    const normalized = data.slug.toLowerCase();
 
     // Check if the slug is already taken in the Neon organization table
     const existing = await db
       .select({ id: organization.id })
       .from(organization)
-      .where(eq(organization.slug, slug))
+      .where(eq(organization.slug, normalized))
       .limit(1);
 
     return existing.length === 0;
   });
+
+/** Get all organizations the authenticated user belongs to (with slugs) */
+export const getUserOrganizations = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const headers = getRequestHeaders();
+    if (!headers) return [];
+
+    const session = await auth.api.getSession({
+      headers: headers as unknown as Headers,
+    });
+    if (!session) return [];
+
+    const memberships = await db
+      .select({
+        orgId: organization.id,
+        orgName: organization.name,
+        orgSlug: organization.slug,
+        role: member.role,
+      })
+      .from(member)
+      .innerJoin(organization, eq(member.organizationId, organization.id))
+      .where(eq(member.userId, session.user.id));
+
+    return memberships;
+  }
+);
 
 /** Add a user as a member of an organization */
 export const addMemberToOrganization = createServerFn({ method: 'POST' })

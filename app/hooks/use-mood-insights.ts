@@ -28,7 +28,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
 
   const { data: patterns, isLoading: patternsLoading } = useQuery(
     queryOptions({
-      enabled: !todaysPatterns,
+      enabled: !todaysPatterns && moods.length > 0,
       queryKey: ['patterns'],
       queryFn: async () => {
         const result = await getPatterns({
@@ -62,7 +62,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
 
   const { data: triggers, isLoading: triggersLoading } = useQuery(
     queryOptions({
-      enabled: !todaysTriggers,
+      enabled: !todaysTriggers && moods.length > 0,
       queryKey: ['triggers'],
       queryFn: async () => {
         const result = await getTriggers({
@@ -96,7 +96,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
 
   const { data: suggestions, isLoading: suggestionsLoading } = useQuery(
     queryOptions({
-      enabled: !todaysSuggestions,
+      enabled: !todaysSuggestions && moods.length > 0,
       queryKey: ['suggestions'],
       queryFn: async () => {
         const result = await getSuggestions({
@@ -121,6 +121,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
   );
 
   return {
+    hasMoods: moods.length > 0,
     patterns: {
       data: todaysPatterns
         ? JSON.parse(todaysPatterns?.insight || '{}')

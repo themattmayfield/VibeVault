@@ -78,21 +78,10 @@ function RouteComponent() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link
-              to="/"
-              hash="contact"
-              hashScrollIntoView={{
-                behavior: 'smooth',
-              }}
-            >
-              <Button variant="outline">Request Demo</Button>
+            <Link to="/login">
+              <Button variant="ghost">Sign In</Button>
             </Link>
-            <Link
-              to="/join"
-              hashScrollIntoView={{
-                behavior: 'smooth',
-              }}
-            >
+            <Link to="/get-started">
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -116,12 +105,7 @@ function RouteComponent() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link
-                    to="/join"
-                    hashScrollIntoView={{
-                      behavior: 'smooth',
-                    }}
-                  >
+                  <Link to="/get-started">
                     <Button size="lg" className="px-8">
                       Get Started
                     </Button>

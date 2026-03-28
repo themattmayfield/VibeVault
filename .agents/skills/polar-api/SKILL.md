@@ -93,7 +93,7 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   -d '{
     "product_id": "07d39ccf-11d5-4993-bb36-c5892f49d252",
-    "success_url": "https://moodsync.com/welcome",
+    "success_url": "https://moodsync.com/org/{slug}/welcome?checkout_id={CHECKOUT_ID}",
     "customer_email": "test@example.com"
   }' \
   "https://sandbox-api.polar.sh/v1/checkouts/custom" | jq
@@ -229,7 +229,7 @@ curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{
        "product_id": "07d39ccf-11d5-4993-bb36-c5892f49d252",
-       "success_url": "https://moodsync.localhost/welcome",
+        "success_url": "https://moodsync.com/org/{slug}/welcome?checkout_id={CHECKOUT_ID}",
        "customer_email": "test@example.com"
      }' \
      "https://sandbox-api.polar.sh/v1/checkouts/custom" | jq '.url'
