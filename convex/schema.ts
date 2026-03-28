@@ -96,13 +96,22 @@ export default defineSchema({
   patterns: defineTable({
     insight: v.string(),
     userId: v.optional(v.id('users')),
-  }).index('by_user_id', ['userId']),
+    organizationId: v.optional(v.string()),
+  })
+    .index('by_user_id', ['userId'])
+    .index('by_org_and_user', ['organizationId', 'userId']),
   triggers: defineTable({
     insight: v.string(),
     userId: v.optional(v.id('users')),
-  }).index('by_user_id', ['userId']),
+    organizationId: v.optional(v.string()),
+  })
+    .index('by_user_id', ['userId'])
+    .index('by_org_and_user', ['organizationId', 'userId']),
   suggestions: defineTable({
     insight: v.string(),
     userId: v.optional(v.id('users')),
-  }).index('by_user_id', ['userId']),
+    organizationId: v.optional(v.string()),
+  })
+    .index('by_user_id', ['userId'])
+    .index('by_org_and_user', ['organizationId', 'userId']),
 });

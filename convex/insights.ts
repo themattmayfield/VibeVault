@@ -9,6 +9,7 @@ export const getTodaysInsight = query({
       v.literal('suggestions')
     ),
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     // Get the start of today in milliseconds (UTC)
@@ -23,9 +24,11 @@ export const getTodaysInsight = query({
 
     const item = await ctx.db
       .query(args.table)
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .filter((q) =>
         q.and(
-          q.eq(q.field('userId'), args.userId),
           q.gte(q.field('_creationTime'), startOfToday),
           q.lt(q.field('_creationTime'), endOfToday)
         )
@@ -44,11 +47,13 @@ export const createInsight = mutation({
     ),
     content: v.string(),
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert(args.table, {
       insight: args.content,
       userId: args.userId,
+      organizationId: args.organizationId,
     });
   },
 });

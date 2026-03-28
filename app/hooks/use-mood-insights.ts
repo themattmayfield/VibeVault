@@ -9,12 +9,19 @@ import {
 } from '../actions/getInsights';
 import type { Id } from 'convex/_generated/dataModel';
 
-export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
+export function useMoodInsights({
+  userId,
+  organizationId,
+}: {
+  userId: Id<'users'>;
+  organizationId: string;
+}) {
   const createInsight = useConvexMutation(api.insights.createInsight);
 
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserLast30DaysMoods, {
       userId,
+      organizationId,
     })
   );
 
@@ -23,13 +30,14 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
     convexQuery(api.insights.getTodaysInsight, {
       table: 'patterns' as const,
       userId,
+      organizationId,
     })
   );
 
   const { data: patterns, isLoading: patternsLoading } = useQuery(
     queryOptions({
       enabled: !todaysPatterns && moods.length > 0,
-      queryKey: ['patterns'],
+      queryKey: ['patterns', organizationId],
       queryFn: async () => {
         const result = await getPatterns({
           data: {
@@ -43,6 +51,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
             table: 'patterns',
             content: JSON.stringify(result),
             userId,
+            organizationId,
           });
         }
 
@@ -57,13 +66,14 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
     convexQuery(api.insights.getTodaysInsight, {
       table: 'triggers' as const,
       userId,
+      organizationId,
     })
   );
 
   const { data: triggers, isLoading: triggersLoading } = useQuery(
     queryOptions({
       enabled: !todaysTriggers && moods.length > 0,
-      queryKey: ['triggers'],
+      queryKey: ['triggers', organizationId],
       queryFn: async () => {
         const result = await getTriggers({
           data: {
@@ -77,6 +87,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
             table: 'triggers',
             content: JSON.stringify(result),
             userId,
+            organizationId,
           });
         }
 
@@ -91,13 +102,14 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
     convexQuery(api.insights.getTodaysInsight, {
       table: 'suggestions' as const,
       userId,
+      organizationId,
     })
   );
 
   const { data: suggestions, isLoading: suggestionsLoading } = useQuery(
     queryOptions({
       enabled: !todaysSuggestions && moods.length > 0,
-      queryKey: ['suggestions'],
+      queryKey: ['suggestions', organizationId],
       queryFn: async () => {
         const result = await getSuggestions({
           data: {
@@ -111,6 +123,7 @@ export function useMoodInsights({ userId }: { userId: Id<'users'> }) {
             table: 'suggestions',
             content: JSON.stringify(result),
             userId,
+            organizationId,
           });
         }
 

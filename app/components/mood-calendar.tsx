@@ -35,9 +35,11 @@ export function MoodCalendar() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
+  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
       userId: user._id,
+      organizationId: orgSettings.betterAuthOrgId,
     })
   );
   type Mood = Omit<(typeof moods)[number], 'time'> & { time: string };

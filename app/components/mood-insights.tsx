@@ -67,9 +67,11 @@ export function MoodInsights() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
+  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
 
   const { hasMoods, patterns, triggers, suggestions } = useMoodInsights({
     userId: user._id,
+    organizationId: orgSettings.betterAuthOrgId,
   });
 
   if (!hasMoods) {

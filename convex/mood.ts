@@ -34,16 +34,18 @@ async function createMoodHelper(
 
 async function getUserLast30DaysMoodsHelper(
   ctx: QueryCtx,
-  args: { userId: Id<'users'> }
+  args: { userId: Id<'users'>; organizationId: string }
 ) {
   // Get current timestamp and timestamp from 30 days ago
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Get all moods from the last 30 days
+  // Get all moods from the last 30 days, scoped by org
   const moods = await ctx.db
     .query('moods')
-    .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+    .withIndex('by_org_and_user', (q) =>
+      q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+    )
     .filter((q) => q.gte(q.field('_creationTime'), thirtyDaysAgo.getTime()))
     .collect();
   return moods;
@@ -52,6 +54,7 @@ async function getUserLast30DaysMoodsHelper(
 export const getUserLast30DaysMoods = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     return getUserLast30DaysMoodsHelper(ctx, args);
@@ -76,11 +79,14 @@ export const createMood = mutation({
 export const getUsersTotalMoodEntries = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     const totalMoodEntries = await ctx.db
       .query('moods')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .collect();
     return totalMoodEntries.length;
   },
@@ -89,11 +95,14 @@ export const getUsersTotalMoodEntries = query({
 export const getUsersCurrentStreak = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     const moods = await ctx.db
       .query('moods')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .order('desc')
       .collect();
 
@@ -144,6 +153,7 @@ export const getUsersCurrentStreak = query({
 export const getMostCommonMoodLast30Days = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     const moods = await getUserLast30DaysMoodsHelper(ctx, args);
@@ -178,6 +188,7 @@ export const getMostCommonMoodLast30Days = query({
 export const getMoodToday = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     // Get today's date at midnight
@@ -189,7 +200,9 @@ export const getMoodToday = query({
     // Get today's moods ordered by most recent first
     const moodsToday = await ctx.db
       .query('moods')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .filter((q) =>
         q.and(
           q.gte(q.field('_creationTime'), today.getTime()),
@@ -206,11 +219,14 @@ export const getMoodToday = query({
 export const getLastFiveMoods = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
     const moods = await ctx.db
       .query('moods')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .order('desc')
       .take(5);
 
@@ -251,6 +267,7 @@ export const getLastFiveMoods = query({
 export const getMoodTrends = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
     usersTimeZone: v.string(),
   },
   handler: async (ctx, args) => {
@@ -274,10 +291,12 @@ export const getMoodTrends = query({
       userNow.toLocaleString('en-US', { timeZone: 'UTC' })
     );
 
-    // Get all moods from the last 14 days
+    // Get all moods from the last 14 days, scoped by org
     const moods = await ctx.db
       .query('moods')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .filter((q) =>
         q.and(
           q.gte(q.field('_creationTime'), startUTC.getTime()),
@@ -294,7 +313,6 @@ export const getMoodTrends = query({
       const userMoodDate = new Date(
         date.toLocaleString('en-US', { timeZone: args.usersTimeZone })
       );
-      // console.log(userMoodDate);
       const formattedDate = format(userMoodDate, 'MMM dd');
       trendData[formattedDate] = {
         happy: 0,
@@ -315,14 +333,11 @@ export const getMoodTrends = query({
       const userMoodDate = new Date(
         moodDate.toLocaleString('en-US', { timeZone: args.usersTimeZone })
       );
-      // console.log(userMoodDate);
       const formattedDate = format(userMoodDate, 'MMM dd');
-      // console.log(formattedDate);
       if (trendData[formattedDate]) {
         trendData[formattedDate][mood.mood]++;
       }
     });
-    // console.log(trendData);
 
     // Convert to array format and sort by date
     const result = Object.entries(trendData)
@@ -371,6 +386,7 @@ export const createMoodsFromLocalStorageUsingNeonUserId = mutation({
 export const getUserMoods = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   returns: v.array(
     v.object({
@@ -385,7 +401,9 @@ export const getUserMoods = query({
   handler: async (ctx, args) => {
     const moods = await ctx.db
       .query('moods')
-      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .withIndex('by_org_and_user', (q) =>
+        q.eq('organizationId', args.organizationId).eq('userId', args.userId)
+      )
       .order('desc')
       .collect();
 

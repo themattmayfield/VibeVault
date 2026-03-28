@@ -30,31 +30,39 @@ function Home() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
+  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const organizationId = orgSettings.betterAuthOrgId;
+
   const { data: totalMoodEntries } = useSuspenseQuery(
     convexQuery(api.mood.getUsersTotalMoodEntries, {
       userId: user._id,
+      organizationId,
     })
   );
   const { data: currentStreak } = useSuspenseQuery(
     convexQuery(api.mood.getUsersCurrentStreak, {
       userId: user._id,
+      organizationId,
     })
   );
   const { data: mostCommonMood } = useSuspenseQuery(
     convexQuery(api.mood.getMostCommonMoodLast30Days, {
       userId: user._id,
+      organizationId,
     })
   );
 
   const { data: moodToday } = useSuspenseQuery(
     convexQuery(api.mood.getMoodToday, {
       userId: user._id,
+      organizationId,
     })
   );
 
   const { data: lastFiveMoods } = useSuspenseQuery(
     convexQuery(api.mood.getLastFiveMoods, {
       userId: user._id,
+      organizationId,
     })
   );
 

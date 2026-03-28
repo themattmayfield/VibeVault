@@ -13,8 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { APP_INFO } from '@/constants/app-info';
-import { signUpEmail, createOrganization } from '@/actions/auth';
-import { checkSlugAvailable } from '@/actions/organization';
+import { signUpEmail, signInEmail, createOrganization } from '@/actions/auth';
+import {
+  checkSlugAvailable,
+  getUserOrganizations,
+} from '@/actions/organization';
 import { useSubmittingDots } from '@/hooks/useSubmittingDots';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
@@ -65,12 +68,51 @@ function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Create user in Better Auth (Neon Postgres)
-      const neonUserId = await signUpEmail({
-        data: { email, password, name: name.trim() },
-      });
+      // 1. Create or authenticate user
+      let neonUserId: string;
+      let isExistingUser = false;
 
-      // 2. Generate a unique slug for the personal org
+      try {
+        // Try creating a new account first
+        neonUserId = await signUpEmail({
+          data: { email, password, name: name.trim() },
+        });
+      } catch {
+        // User likely already exists -- try signing them in instead
+        try {
+          neonUserId = await signInEmail({
+            data: { email, password },
+          });
+          isExistingUser = true;
+        } catch {
+          // Sign-in also failed -- wrong password for existing account
+          setIsSubmitting(false);
+          toast.error('An account with this email already exists', {
+            description:
+              'Please sign in with your existing password to create a personal workspace.',
+          });
+          return;
+        }
+      }
+
+      // 2. If existing user, check if they already have a personal org
+      if (isExistingUser) {
+        const existingOrgs = await getUserOrganizations();
+        const personalOrg = existingOrgs.find(
+          (o) => o.orgName?.includes("'s Space") && o.orgSlug
+        );
+        if (personalOrg?.orgSlug) {
+          // Already has a personal org -- just redirect there
+          router.navigate({
+            to: '/org/$slug/dashboard',
+            params: { slug: personalOrg.orgSlug },
+          });
+          toast.success('Welcome back! Opening your personal workspace.');
+          return;
+        }
+      }
+
+      // 3. Generate a unique slug for the personal org
       let slug = generatePersonalSlug(name);
       let attempts = 0;
       while (attempts < 5) {
@@ -80,7 +122,7 @@ function SignupPage() {
         attempts++;
       }
 
-      // 3. Create personal organization in Better Auth
+      // 4. Create personal organization in Better Auth
       const betterAuthOrgId = await createOrganization({
         data: {
           name: `${name.trim()}'s Space`,
@@ -89,7 +131,7 @@ function SignupPage() {
         },
       });
 
-      // 4. Create Convex user + org settings (marked as personal)
+      // 5. Create Convex user + org settings (marked as personal)
       await handleOrganizationOnboard({
         neonUserId,
         displayName: name.trim(),
@@ -98,13 +140,17 @@ function SignupPage() {
         isPersonal: true,
       });
 
-      // 5. Redirect straight to dashboard -- no payment for personal tier
+      // 6. Redirect straight to dashboard -- no payment for personal tier
       router.navigate({
         to: '/org/$slug/dashboard',
         params: { slug },
       });
 
-      toast.success(`Account created! Welcome to ${APP_INFO.name}`);
+      toast.success(
+        isExistingUser
+          ? 'Personal workspace created!'
+          : `Account created! Welcome to ${APP_INFO.name}`
+      );
     } catch (error) {
       setIsSubmitting(false);
       const message =

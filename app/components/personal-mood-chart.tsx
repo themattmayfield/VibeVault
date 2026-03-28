@@ -19,9 +19,11 @@ export function PersonalMoodChart() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
+  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
   const { data: getMoodTrends } = useSuspenseQuery(
     convexQuery(api.mood.getMoodTrends, {
       userId: user._id,
+      organizationId: orgSettings.betterAuthOrgId,
       usersTimeZone,
     })
   );
