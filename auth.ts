@@ -16,9 +16,19 @@ if (!process.env.POLAR_WEBHOOK_SECRET) {
   throw new Error('POLAR_WEBHOOK_SECRET is not set');
 }
 
+if (!process.env.POLAR_SERVER) {
+  throw new Error(
+    'POLAR_SERVER is not set (expected "sandbox" or "production")'
+  );
+}
+
+if (!process.env.POLAR_PRODUCT_ID) {
+  throw new Error('POLAR_PRODUCT_ID is not set');
+}
+
 export const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: 'sandbox',
+  server: process.env.POLAR_SERVER as 'sandbox' | 'production',
 });
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -63,7 +73,7 @@ export const auth = betterAuth({
         checkout({
           products: [
             {
-              productId: '07d39ccf-11d5-4993-bb36-c5892f49d252',
+              productId: process.env.POLAR_PRODUCT_ID!,
               slug: 'pro',
             },
           ],

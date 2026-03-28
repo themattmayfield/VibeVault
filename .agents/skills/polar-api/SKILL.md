@@ -30,13 +30,14 @@ Manage Polar payments and subscriptions via the REST API using curl. Polar has n
 
 ## Prerequisites
 
-**Authentication:** Set the `POLAR_ACCESS_TOKEN` env var:
+**Authentication:** The `POLAR_ACCESS_TOKEN` and `POLAR_PRODUCT_ID` env vars are available in `.env.local`. Source them before running commands:
 
 ```bash
-export POLAR_ACCESS_TOKEN="your-organization-access-token"
+export POLAR_ACCESS_TOKEN=$(grep POLAR_ACCESS_TOKEN .env.local | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+export POLAR_PRODUCT_ID=$(grep POLAR_PRODUCT_ID .env.local | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'")
 ```
 
-Get a token from: https://sandbox.polar.sh/dashboard/settings (sandbox) or https://dashboard.polar.sh/settings (production).
+Tokens can be managed at: https://sandbox.polar.sh/dashboard/settings (sandbox) or https://dashboard.polar.sh/settings (production).
 
 **Base URLs:**
 
@@ -53,8 +54,8 @@ This project uses **sandbox mode**. All examples below use the sandbox URL.
 
 ### Polar Configuration
 
-- **Mode:** Sandbox
-- **Product:** "Pro" plan (ID: `07d39ccf-11d5-4993-bb36-c5892f49d252`, slug: `pro`)
+- **Mode:** Sandbox (env-driven -- see `POLAR_SERVER` in `.env.local`)
+- **Product ID:** Stored in `POLAR_PRODUCT_ID` env var -- always query the API for current product details (name, pricing, etc.)
 - **Integration:** Better Auth Polar plugin in `auth.ts`
 - **Server actions:** `app/actions/polar.ts` -- `createPolarCheckoutSession`, `getPolarCheckoutSession`, `getPolarCustomer`
 - **Webhook handler:** Configured via Better Auth's Polar plugin
@@ -75,9 +76,9 @@ Authorization: Bearer $POLAR_ACCESS_TOKEN
 curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
   "https://sandbox-api.polar.sh/v1/products" | jq
 
-# Get a specific product
+# Get the configured product (uses POLAR_PRODUCT_ID from .env.local)
 curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/products/07d39ccf-11d5-4993-bb36-c5892f49d252" | jq
+  "https://sandbox-api.polar.sh/v1/products/$POLAR_PRODUCT_ID" | jq
 
 # List products with pagination
 curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
@@ -87,15 +88,15 @@ curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
 ### Checkouts
 
 ```bash
-# Create a checkout session
+# Create a checkout session (uses POLAR_PRODUCT_ID from .env.local)
 curl -s -X POST \
   -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "product_id": "07d39ccf-11d5-4993-bb36-c5892f49d252",
-    "success_url": "https://moodsync.com/org/{slug}/welcome?checkout_id={CHECKOUT_ID}",
-    "customer_email": "test@example.com"
-  }' \
+  -d "{
+    \"product_id\": \"$POLAR_PRODUCT_ID\",
+    \"success_url\": \"https://moodsync.com/welcome\",
+    \"customer_email\": \"test@example.com\"
+  }" \
   "https://sandbox-api.polar.sh/v1/checkouts/custom" | jq
 
 # Get a checkout session by ID
@@ -219,7 +220,7 @@ curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
 1. Verify the product exists:
    ```bash
    curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-     "https://sandbox-api.polar.sh/v1/products/07d39ccf-11d5-4993-bb36-c5892f49d252" | jq '.name, .prices'
+     "https://sandbox-api.polar.sh/v1/products/$POLAR_PRODUCT_ID" | jq '{ name: .name, prices: [.prices[] | { amount: .price_amount, currency: .price_currency, interval: .recurring_interval }] }'
    ```
 
 2. Create a checkout session:
@@ -227,11 +228,11 @@ curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
    curl -s -X POST \
      -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
-     -d '{
-       "product_id": "07d39ccf-11d5-4993-bb36-c5892f49d252",
-        "success_url": "https://moodsync.com/org/{slug}/welcome?checkout_id={CHECKOUT_ID}",
-       "customer_email": "test@example.com"
-     }' \
+     -d "{
+       \"product_id\": \"$POLAR_PRODUCT_ID\",
+       \"success_url\": \"https://moodsync.com/welcome\",
+       \"customer_email\": \"test@example.com\"
+     }" \
      "https://sandbox-api.polar.sh/v1/checkouts/custom" | jq '.url'
    ```
 

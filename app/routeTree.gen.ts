@@ -18,6 +18,7 @@ import { Route as MarketingLoginRouteImport } from './routes/_marketing.login'
 import { Route as MarketingJoinRouteImport } from './routes/_marketing.join'
 import { Route as MarketingGetStartedRouteImport } from './routes/_marketing.get-started'
 import { Route as OrgSlugIndexRouteImport } from './routes/org/$slug/index'
+import { Route as ApiFlagsIndexRouteImport } from './routes/api/flags/index'
 import { Route as OrgSlugAuthenticatedRouteImport } from './routes/org/$slug/_authenticated'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as OrgSlugUnauthenticatedSignUpRouteImport } from './routes/org/$slug/_unauthenticated/sign-up'
@@ -77,6 +78,11 @@ const OrgSlugIndexRoute = OrgSlugIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => OrgSlugRoute,
+} as any)
+const ApiFlagsIndexRoute = ApiFlagsIndexRouteImport.update({
+  id: '/api/flags/',
+  path: '/api/flags/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OrgSlugAuthenticatedRoute = OrgSlugAuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof MarketingSignupRoute
   '/org/$slug': typeof OrgSlugAuthenticatedRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/flags/': typeof ApiFlagsIndexRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/calendar': typeof OrgSlugAuthenticatedCalendarRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/': typeof MarketingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/$slug': typeof OrgSlugIndexRoute
+  '/api/flags': typeof ApiFlagsIndexRoute
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/calendar': typeof OrgSlugAuthenticatedCalendarRoute
   '/org/$slug/dashboard': typeof OrgSlugAuthenticatedDashboardRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_marketing/': typeof MarketingIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/$slug/_authenticated': typeof OrgSlugAuthenticatedRouteWithChildren
+  '/api/flags/': typeof ApiFlagsIndexRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
   '/org/$slug/_authenticated/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/_authenticated/calendar': typeof OrgSlugAuthenticatedCalendarRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/org/$slug'
     | '/api/auth/$'
+    | '/api/flags/'
     | '/org/$slug/'
     | '/org/$slug/admin'
     | '/org/$slug/calendar'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/auth/$'
     | '/org/$slug'
+    | '/api/flags'
     | '/org/$slug/admin'
     | '/org/$slug/calendar'
     | '/org/$slug/dashboard'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/_marketing/'
     | '/api/auth/$'
     | '/org/$slug/_authenticated'
+    | '/api/flags/'
     | '/org/$slug/'
     | '/org/$slug/_authenticated/admin'
     | '/org/$slug/_authenticated/calendar'
@@ -320,6 +332,7 @@ export interface RootRouteChildren {
   NewLogRoute: typeof NewLogRoute
   OrgSlugRoute: typeof OrgSlugRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiFlagsIndexRoute: typeof ApiFlagsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -386,6 +399,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/org/$slug/'
       preLoaderRoute: typeof OrgSlugIndexRouteImport
       parentRoute: typeof OrgSlugRoute
+    }
+    '/api/flags/': {
+      id: '/api/flags/'
+      path: '/api/flags'
+      fullPath: '/api/flags/'
+      preLoaderRoute: typeof ApiFlagsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/org/$slug/_authenticated': {
       id: '/org/$slug/_authenticated'
@@ -570,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   NewLogRoute: NewLogRoute,
   OrgSlugRoute: OrgSlugRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiFlagsIndexRoute: ApiFlagsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

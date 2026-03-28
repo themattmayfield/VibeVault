@@ -10,3 +10,4 @@ explorations
 node_modules
 .eslintcache
 *.env
+.vercel

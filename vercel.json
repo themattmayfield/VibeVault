@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node ./scripts/vercel-build.mjs",
+  "rewrites": [
+    {
+      "source": "/.well-known/vercel/flags",
+      "destination": "/api/flags"
+    }
+  ]
+}

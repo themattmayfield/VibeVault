@@ -2,20 +2,22 @@ import { polarClient } from 'auth';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
-/** Map plan + billing cycle to Polar product IDs.
- *  TODO: Create separate Polar products for each tier and update these IDs. */
+/** Default product ID from environment.
+ *  TODO: Create separate Polar products for each tier and add per-plan env vars. */
+const DEFAULT_PRODUCT_ID = process.env.POLAR_PRODUCT_ID!;
+
 const PLAN_PRODUCT_MAP: Record<string, Record<string, string>> = {
   small: {
-    annual: '07d39ccf-11d5-4993-bb36-c5892f49d252',
-    monthly: '07d39ccf-11d5-4993-bb36-c5892f49d252',
+    annual: DEFAULT_PRODUCT_ID,
+    monthly: DEFAULT_PRODUCT_ID,
   },
   medium: {
-    annual: '07d39ccf-11d5-4993-bb36-c5892f49d252',
-    monthly: '07d39ccf-11d5-4993-bb36-c5892f49d252',
+    annual: DEFAULT_PRODUCT_ID,
+    monthly: DEFAULT_PRODUCT_ID,
   },
   enterprise: {
-    annual: '07d39ccf-11d5-4993-bb36-c5892f49d252',
-    monthly: '07d39ccf-11d5-4993-bb36-c5892f49d252',
+    annual: DEFAULT_PRODUCT_ID,
+    monthly: DEFAULT_PRODUCT_ID,
   },
 };
 
@@ -32,8 +34,7 @@ export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
   .inputValidator(createPolarCheckoutSessionSchema)
   .handler(async ({ data }) => {
     const productId =
-      PLAN_PRODUCT_MAP[data.plan]?.[data.billingCycle] ??
-      '07d39ccf-11d5-4993-bb36-c5892f49d252';
+      PLAN_PRODUCT_MAP[data.plan]?.[data.billingCycle] ?? DEFAULT_PRODUCT_ID;
 
     const response = await polarClient.checkouts.create({
       customerBillingAddress: {

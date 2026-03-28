@@ -19,7 +19,7 @@ MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g.
 | **App database** | Convex | Moods, groups, insights, org settings (real-time) |
 | **Auth database** | Neon PostgreSQL + Drizzle ORM | Users, sessions, accounts, organizations, memberships (via Better Auth) |
 | **Frontend** | TanStack Start (React 19 + Vite) | File-based routing, SSR, server functions |
-| **Payments** | Polar (sandbox) | Checkout sessions, subscriptions, customer portal |
+| **Payments** | Polar (env-driven: sandbox/production) | Checkout sessions, subscriptions, customer portal |
 | **AI** | Anthropic Claude | Mood pattern analysis, triggers, suggestions |
 | **Email** | Resend | Verification emails |
 | **Deployment** | Vercel | Hosting, preview deploys, feature flags |
@@ -32,7 +32,7 @@ MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g.
 | Neon | `neonctl` | `DATABASE_URL`, `NEON_API_KEY` | `neon-cli` |
 | Drizzle | `npx drizzle-kit` | uses `DATABASE_URL` | `drizzle-cli` |
 | Vercel | `vercel` | `VERCEL_TOKEN` | `vercel-deploy`, `vercel-flags` |
-| Polar | curl (REST API) | `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET` | `polar-api` |
+| Polar | curl (REST API) | `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`, `POLAR_PRODUCT_ID` | `polar-api` |
 | Anthropic | SDK only | `ANTHROPIC_API_KEY` | -- |
 | Resend | SDK only | `RESEND_API_KEY` | -- |
 
@@ -207,7 +207,8 @@ app/                          # TanStack Start application
         trends.tsx            # Global trends
         admin.tsx             # Admin dashboard (stub)
   components/                 # React components
-  actions/                    # Server functions (auth, AI, payments)
+  actions/                    # Server functions (auth, AI, payments, flags)
+  lib/                        # Shared utilities (flags, domain, etc.)
   hooks/                      # Custom React hooks
   styles/                     # CSS/Tailwind
   constants/                  # App constants
@@ -232,6 +233,47 @@ drizzle.config.ts             # Drizzle Kit configuration
 ## Multi-Tenancy Model
 
 Path-based routing: `moodsync.com/org/{slug}/*` where `$slug` is a TanStack Router dynamic param. The org layout route (`app/routes/org/$slug.tsx`) resolves the slug from URL params and loads org settings from Convex (`orgSettings` table via `by_slug` index). All tenant data is scoped by `organizationId` (Better Auth org ID). Components access the slug via `useParams({ strict: false })`.
+
+## Deployment Model
+
+Two environments with continuous deployment. No promotion flow -- feature flags gate releases in production.
+
+### Environments
+
+| | **Production** | **Preview/Staging** |
+|---|---|---|
+| **Trigger** | Push to `main` | Push to any other branch / PR |
+| **Convex** | `fine-lobster-719` (production) | `moonlit-fox-464` (dev) |
+| **Neon** | `production` branch | `development` branch |
+| **Polar** | Production org | Sandbox org |
+| **Feature flags** | Vercel flags control rollout | All flags ON |
+
+### How It Works
+
+1. **Push to `main`** -- Vercel builds with production env vars, runs `npx convex deploy` to push Convex functions to production, builds the app pointing at production Convex/Neon/Polar.
+2. **Push to any other branch / open PR** -- Vercel creates a preview deployment with staging env vars (dev Convex, dev Neon, sandbox Polar). Convex deploy is skipped (uses existing dev deployment).
+3. **Feature gating** -- Use `npx vercel flags create/enable/disable` to control what's visible in production. Test everything in preview, then flip the flag.
+
+### Build Pipeline
+
+The build is handled by `scripts/vercel-build.mjs`:
+- **Production** (`VERCEL_ENV=production`): `npx convex deploy --cmd 'npx vite build'` -- deploys Convex + builds app
+- **Preview** (`VERCEL_ENV=preview`): `npx vite build` -- builds app only (uses dev Convex via env vars)
+
+### Feature Flags (Two Layers)
+
+1. **Vercel Feature Flags** (`app/lib/flags.ts`) -- global app-level flags for deployment rollouts. Managed via `npx vercel flags` CLI. Evaluated server-side via `@vercel/flags-core`.
+2. **Convex per-org flags** (`orgSettings.featureFlags`) -- tenant-scoped customization per organization. Managed via Convex mutations.
+
+### Adding Production Polar Credentials
+
+Three Vercel env vars still need production Polar values (currently only preview/sandbox is configured):
+
+```bash
+echo '<your-prod-token>' | npx vercel env add POLAR_ACCESS_TOKEN production
+echo '<your-prod-secret>' | npx vercel env add POLAR_WEBHOOK_SECRET production
+echo '<your-prod-product-id>' | npx vercel env add POLAR_PRODUCT_ID production
+```
 
 ## Environment Setup
 
