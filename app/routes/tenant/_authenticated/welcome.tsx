@@ -54,7 +54,7 @@ function RouteComponent() {
     await verifyEmail({
       data: {
         email: customer.email,
-        callbackURL: `/tenant/dashboard`,
+        callbackURL: `/dashboard`,
       },
     });
   };

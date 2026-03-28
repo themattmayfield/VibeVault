@@ -53,6 +53,7 @@ export default defineSchema({
     neonUserId: v.string(),
     displayName: v.string(),
     image: v.optional(v.string()),
+    role: v.optional(v.string()),
     availableGroups: v.optional(v.array(v.id('groups'))),
     theme: v.optional(
       v.union(v.literal('light'), v.literal('dark'), v.literal('system'))

@@ -19,7 +19,6 @@ import {
   CreditCard,
   Building,
   User,
-  Globe,
   Check,
   Loader2,
 } from 'lucide-react';
@@ -31,7 +30,9 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { createPolarCheckoutSession } from '@/actions/polar';
 import { signUpEmail, createOrganization } from '@/actions/auth';
+import { checkSubdomainAvailable } from '@/actions/organization';
 import { buildTenantUrl } from '@/lib/domain';
+import { useRef, useCallback } from 'react';
 
 export const Route = createFileRoute('/_marketing/join')({
   component: RouteComponent,
@@ -65,15 +66,6 @@ function RouteComponent() {
     password: '',
     confirmPassword: '',
     role: 'administrator',
-
-    // Payment details
-    cardName: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvc: '',
-
-    // Terms
-    agreeTerms: false,
   });
 
   const plans = [
@@ -112,16 +104,27 @@ function RouteComponent() {
     },
   ];
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, type, checked } = e.target;
+    let { value } = e.target;
+
+    // Normalize subdomain to lowercase, strip invalid chars
+    if (name === 'subdomain') {
+      value = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    }
+
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
 
     // Check subdomain availability when typing
-    if (name === 'subdomain' && value) {
-      checkSubdomainAvailability(value);
+    if (name === 'subdomain') {
+      if (value) {
+        checkSubdomainAvailability(value);
+      } else {
+        setIsSubdomainAvailable(null);
+      }
     }
   };
 
@@ -139,22 +142,45 @@ function RouteComponent() {
     });
   };
 
-  const checkSubdomainAvailability = (subdomain) => {
-    if (subdomain.length < 3) {
+  const subdomainCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const SUBDOMAIN_REGEX = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+
+  const checkSubdomainAvailability = useCallback((subdomain: string) => {
+    // Clear any pending debounced check
+    if (subdomainCheckTimeout.current) {
+      clearTimeout(subdomainCheckTimeout.current);
+    }
+
+    const slug = subdomain.toLowerCase();
+
+    if (slug.length < 3) {
       setIsSubdomainAvailable(null);
+      return;
+    }
+
+    if (!SUBDOMAIN_REGEX.test(slug)) {
+      setIsSubdomainAvailable(false);
       return;
     }
 
     setIsCheckingSubdomain(true);
 
-    // Simulate API call to check subdomain availability
-    setTimeout(() => {
-      // For demo purposes, we'll say all subdomains are available except "taken"
-      const isAvailable = subdomain.toLowerCase() !== 'taken';
-      setIsSubdomainAvailable(isAvailable);
-      setIsCheckingSubdomain(false);
-    }, 800);
-  };
+    // Debounce the API call to avoid hammering on every keystroke
+    subdomainCheckTimeout.current = setTimeout(async () => {
+      try {
+        const isAvailable = await checkSubdomainAvailable({
+          data: { subdomain: slug },
+        });
+        setIsSubdomainAvailable(isAvailable);
+      } catch {
+        setIsSubdomainAvailable(null);
+      } finally {
+        setIsCheckingSubdomain(false);
+      }
+    }, 400);
+  }, []);
 
   const validateCurrentStep = () => {
     switch (currentStep) {
@@ -166,23 +192,18 @@ function RouteComponent() {
           formData.subdomain &&
           isSubdomainAvailable
         );
-      case 3: // Personal details
+      case 3: {
+        // Personal details
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return (
-          formData.firstName &&
-          formData.lastName &&
-          formData.email &&
-          formData.password &&
-          formData.confirmPassword &&
+          formData.firstName.trim().length > 0 &&
+          formData.lastName.trim().length > 0 &&
+          emailRegex.test(formData.email) &&
+          formData.password.length >= 8 &&
+          formData.confirmPassword.length > 0 &&
           formData.password === formData.confirmPassword
         );
-      case 4: // Payment details
-        return (
-          formData.cardName &&
-          formData.cardNumber &&
-          formData.expiryDate &&
-          formData.cvc &&
-          formData.agreeTerms
-        );
+      }
       default:
         return false;
     }
@@ -205,7 +226,7 @@ function RouteComponent() {
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateCurrentStep()) {
       toast.error('Please complete all required fields', {
@@ -217,51 +238,63 @@ function RouteComponent() {
 
     setIsSubmitting(true);
 
-    const name = `${formData.firstName} ${formData.lastName}`;
+    try {
+      const name = `${formData.firstName} ${formData.lastName}`;
 
-    // 1. Create user in Better Auth (Neon Postgres)
-    const neonUserId = await signUpEmail({
-      data: {
-        email: formData.email,
-        password: formData.password,
-        name,
-      },
-    });
+      // 1. Create user in Better Auth (Neon Postgres)
+      const neonUserId = await signUpEmail({
+        data: {
+          email: formData.email,
+          password: formData.password,
+          name,
+        },
+      });
 
-    // 2. Create organization in Better Auth
-    const betterAuthOrgId = await createOrganization({
-      data: {
-        name: formData.organizationName,
-        slug: formData.subdomain,
-        userId: neonUserId,
-      },
-    });
+      // 2. Create organization in Better Auth
+      const betterAuthOrgId = await createOrganization({
+        data: {
+          name: formData.organizationName,
+          slug: formData.subdomain,
+          userId: neonUserId,
+        },
+      });
 
-    // 3. Create Convex user + org settings (linked to Better Auth org)
-    await handleOrganizationOnboard({
-      neonUserId,
-      displayName: name,
-      subdomain: formData.subdomain,
-      betterAuthOrgId,
-    });
+      // 3. Create Convex user + org settings (linked to Better Auth org)
+      await handleOrganizationOnboard({
+        neonUserId,
+        displayName: name,
+        subdomain: formData.subdomain,
+        betterAuthOrgId,
+        role: formData.role,
+      });
 
-    const result = await createPolarCheckoutSession({
-      data: {
-        country: 'US',
-        product: '07d39ccf-11d5-4993-bb36-c5892f49d252',
-        successUrl: `${buildTenantUrl(formData.subdomain)}/welcome?checkout_id={CHECKOUT_ID}&email=${formData.email}&subdomain=${formData.subdomain}`,
-        customerEmail: formData.email,
-        customerName: name,
-      },
-    });
-    window.location.href = result.url;
+      // 4. Create Polar checkout session and redirect to payment
+      const result = await createPolarCheckoutSession({
+        data: {
+          country: 'US',
+          plan: formData.plan as 'small' | 'medium' | 'enterprise',
+          billingCycle: formData.billingCycle as 'annual' | 'monthly',
+          successUrl: `${buildTenantUrl(formData.subdomain)}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}&subdomain=${formData.subdomain}`,
+          customerEmail: formData.email,
+          customerName: name,
+        },
+      });
+      window.location.href = result.url;
+    } catch (error) {
+      setIsSubmitting(false);
+      const message =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error('Registration failed', {
+        description: message,
+      });
+    }
   };
 
   const renderStepIndicator = () => {
     return (
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center">
-          {[1, 2, 3, 4].map((step) => (
+          {[1, 2, 3].map((step) => (
             <div key={step} className="flex items-center">
               <div
                 className={`flex items-center justify-center w-8 h-8 rounded-full border-2 
@@ -273,7 +306,7 @@ function RouteComponent() {
               >
                 {currentStep > step ? <Check className="h-4 w-4" /> : step}
               </div>
-              {step < 4 && (
+              {step < 3 && (
                 <div
                   className={`w-12 h-0.5 ${currentStep > step ? 'bg-primary' : 'bg-muted-foreground'}`}
                 />
@@ -297,11 +330,8 @@ function RouteComponent() {
         </Link>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
-            Already have an account?
+            Already have an account? Sign in at your organization&apos;s URL
           </span>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/">Log in</Link>
-          </Button>
         </div>
       </div>
 
@@ -482,11 +512,15 @@ function RouteComponent() {
                       Subdomain is available!
                     </span>
                   )}
-                {!isCheckingSubdomain && isSubdomainAvailable === false && (
-                  <span className="text-red-500">
-                    This subdomain is already taken. Please choose another.
-                  </span>
-                )}
+                {!isCheckingSubdomain &&
+                  isSubdomainAvailable === false &&
+                  formData.subdomain && (
+                    <span className="text-red-500">
+                      {SUBDOMAIN_REGEX.test(formData.subdomain.toLowerCase())
+                        ? 'This subdomain is already taken. Please choose another.'
+                        : 'Only lowercase letters, numbers, and hyphens allowed. Must start and end with a letter or number.'}
+                    </span>
+                  )}
                 {!isCheckingSubdomain &&
                   isSubdomainAvailable === null &&
                   `Your subdomain will be used to access your ${APP_INFO.name} instance.`}
@@ -554,6 +588,12 @@ function RouteComponent() {
                 onChange={handleChange}
                 required
               />
+              {formData.email &&
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                  <p className="text-xs text-red-500">
+                    Please enter a valid email address
+                  </p>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -567,7 +607,9 @@ function RouteComponent() {
                   onChange={handleChange}
                   required
                 />
-                <p className="text-xs text-muted-foreground">
+                <p
+                  className={`text-xs ${formData.password && formData.password.length < 8 ? 'text-red-500' : 'text-muted-foreground'}`}
+                >
                   Must be at least 8 characters
                 </p>
               </div>
@@ -632,75 +674,17 @@ function RouteComponent() {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
             <Button disabled={isSubmitting} onClick={handleSubmit}>
-              Continue <ArrowRight className="ml-2 h-4 w-4" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating
+                  account...
+                </>
+              ) : (
+                <>
+                  Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
             </Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      {currentStep === 4 && (
-        <Card className="mx-auto max-w-3xl">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <CheckCircle className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Your Account is Ready!</CardTitle>
-            <CardDescription>
-              Welcome to {APP_INFO.name}. Your 14-day free trial has started.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="font-medium mb-2">Your {APP_INFO.name} URL:</h3>
-              <div className="flex items-center justify-center">
-                <div className="bg-background border rounded-md px-4 py-2 flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-primary" />
-                  <span className="font-medium">
-                    {formData.subdomain}.{APP_INFO.domain}
-                  </span>
-                </div>
-              </div>
-              <p className="text-sm text-center mt-2">
-                Bookmark this URL to easily access your {APP_INFO.name} instance
-              </p>
-            </div>
-
-            <div className="bg-primary/10 p-4 rounded-lg">
-              <h3 className="font-medium mb-2">
-                Early Adopter Benefits Activated:
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span>20% off first year</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span>Free onboarding ($1,500 value)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span>Priority support</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <span>Extended 30-day trial</span>
-                </li>
-              </ul>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" asChild>
-              <a href={`https://${formData.subdomain}.${APP_INFO.domain}`}>
-                Go to Your Dashboard
-              </a>
-            </Button>
-            <div className="text-center text-sm text-muted-foreground">
-              Need help getting started?{' '}
-              <a href="#" className="text-primary hover:underline">
-                Schedule an onboarding call
-              </a>
-            </div>
           </CardFooter>
         </Card>
       )}

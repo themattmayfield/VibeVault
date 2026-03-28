@@ -21,6 +21,7 @@ export const handleOrganizationOnboard = mutation({
     displayName: v.string(),
     subdomain: v.string(),
     betterAuthOrgId: v.string(),
+    role: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Idempotency: skip if user already exists
@@ -32,6 +33,7 @@ export const handleOrganizationOnboard = mutation({
       await createUserHelper(ctx, {
         neonUserId: args.neonUserId,
         displayName: args.displayName,
+        role: args.role,
       });
     }
 

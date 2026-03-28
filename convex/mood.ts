@@ -356,10 +356,14 @@ export const createMoodsFromLocalStorageUsingNeonUserId = mutation({
     });
 
     for (const moodId of args.moods) {
-      await ctx.db.patch(moodId as Id<'moods'>, {
-        userId: user._id,
-        ...(args.organizationId && { organizationId: args.organizationId }),
-      });
+      const mood = await ctx.db.get(moodId as Id<'moods'>);
+      // Only claim moods that exist and have no owner (anonymous moods)
+      if (mood && !mood.userId) {
+        await ctx.db.patch(mood._id, {
+          userId: user._id,
+          ...(args.organizationId && { organizationId: args.organizationId }),
+        });
+      }
     }
   },
 });

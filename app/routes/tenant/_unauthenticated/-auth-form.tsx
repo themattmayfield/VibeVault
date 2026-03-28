@@ -22,6 +22,7 @@ import { useState } from 'react';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { signInEmail, signUpEmail } from '@/actions/auth';
+import { addMemberToOrganization } from '@/actions/organization';
 import { toast } from 'sonner';
 import { APP_INFO } from '@/constants/app-info';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
@@ -106,6 +107,15 @@ export function AuthForm() {
           });
 
           await createUser({ neonUserId, displayName: value.name });
+
+          // Add the new user as a member of this organization
+          await addMemberToOrganization({
+            data: {
+              userId: neonUserId,
+              organizationId: orgSettings.betterAuthOrgId,
+              role: 'member',
+            },
+          });
         }
         await createMoodsFromLocalStorageUsingNeonUserId({
           neonUserId,

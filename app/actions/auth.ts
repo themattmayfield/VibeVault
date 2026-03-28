@@ -26,7 +26,9 @@ const signUpEmailSchema = z.object({
 export const signInEmail = createServerFn({ method: 'POST' })
   .inputValidator(signInEmailSchema)
   .handler(async ({ data }) => {
+    const headers = getRequestHeaders();
     const response = await auth.api.signInEmail({
+      headers: headers as unknown as Headers,
       body: {
         email: data.email,
         password: data.password,
@@ -40,7 +42,9 @@ export const signInEmail = createServerFn({ method: 'POST' })
 export const signUpEmail = createServerFn({ method: 'POST' })
   .inputValidator(signUpEmailSchema)
   .handler(async ({ data }) => {
+    const headers = getRequestHeaders();
     const response = await auth.api.signUpEmail({
+      headers: headers as unknown as Headers,
       body: {
         name: data.name,
         email: data.email,

@@ -27,12 +27,13 @@ export const getUserFromNeonUserIdHelper = async (
 
 export const createUserHelper = async (
   ctx: MutationCtx,
-  args: { neonUserId: string; displayName: string }
+  args: { neonUserId: string; displayName: string; role?: string }
 ) => {
   return await ctx.db.insert('users', {
     neonUserId: args.neonUserId,
     displayName: args.displayName,
     availableGroups: [],
+    ...(args.role && { role: args.role }),
   });
 };
 
