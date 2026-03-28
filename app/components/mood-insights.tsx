@@ -65,7 +65,7 @@ const InsightTabContent = ({
 
 export function MoodInsights() {
   const user = useLoaderData({
-    from: '/o/$orgId/_authenticated',
+    from: '/tenant/_authenticated',
   });
 
   const { patterns, triggers, suggestions } = useMoodInsights({

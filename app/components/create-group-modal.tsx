@@ -25,11 +25,16 @@ import { useLoaderData } from '@tanstack/react-router';
 interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  organizationId?: string;
 }
 
-export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
+export function CreateGroupModal({
+  isOpen,
+  onClose,
+  organizationId,
+}: CreateGroupModalProps) {
   const user = useLoaderData({
-    from: '/o/$orgId/_authenticated',
+    from: '/tenant/_authenticated',
   });
 
   const createGroup = useMutation(api.groups.createGroup);
@@ -63,6 +68,7 @@ export function CreateGroupModal({ isOpen, onClose }: CreateGroupModalProps) {
         isPrivate: privacy === 'private',
         image: image || undefined,
         userId: user._id,
+        organizationId,
       });
       onClose();
 

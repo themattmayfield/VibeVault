@@ -1,20 +1,29 @@
+/// <reference types="vite/client" />
 import type { QueryClient } from '@tanstack/react-query';
 import {
   createRootRouteWithContext,
   HeadContent,
+  Outlet,
   Scripts,
 } from '@tanstack/react-router';
-import { Outlet } from '@tanstack/react-router';
 import type * as React from 'react';
 import { Toaster } from '@/components/ui/sonner';
 
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import appCss from '@/styles/app.css?url';
 import { APP_INFO } from '@/constants/app-info';
+import { getSubdomainAction } from '@/actions/subdomain';
 
-export const Route = createRootRouteWithContext<{
+export interface RootRouteContext {
   queryClient: QueryClient;
-}>()({
+  subdomain: string | null;
+}
+
+export const Route = createRootRouteWithContext<RootRouteContext>()({
+  beforeLoad: async () => {
+    const subdomain = await getSubdomainAction();
+    return { subdomain };
+  },
   head: () => ({
     meta: [
       {
@@ -46,25 +55,20 @@ export const Route = createRootRouteWithContext<{
         rel: 'stylesheet',
         href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap',
       },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap',
-      },
     ],
   }),
   notFoundComponent: () => <div>Route not found</div>,
   component: RootComponent,
+  shellComponent: RootDocument,
 });
 
 function RootComponent() {
   return (
-    <RootDocument>
-      <div className="flex min-h-screen flex-col ">
-        <main className="flex-1 overflow-y-auto">
-          <Outlet />
-        </main>
-      </div>
-    </RootDocument>
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1 overflow-y-auto">
+        <Outlet />
+      </main>
+    </div>
   );
 }
 

@@ -33,7 +33,7 @@ const moodEmojis: Record<string, string> = {
 
 export function MoodCalendar() {
   const user = useLoaderData({
-    from: '/o/$orgId/_authenticated',
+    from: '/tenant/_authenticated',
   });
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
@@ -118,18 +118,20 @@ export function MoodCalendar() {
           booked: { fontWeight: 'bold' },
         }}
         components={{
-          DayContent: ({ date, ...props }) => {
-            const dateStr = date.toISOString().split('T')[0];
+          DayButton: ({ day, modifiers, ...props }) => {
+            const dateStr = day.date.toISOString().split('T')[0];
             const dayMoods = moodsByDate[dateStr];
             const dominantMood = getDominantMood(dateStr);
 
             return (
-              <div
+              <button
                 {...props}
-                onClick={() => handleSelect(date)}
-                className="relative w-full h-full flex items-center justify-center"
+                className={cn(
+                  props.className,
+                  'relative w-full h-full flex items-center justify-center'
+                )}
               >
-                {date.getDate()}
+                {day.date.getDate()}
                 {dayMoods && (
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {/* Show a single dot for the dominant mood */}
@@ -148,7 +150,7 @@ export function MoodCalendar() {
                     )}
                   </div>
                 )}
-              </div>
+              </button>
             );
           },
         }}

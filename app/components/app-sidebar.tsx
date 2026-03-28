@@ -81,7 +81,7 @@ const data = {
   navSecondary: [
     {
       title: 'Settings',
-      url: '#',
+      url: '/tenant/settings',
       icon: SettingsIcon,
     },
     {

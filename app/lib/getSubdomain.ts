@@ -1,22 +1,48 @@
-export const getSubdomain = async (request: Request | undefined) => {
-  const url = new URL(request?.url || '');
-  const hostname = url.hostname;
-  const parts = hostname.split('.');
+import { getAppDomain } from './domain';
 
-  // Handle plain localhost explicitly
+/**
+ * Extracts the tenant subdomain from the request hostname.
+ *
+ * Given APP_DOMAIN = "moodsync.localhost":
+ *   - "moodsync.localhost"       -> null  (root domain, no tenant)
+ *   - "acme.moodsync.localhost"  -> "acme"
+ *
+ * Given APP_DOMAIN = "moodsync.com":
+ *   - "moodsync.com"             -> null
+ *   - "acme.moodsync.com"        -> "acme"
+ */
+export const getSubdomain = async (
+  request: Request | undefined
+): Promise<string | null> => {
+  // Prefer the Host header (preserves the original hostname behind proxies
+  // like Portless, ALB, CloudFront). Fall back to parsing request.url.
+  const hostHeader =
+    request?.headers.get('x-forwarded-host') || request?.headers.get('host');
+  const hostname = hostHeader
+    ? hostHeader.split(':')[0] // strip port (e.g. "acme.moodsync.localhost:1355" -> "acme.moodsync.localhost")
+    : new URL(request?.url || 'http://localhost').hostname;
+
+  const appDomain = getAppDomain(); // e.g. "moodsync.localhost" or "moodsync.com"
+
+  // Plain localhost / 127.0.0.1 with no app domain context
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return null; // No subdomain for plain localhost
+    return null;
   }
 
-  // Handle *.localhost (e.g., sub.localhost)
-  if (hostname.endsWith('.localhost') && parts.length === 2) {
-    return parts[0]; // Returns "sub" from "sub.localhost"
+  // If hostname exactly matches the app domain, no subdomain
+  if (hostname === appDomain) {
+    return null;
   }
 
-  // For sub.example.com, check if there's a subdomain
-  if (parts.length >= 3) {
-    return parts[0]; // Returns "sub" from "sub.example.com"
+  // If hostname ends with ".{appDomain}", extract the subdomain prefix
+  const suffix = `.${appDomain}`;
+  if (hostname.endsWith(suffix)) {
+    const subdomain = hostname.slice(0, -suffix.length);
+    // Ensure it's a single label (no extra dots) and non-empty
+    if (subdomain && !subdomain.includes('.')) {
+      return subdomain;
+    }
   }
 
-  return null; // No subdomain
+  return null;
 };

@@ -8,548 +8,514 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as TenantRouteImport } from './routes/tenant'
+import { Route as NewLogRouteImport } from './routes/new-log'
+import { Route as MarketingRouteImport } from './routes/_marketing'
+import { Route as TenantIndexRouteImport } from './routes/tenant/index'
+import { Route as MarketingIndexRouteImport } from './routes/_marketing.index'
+import { Route as TenantAuthenticatedRouteImport } from './routes/tenant/_authenticated'
+import { Route as MarketingJoinRouteImport } from './routes/_marketing.join'
+import { Route as TenantUnauthenticatedSignUpRouteImport } from './routes/tenant/_unauthenticated/sign-up'
+import { Route as TenantUnauthenticatedSignInRouteImport } from './routes/tenant/_unauthenticated/sign-in'
+import { Route as TenantUnauthenticatedForgotPasswordRouteImport } from './routes/tenant/_unauthenticated/forgot-password'
+import { Route as TenantAuthenticatedWelcomeRouteImport } from './routes/tenant/_authenticated/welcome'
+import { Route as TenantAuthenticatedTrendsRouteImport } from './routes/tenant/_authenticated/trends'
+import { Route as TenantAuthenticatedSettingsRouteImport } from './routes/tenant/_authenticated/settings'
+import { Route as TenantAuthenticatedLogRouteImport } from './routes/tenant/_authenticated/log'
+import { Route as TenantAuthenticatedInsightsRouteImport } from './routes/tenant/_authenticated/insights'
+import { Route as TenantAuthenticatedDashboardRouteImport } from './routes/tenant/_authenticated/dashboard'
+import { Route as TenantAuthenticatedCalendarRouteImport } from './routes/tenant/_authenticated/calendar'
+import { Route as TenantAuthenticatedAdminRouteImport } from './routes/tenant/_authenticated/admin'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as TenantAuthenticatedGroupsIndexRouteImport } from './routes/tenant/_authenticated/groups/index'
+import { Route as TenantAuthenticatedGroupsGroupIdRouteImport } from './routes/tenant/_authenticated/groups/$groupId'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as TempRedirectImport } from './routes/temp-redirect'
-import { Route as NewLogImport } from './routes/new-log'
-import { Route as PublicImport } from './routes/_public'
-import { Route as PublicIndexImport } from './routes/_public.index'
-import { Route as OOrgIdImport } from './routes/o.$orgId'
-import { Route as PublicJoinImport } from './routes/_public.join'
-import { Route as OOrgIdAuthenticatedImport } from './routes/o.$orgId/_authenticated'
-import { Route as OOrgIdUnauthenticatedSignUpImport } from './routes/o.$orgId/_unauthenticated/sign-up'
-import { Route as OOrgIdUnauthenticatedSignInImport } from './routes/o.$orgId/_unauthenticated/sign-in'
-import { Route as OOrgIdUnauthenticatedForgotPasswordImport } from './routes/o.$orgId/_unauthenticated/forgot-password'
-import { Route as OOrgIdAuthenticatedWelcomeImport } from './routes/o.$orgId/_authenticated/welcome'
-import { Route as OOrgIdAuthenticatedTrendsImport } from './routes/o.$orgId/_authenticated/trends'
-import { Route as OOrgIdAuthenticatedLogImport } from './routes/o.$orgId/_authenticated/log'
-import { Route as OOrgIdAuthenticatedDashboardImport } from './routes/o.$orgId/_authenticated/dashboard'
-import { Route as OOrgIdAuthenticatedAdminImport } from './routes/o.$orgId/_authenticated/admin'
-import { Route as OOrgIdAuthenticatedGroupsIndexImport } from './routes/o.$orgId/_authenticated/groups/index'
-import { Route as OOrgIdAuthenticatedGroupsGroupIdImport } from './routes/o.$orgId/_authenticated/groups/$groupId'
-
-// Create/Update Routes
-
-const TempRedirectRoute = TempRedirectImport.update({
-  id: '/temp-redirect',
-  path: '/temp-redirect',
-  getParentRoute: () => rootRoute,
+const TenantRoute = TenantRouteImport.update({
+  id: '/tenant',
+  path: '/tenant',
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const NewLogRoute = NewLogImport.update({
+const NewLogRoute = NewLogRouteImport.update({
   id: '/new-log',
   path: '/new-log',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const PublicRoute = PublicImport.update({
-  id: '/_public',
-  getParentRoute: () => rootRoute,
+const MarketingRoute = MarketingRouteImport.update({
+  id: '/_marketing',
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const PublicIndexRoute = PublicIndexImport.update({
+const TenantIndexRoute = TenantIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => TenantRoute,
 } as any)
-
-const OOrgIdRoute = OOrgIdImport.update({
-  id: '/o/$orgId',
-  path: '/o/$orgId',
-  getParentRoute: () => rootRoute,
+const MarketingIndexRoute = MarketingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MarketingRoute,
 } as any)
-
-const PublicJoinRoute = PublicJoinImport.update({
+const TenantAuthenticatedRoute = TenantAuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => TenantRoute,
+} as any)
+const MarketingJoinRoute = MarketingJoinRouteImport.update({
   id: '/join',
   path: '/join',
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => MarketingRoute,
 } as any)
-
-const OOrgIdAuthenticatedRoute = OOrgIdAuthenticatedImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => OOrgIdRoute,
-} as any)
-
-const OOrgIdUnauthenticatedSignUpRoute =
-  OOrgIdUnauthenticatedSignUpImport.update({
+const TenantUnauthenticatedSignUpRoute =
+  TenantUnauthenticatedSignUpRouteImport.update({
     id: '/_unauthenticated/sign-up',
     path: '/sign-up',
-    getParentRoute: () => OOrgIdRoute,
+    getParentRoute: () => TenantRoute,
   } as any)
-
-const OOrgIdUnauthenticatedSignInRoute =
-  OOrgIdUnauthenticatedSignInImport.update({
+const TenantUnauthenticatedSignInRoute =
+  TenantUnauthenticatedSignInRouteImport.update({
     id: '/_unauthenticated/sign-in',
     path: '/sign-in',
-    getParentRoute: () => OOrgIdRoute,
+    getParentRoute: () => TenantRoute,
   } as any)
-
-const OOrgIdUnauthenticatedForgotPasswordRoute =
-  OOrgIdUnauthenticatedForgotPasswordImport.update({
+const TenantUnauthenticatedForgotPasswordRoute =
+  TenantUnauthenticatedForgotPasswordRouteImport.update({
     id: '/_unauthenticated/forgot-password',
     path: '/forgot-password',
-    getParentRoute: () => OOrgIdRoute,
+    getParentRoute: () => TenantRoute,
   } as any)
-
-const OOrgIdAuthenticatedWelcomeRoute = OOrgIdAuthenticatedWelcomeImport.update(
-  {
+const TenantAuthenticatedWelcomeRoute =
+  TenantAuthenticatedWelcomeRouteImport.update({
     id: '/welcome',
     path: '/welcome',
-    getParentRoute: () => OOrgIdAuthenticatedRoute,
-  } as any,
-)
-
-const OOrgIdAuthenticatedTrendsRoute = OOrgIdAuthenticatedTrendsImport.update({
-  id: '/trends',
-  path: '/trends',
-  getParentRoute: () => OOrgIdAuthenticatedRoute,
-} as any)
-
-const OOrgIdAuthenticatedLogRoute = OOrgIdAuthenticatedLogImport.update({
+    getParentRoute: () => TenantAuthenticatedRoute,
+  } as any)
+const TenantAuthenticatedTrendsRoute =
+  TenantAuthenticatedTrendsRouteImport.update({
+    id: '/trends',
+    path: '/trends',
+    getParentRoute: () => TenantAuthenticatedRoute,
+  } as any)
+const TenantAuthenticatedSettingsRoute =
+  TenantAuthenticatedSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => TenantAuthenticatedRoute,
+  } as any)
+const TenantAuthenticatedLogRoute = TenantAuthenticatedLogRouteImport.update({
   id: '/log',
   path: '/log',
-  getParentRoute: () => OOrgIdAuthenticatedRoute,
+  getParentRoute: () => TenantAuthenticatedRoute,
 } as any)
-
-const OOrgIdAuthenticatedDashboardRoute =
-  OOrgIdAuthenticatedDashboardImport.update({
+const TenantAuthenticatedInsightsRoute =
+  TenantAuthenticatedInsightsRouteImport.update({
+    id: '/insights',
+    path: '/insights',
+    getParentRoute: () => TenantAuthenticatedRoute,
+  } as any)
+const TenantAuthenticatedDashboardRoute =
+  TenantAuthenticatedDashboardRouteImport.update({
     id: '/dashboard',
     path: '/dashboard',
-    getParentRoute: () => OOrgIdAuthenticatedRoute,
+    getParentRoute: () => TenantAuthenticatedRoute,
   } as any)
-
-const OOrgIdAuthenticatedAdminRoute = OOrgIdAuthenticatedAdminImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => OOrgIdAuthenticatedRoute,
+const TenantAuthenticatedCalendarRoute =
+  TenantAuthenticatedCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => TenantAuthenticatedRoute,
+  } as any)
+const TenantAuthenticatedAdminRoute =
+  TenantAuthenticatedAdminRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => TenantAuthenticatedRoute,
+  } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const OOrgIdAuthenticatedGroupsIndexRoute =
-  OOrgIdAuthenticatedGroupsIndexImport.update({
+const TenantAuthenticatedGroupsIndexRoute =
+  TenantAuthenticatedGroupsIndexRouteImport.update({
     id: '/groups/',
     path: '/groups/',
-    getParentRoute: () => OOrgIdAuthenticatedRoute,
+    getParentRoute: () => TenantAuthenticatedRoute,
   } as any)
-
-const OOrgIdAuthenticatedGroupsGroupIdRoute =
-  OOrgIdAuthenticatedGroupsGroupIdImport.update({
+const TenantAuthenticatedGroupsGroupIdRoute =
+  TenantAuthenticatedGroupsGroupIdRouteImport.update({
     id: '/groups/$groupId',
     path: '/groups/$groupId',
-    getParentRoute: () => OOrgIdAuthenticatedRoute,
+    getParentRoute: () => TenantAuthenticatedRoute,
   } as any)
 
-// Populate the FileRoutesByPath interface
+export interface FileRoutesByFullPath {
+  '/': typeof MarketingIndexRoute
+  '/new-log': typeof NewLogRoute
+  '/tenant': typeof TenantAuthenticatedRouteWithChildren
+  '/join': typeof MarketingJoinRoute
+  '/tenant/': typeof TenantIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/tenant/admin': typeof TenantAuthenticatedAdminRoute
+  '/tenant/calendar': typeof TenantAuthenticatedCalendarRoute
+  '/tenant/dashboard': typeof TenantAuthenticatedDashboardRoute
+  '/tenant/insights': typeof TenantAuthenticatedInsightsRoute
+  '/tenant/log': typeof TenantAuthenticatedLogRoute
+  '/tenant/settings': typeof TenantAuthenticatedSettingsRoute
+  '/tenant/trends': typeof TenantAuthenticatedTrendsRoute
+  '/tenant/welcome': typeof TenantAuthenticatedWelcomeRoute
+  '/tenant/forgot-password': typeof TenantUnauthenticatedForgotPasswordRoute
+  '/tenant/sign-in': typeof TenantUnauthenticatedSignInRoute
+  '/tenant/sign-up': typeof TenantUnauthenticatedSignUpRoute
+  '/tenant/groups/$groupId': typeof TenantAuthenticatedGroupsGroupIdRoute
+  '/tenant/groups/': typeof TenantAuthenticatedGroupsIndexRoute
+}
+export interface FileRoutesByTo {
+  '/new-log': typeof NewLogRoute
+  '/join': typeof MarketingJoinRoute
+  '/tenant': typeof TenantIndexRoute
+  '/': typeof MarketingIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/tenant/admin': typeof TenantAuthenticatedAdminRoute
+  '/tenant/calendar': typeof TenantAuthenticatedCalendarRoute
+  '/tenant/dashboard': typeof TenantAuthenticatedDashboardRoute
+  '/tenant/insights': typeof TenantAuthenticatedInsightsRoute
+  '/tenant/log': typeof TenantAuthenticatedLogRoute
+  '/tenant/settings': typeof TenantAuthenticatedSettingsRoute
+  '/tenant/trends': typeof TenantAuthenticatedTrendsRoute
+  '/tenant/welcome': typeof TenantAuthenticatedWelcomeRoute
+  '/tenant/forgot-password': typeof TenantUnauthenticatedForgotPasswordRoute
+  '/tenant/sign-in': typeof TenantUnauthenticatedSignInRoute
+  '/tenant/sign-up': typeof TenantUnauthenticatedSignUpRoute
+  '/tenant/groups/$groupId': typeof TenantAuthenticatedGroupsGroupIdRoute
+  '/tenant/groups': typeof TenantAuthenticatedGroupsIndexRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/_marketing': typeof MarketingRouteWithChildren
+  '/new-log': typeof NewLogRoute
+  '/tenant': typeof TenantRouteWithChildren
+  '/_marketing/join': typeof MarketingJoinRoute
+  '/tenant/_authenticated': typeof TenantAuthenticatedRouteWithChildren
+  '/_marketing/': typeof MarketingIndexRoute
+  '/tenant/': typeof TenantIndexRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/tenant/_authenticated/admin': typeof TenantAuthenticatedAdminRoute
+  '/tenant/_authenticated/calendar': typeof TenantAuthenticatedCalendarRoute
+  '/tenant/_authenticated/dashboard': typeof TenantAuthenticatedDashboardRoute
+  '/tenant/_authenticated/insights': typeof TenantAuthenticatedInsightsRoute
+  '/tenant/_authenticated/log': typeof TenantAuthenticatedLogRoute
+  '/tenant/_authenticated/settings': typeof TenantAuthenticatedSettingsRoute
+  '/tenant/_authenticated/trends': typeof TenantAuthenticatedTrendsRoute
+  '/tenant/_authenticated/welcome': typeof TenantAuthenticatedWelcomeRoute
+  '/tenant/_unauthenticated/forgot-password': typeof TenantUnauthenticatedForgotPasswordRoute
+  '/tenant/_unauthenticated/sign-in': typeof TenantUnauthenticatedSignInRoute
+  '/tenant/_unauthenticated/sign-up': typeof TenantUnauthenticatedSignUpRoute
+  '/tenant/_authenticated/groups/$groupId': typeof TenantAuthenticatedGroupsGroupIdRoute
+  '/tenant/_authenticated/groups/': typeof TenantAuthenticatedGroupsIndexRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/new-log'
+    | '/tenant'
+    | '/join'
+    | '/tenant/'
+    | '/api/auth/$'
+    | '/tenant/admin'
+    | '/tenant/calendar'
+    | '/tenant/dashboard'
+    | '/tenant/insights'
+    | '/tenant/log'
+    | '/tenant/settings'
+    | '/tenant/trends'
+    | '/tenant/welcome'
+    | '/tenant/forgot-password'
+    | '/tenant/sign-in'
+    | '/tenant/sign-up'
+    | '/tenant/groups/$groupId'
+    | '/tenant/groups/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/new-log'
+    | '/join'
+    | '/tenant'
+    | '/'
+    | '/api/auth/$'
+    | '/tenant/admin'
+    | '/tenant/calendar'
+    | '/tenant/dashboard'
+    | '/tenant/insights'
+    | '/tenant/log'
+    | '/tenant/settings'
+    | '/tenant/trends'
+    | '/tenant/welcome'
+    | '/tenant/forgot-password'
+    | '/tenant/sign-in'
+    | '/tenant/sign-up'
+    | '/tenant/groups/$groupId'
+    | '/tenant/groups'
+  id:
+    | '__root__'
+    | '/_marketing'
+    | '/new-log'
+    | '/tenant'
+    | '/_marketing/join'
+    | '/tenant/_authenticated'
+    | '/_marketing/'
+    | '/tenant/'
+    | '/api/auth/$'
+    | '/tenant/_authenticated/admin'
+    | '/tenant/_authenticated/calendar'
+    | '/tenant/_authenticated/dashboard'
+    | '/tenant/_authenticated/insights'
+    | '/tenant/_authenticated/log'
+    | '/tenant/_authenticated/settings'
+    | '/tenant/_authenticated/trends'
+    | '/tenant/_authenticated/welcome'
+    | '/tenant/_unauthenticated/forgot-password'
+    | '/tenant/_unauthenticated/sign-in'
+    | '/tenant/_unauthenticated/sign-up'
+    | '/tenant/_authenticated/groups/$groupId'
+    | '/tenant/_authenticated/groups/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  MarketingRoute: typeof MarketingRouteWithChildren
+  NewLogRoute: typeof NewLogRoute
+  TenantRoute: typeof TenantRouteWithChildren
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+}
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_public': {
-      id: '/_public'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof PublicImport
-      parentRoute: typeof rootRoute
+    '/tenant': {
+      id: '/tenant'
+      path: '/tenant'
+      fullPath: '/tenant'
+      preLoaderRoute: typeof TenantRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/new-log': {
       id: '/new-log'
       path: '/new-log'
       fullPath: '/new-log'
-      preLoaderRoute: typeof NewLogImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof NewLogRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/temp-redirect': {
-      id: '/temp-redirect'
-      path: '/temp-redirect'
-      fullPath: '/temp-redirect'
-      preLoaderRoute: typeof TempRedirectImport
-      parentRoute: typeof rootRoute
+    '/_marketing': {
+      id: '/_marketing'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_public/join': {
-      id: '/_public/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof PublicJoinImport
-      parentRoute: typeof PublicImport
+    '/tenant/': {
+      id: '/tenant/'
+      path: '/'
+      fullPath: '/tenant/'
+      preLoaderRoute: typeof TenantIndexRouteImport
+      parentRoute: typeof TenantRoute
     }
-    '/o/$orgId': {
-      id: '/o/$orgId'
-      path: '/o/$orgId'
-      fullPath: '/o/$orgId'
-      preLoaderRoute: typeof OOrgIdImport
-      parentRoute: typeof rootRoute
-    }
-    '/_public/': {
-      id: '/_public/'
+    '/_marketing/': {
+      id: '/_marketing/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof PublicIndexImport
-      parentRoute: typeof PublicImport
+      preLoaderRoute: typeof MarketingIndexRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/o/$orgId/_authenticated': {
-      id: '/o/$orgId/_authenticated'
+    '/tenant/_authenticated': {
+      id: '/tenant/_authenticated'
       path: ''
-      fullPath: '/o/$orgId'
-      preLoaderRoute: typeof OOrgIdAuthenticatedImport
-      parentRoute: typeof OOrgIdImport
+      fullPath: '/tenant'
+      preLoaderRoute: typeof TenantAuthenticatedRouteImport
+      parentRoute: typeof TenantRoute
     }
-    '/o/$orgId/_authenticated/admin': {
-      id: '/o/$orgId/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/o/$orgId/admin'
-      preLoaderRoute: typeof OOrgIdAuthenticatedAdminImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
+    '/_marketing/join': {
+      id: '/_marketing/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof MarketingJoinRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/o/$orgId/_authenticated/dashboard': {
-      id: '/o/$orgId/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/o/$orgId/dashboard'
-      preLoaderRoute: typeof OOrgIdAuthenticatedDashboardImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
-    }
-    '/o/$orgId/_authenticated/log': {
-      id: '/o/$orgId/_authenticated/log'
-      path: '/log'
-      fullPath: '/o/$orgId/log'
-      preLoaderRoute: typeof OOrgIdAuthenticatedLogImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
-    }
-    '/o/$orgId/_authenticated/trends': {
-      id: '/o/$orgId/_authenticated/trends'
-      path: '/trends'
-      fullPath: '/o/$orgId/trends'
-      preLoaderRoute: typeof OOrgIdAuthenticatedTrendsImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
-    }
-    '/o/$orgId/_authenticated/welcome': {
-      id: '/o/$orgId/_authenticated/welcome'
-      path: '/welcome'
-      fullPath: '/o/$orgId/welcome'
-      preLoaderRoute: typeof OOrgIdAuthenticatedWelcomeImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
-    }
-    '/o/$orgId/_unauthenticated/forgot-password': {
-      id: '/o/$orgId/_unauthenticated/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/o/$orgId/forgot-password'
-      preLoaderRoute: typeof OOrgIdUnauthenticatedForgotPasswordImport
-      parentRoute: typeof OOrgIdImport
-    }
-    '/o/$orgId/_unauthenticated/sign-in': {
-      id: '/o/$orgId/_unauthenticated/sign-in'
-      path: '/sign-in'
-      fullPath: '/o/$orgId/sign-in'
-      preLoaderRoute: typeof OOrgIdUnauthenticatedSignInImport
-      parentRoute: typeof OOrgIdImport
-    }
-    '/o/$orgId/_unauthenticated/sign-up': {
-      id: '/o/$orgId/_unauthenticated/sign-up'
+    '/tenant/_unauthenticated/sign-up': {
+      id: '/tenant/_unauthenticated/sign-up'
       path: '/sign-up'
-      fullPath: '/o/$orgId/sign-up'
-      preLoaderRoute: typeof OOrgIdUnauthenticatedSignUpImport
-      parentRoute: typeof OOrgIdImport
+      fullPath: '/tenant/sign-up'
+      preLoaderRoute: typeof TenantUnauthenticatedSignUpRouteImport
+      parentRoute: typeof TenantRoute
     }
-    '/o/$orgId/_authenticated/groups/$groupId': {
-      id: '/o/$orgId/_authenticated/groups/$groupId'
-      path: '/groups/$groupId'
-      fullPath: '/o/$orgId/groups/$groupId'
-      preLoaderRoute: typeof OOrgIdAuthenticatedGroupsGroupIdImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
+    '/tenant/_unauthenticated/sign-in': {
+      id: '/tenant/_unauthenticated/sign-in'
+      path: '/sign-in'
+      fullPath: '/tenant/sign-in'
+      preLoaderRoute: typeof TenantUnauthenticatedSignInRouteImport
+      parentRoute: typeof TenantRoute
     }
-    '/o/$orgId/_authenticated/groups/': {
-      id: '/o/$orgId/_authenticated/groups/'
+    '/tenant/_unauthenticated/forgot-password': {
+      id: '/tenant/_unauthenticated/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/tenant/forgot-password'
+      preLoaderRoute: typeof TenantUnauthenticatedForgotPasswordRouteImport
+      parentRoute: typeof TenantRoute
+    }
+    '/tenant/_authenticated/welcome': {
+      id: '/tenant/_authenticated/welcome'
+      path: '/welcome'
+      fullPath: '/tenant/welcome'
+      preLoaderRoute: typeof TenantAuthenticatedWelcomeRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/trends': {
+      id: '/tenant/_authenticated/trends'
+      path: '/trends'
+      fullPath: '/tenant/trends'
+      preLoaderRoute: typeof TenantAuthenticatedTrendsRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/settings': {
+      id: '/tenant/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/tenant/settings'
+      preLoaderRoute: typeof TenantAuthenticatedSettingsRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/log': {
+      id: '/tenant/_authenticated/log'
+      path: '/log'
+      fullPath: '/tenant/log'
+      preLoaderRoute: typeof TenantAuthenticatedLogRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/insights': {
+      id: '/tenant/_authenticated/insights'
+      path: '/insights'
+      fullPath: '/tenant/insights'
+      preLoaderRoute: typeof TenantAuthenticatedInsightsRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/dashboard': {
+      id: '/tenant/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/tenant/dashboard'
+      preLoaderRoute: typeof TenantAuthenticatedDashboardRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/calendar': {
+      id: '/tenant/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/tenant/calendar'
+      preLoaderRoute: typeof TenantAuthenticatedCalendarRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/admin': {
+      id: '/tenant/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/tenant/admin'
+      preLoaderRoute: typeof TenantAuthenticatedAdminRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tenant/_authenticated/groups/': {
+      id: '/tenant/_authenticated/groups/'
       path: '/groups'
-      fullPath: '/o/$orgId/groups'
-      preLoaderRoute: typeof OOrgIdAuthenticatedGroupsIndexImport
-      parentRoute: typeof OOrgIdAuthenticatedImport
+      fullPath: '/tenant/groups/'
+      preLoaderRoute: typeof TenantAuthenticatedGroupsIndexRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
+    }
+    '/tenant/_authenticated/groups/$groupId': {
+      id: '/tenant/_authenticated/groups/$groupId'
+      path: '/groups/$groupId'
+      fullPath: '/tenant/groups/$groupId'
+      preLoaderRoute: typeof TenantAuthenticatedGroupsGroupIdRouteImport
+      parentRoute: typeof TenantAuthenticatedRoute
     }
   }
 }
 
-// Create and export the route tree
-
-interface PublicRouteChildren {
-  PublicJoinRoute: typeof PublicJoinRoute
-  PublicIndexRoute: typeof PublicIndexRoute
+interface MarketingRouteChildren {
+  MarketingJoinRoute: typeof MarketingJoinRoute
+  MarketingIndexRoute: typeof MarketingIndexRoute
 }
 
-const PublicRouteChildren: PublicRouteChildren = {
-  PublicJoinRoute: PublicJoinRoute,
-  PublicIndexRoute: PublicIndexRoute,
+const MarketingRouteChildren: MarketingRouteChildren = {
+  MarketingJoinRoute: MarketingJoinRoute,
+  MarketingIndexRoute: MarketingIndexRoute,
 }
 
-const PublicRouteWithChildren =
-  PublicRoute._addFileChildren(PublicRouteChildren)
+const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
+  MarketingRouteChildren,
+)
 
-interface OOrgIdAuthenticatedRouteChildren {
-  OOrgIdAuthenticatedAdminRoute: typeof OOrgIdAuthenticatedAdminRoute
-  OOrgIdAuthenticatedDashboardRoute: typeof OOrgIdAuthenticatedDashboardRoute
-  OOrgIdAuthenticatedLogRoute: typeof OOrgIdAuthenticatedLogRoute
-  OOrgIdAuthenticatedTrendsRoute: typeof OOrgIdAuthenticatedTrendsRoute
-  OOrgIdAuthenticatedWelcomeRoute: typeof OOrgIdAuthenticatedWelcomeRoute
-  OOrgIdAuthenticatedGroupsGroupIdRoute: typeof OOrgIdAuthenticatedGroupsGroupIdRoute
-  OOrgIdAuthenticatedGroupsIndexRoute: typeof OOrgIdAuthenticatedGroupsIndexRoute
+interface TenantAuthenticatedRouteChildren {
+  TenantAuthenticatedAdminRoute: typeof TenantAuthenticatedAdminRoute
+  TenantAuthenticatedCalendarRoute: typeof TenantAuthenticatedCalendarRoute
+  TenantAuthenticatedDashboardRoute: typeof TenantAuthenticatedDashboardRoute
+  TenantAuthenticatedInsightsRoute: typeof TenantAuthenticatedInsightsRoute
+  TenantAuthenticatedLogRoute: typeof TenantAuthenticatedLogRoute
+  TenantAuthenticatedSettingsRoute: typeof TenantAuthenticatedSettingsRoute
+  TenantAuthenticatedTrendsRoute: typeof TenantAuthenticatedTrendsRoute
+  TenantAuthenticatedWelcomeRoute: typeof TenantAuthenticatedWelcomeRoute
+  TenantAuthenticatedGroupsGroupIdRoute: typeof TenantAuthenticatedGroupsGroupIdRoute
+  TenantAuthenticatedGroupsIndexRoute: typeof TenantAuthenticatedGroupsIndexRoute
 }
 
-const OOrgIdAuthenticatedRouteChildren: OOrgIdAuthenticatedRouteChildren = {
-  OOrgIdAuthenticatedAdminRoute: OOrgIdAuthenticatedAdminRoute,
-  OOrgIdAuthenticatedDashboardRoute: OOrgIdAuthenticatedDashboardRoute,
-  OOrgIdAuthenticatedLogRoute: OOrgIdAuthenticatedLogRoute,
-  OOrgIdAuthenticatedTrendsRoute: OOrgIdAuthenticatedTrendsRoute,
-  OOrgIdAuthenticatedWelcomeRoute: OOrgIdAuthenticatedWelcomeRoute,
-  OOrgIdAuthenticatedGroupsGroupIdRoute: OOrgIdAuthenticatedGroupsGroupIdRoute,
-  OOrgIdAuthenticatedGroupsIndexRoute: OOrgIdAuthenticatedGroupsIndexRoute,
+const TenantAuthenticatedRouteChildren: TenantAuthenticatedRouteChildren = {
+  TenantAuthenticatedAdminRoute: TenantAuthenticatedAdminRoute,
+  TenantAuthenticatedCalendarRoute: TenantAuthenticatedCalendarRoute,
+  TenantAuthenticatedDashboardRoute: TenantAuthenticatedDashboardRoute,
+  TenantAuthenticatedInsightsRoute: TenantAuthenticatedInsightsRoute,
+  TenantAuthenticatedLogRoute: TenantAuthenticatedLogRoute,
+  TenantAuthenticatedSettingsRoute: TenantAuthenticatedSettingsRoute,
+  TenantAuthenticatedTrendsRoute: TenantAuthenticatedTrendsRoute,
+  TenantAuthenticatedWelcomeRoute: TenantAuthenticatedWelcomeRoute,
+  TenantAuthenticatedGroupsGroupIdRoute: TenantAuthenticatedGroupsGroupIdRoute,
+  TenantAuthenticatedGroupsIndexRoute: TenantAuthenticatedGroupsIndexRoute,
 }
 
-const OOrgIdAuthenticatedRouteWithChildren =
-  OOrgIdAuthenticatedRoute._addFileChildren(OOrgIdAuthenticatedRouteChildren)
+const TenantAuthenticatedRouteWithChildren =
+  TenantAuthenticatedRoute._addFileChildren(TenantAuthenticatedRouteChildren)
 
-interface OOrgIdRouteChildren {
-  OOrgIdAuthenticatedRoute: typeof OOrgIdAuthenticatedRouteWithChildren
-  OOrgIdUnauthenticatedForgotPasswordRoute: typeof OOrgIdUnauthenticatedForgotPasswordRoute
-  OOrgIdUnauthenticatedSignInRoute: typeof OOrgIdUnauthenticatedSignInRoute
-  OOrgIdUnauthenticatedSignUpRoute: typeof OOrgIdUnauthenticatedSignUpRoute
+interface TenantRouteChildren {
+  TenantAuthenticatedRoute: typeof TenantAuthenticatedRouteWithChildren
+  TenantIndexRoute: typeof TenantIndexRoute
+  TenantUnauthenticatedForgotPasswordRoute: typeof TenantUnauthenticatedForgotPasswordRoute
+  TenantUnauthenticatedSignInRoute: typeof TenantUnauthenticatedSignInRoute
+  TenantUnauthenticatedSignUpRoute: typeof TenantUnauthenticatedSignUpRoute
 }
 
-const OOrgIdRouteChildren: OOrgIdRouteChildren = {
-  OOrgIdAuthenticatedRoute: OOrgIdAuthenticatedRouteWithChildren,
-  OOrgIdUnauthenticatedForgotPasswordRoute:
-    OOrgIdUnauthenticatedForgotPasswordRoute,
-  OOrgIdUnauthenticatedSignInRoute: OOrgIdUnauthenticatedSignInRoute,
-  OOrgIdUnauthenticatedSignUpRoute: OOrgIdUnauthenticatedSignUpRoute,
+const TenantRouteChildren: TenantRouteChildren = {
+  TenantAuthenticatedRoute: TenantAuthenticatedRouteWithChildren,
+  TenantIndexRoute: TenantIndexRoute,
+  TenantUnauthenticatedForgotPasswordRoute:
+    TenantUnauthenticatedForgotPasswordRoute,
+  TenantUnauthenticatedSignInRoute: TenantUnauthenticatedSignInRoute,
+  TenantUnauthenticatedSignUpRoute: TenantUnauthenticatedSignUpRoute,
 }
 
-const OOrgIdRouteWithChildren =
-  OOrgIdRoute._addFileChildren(OOrgIdRouteChildren)
-
-export interface FileRoutesByFullPath {
-  '': typeof PublicRouteWithChildren
-  '/new-log': typeof NewLogRoute
-  '/temp-redirect': typeof TempRedirectRoute
-  '/join': typeof PublicJoinRoute
-  '/o/$orgId': typeof OOrgIdAuthenticatedRouteWithChildren
-  '/': typeof PublicIndexRoute
-  '/o/$orgId/admin': typeof OOrgIdAuthenticatedAdminRoute
-  '/o/$orgId/dashboard': typeof OOrgIdAuthenticatedDashboardRoute
-  '/o/$orgId/log': typeof OOrgIdAuthenticatedLogRoute
-  '/o/$orgId/trends': typeof OOrgIdAuthenticatedTrendsRoute
-  '/o/$orgId/welcome': typeof OOrgIdAuthenticatedWelcomeRoute
-  '/o/$orgId/forgot-password': typeof OOrgIdUnauthenticatedForgotPasswordRoute
-  '/o/$orgId/sign-in': typeof OOrgIdUnauthenticatedSignInRoute
-  '/o/$orgId/sign-up': typeof OOrgIdUnauthenticatedSignUpRoute
-  '/o/$orgId/groups/$groupId': typeof OOrgIdAuthenticatedGroupsGroupIdRoute
-  '/o/$orgId/groups': typeof OOrgIdAuthenticatedGroupsIndexRoute
-}
-
-export interface FileRoutesByTo {
-  '/new-log': typeof NewLogRoute
-  '/temp-redirect': typeof TempRedirectRoute
-  '/join': typeof PublicJoinRoute
-  '/o/$orgId': typeof OOrgIdAuthenticatedRouteWithChildren
-  '/': typeof PublicIndexRoute
-  '/o/$orgId/admin': typeof OOrgIdAuthenticatedAdminRoute
-  '/o/$orgId/dashboard': typeof OOrgIdAuthenticatedDashboardRoute
-  '/o/$orgId/log': typeof OOrgIdAuthenticatedLogRoute
-  '/o/$orgId/trends': typeof OOrgIdAuthenticatedTrendsRoute
-  '/o/$orgId/welcome': typeof OOrgIdAuthenticatedWelcomeRoute
-  '/o/$orgId/forgot-password': typeof OOrgIdUnauthenticatedForgotPasswordRoute
-  '/o/$orgId/sign-in': typeof OOrgIdUnauthenticatedSignInRoute
-  '/o/$orgId/sign-up': typeof OOrgIdUnauthenticatedSignUpRoute
-  '/o/$orgId/groups/$groupId': typeof OOrgIdAuthenticatedGroupsGroupIdRoute
-  '/o/$orgId/groups': typeof OOrgIdAuthenticatedGroupsIndexRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/_public': typeof PublicRouteWithChildren
-  '/new-log': typeof NewLogRoute
-  '/temp-redirect': typeof TempRedirectRoute
-  '/_public/join': typeof PublicJoinRoute
-  '/o/$orgId': typeof OOrgIdRouteWithChildren
-  '/_public/': typeof PublicIndexRoute
-  '/o/$orgId/_authenticated': typeof OOrgIdAuthenticatedRouteWithChildren
-  '/o/$orgId/_authenticated/admin': typeof OOrgIdAuthenticatedAdminRoute
-  '/o/$orgId/_authenticated/dashboard': typeof OOrgIdAuthenticatedDashboardRoute
-  '/o/$orgId/_authenticated/log': typeof OOrgIdAuthenticatedLogRoute
-  '/o/$orgId/_authenticated/trends': typeof OOrgIdAuthenticatedTrendsRoute
-  '/o/$orgId/_authenticated/welcome': typeof OOrgIdAuthenticatedWelcomeRoute
-  '/o/$orgId/_unauthenticated/forgot-password': typeof OOrgIdUnauthenticatedForgotPasswordRoute
-  '/o/$orgId/_unauthenticated/sign-in': typeof OOrgIdUnauthenticatedSignInRoute
-  '/o/$orgId/_unauthenticated/sign-up': typeof OOrgIdUnauthenticatedSignUpRoute
-  '/o/$orgId/_authenticated/groups/$groupId': typeof OOrgIdAuthenticatedGroupsGroupIdRoute
-  '/o/$orgId/_authenticated/groups/': typeof OOrgIdAuthenticatedGroupsIndexRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | ''
-    | '/new-log'
-    | '/temp-redirect'
-    | '/join'
-    | '/o/$orgId'
-    | '/'
-    | '/o/$orgId/admin'
-    | '/o/$orgId/dashboard'
-    | '/o/$orgId/log'
-    | '/o/$orgId/trends'
-    | '/o/$orgId/welcome'
-    | '/o/$orgId/forgot-password'
-    | '/o/$orgId/sign-in'
-    | '/o/$orgId/sign-up'
-    | '/o/$orgId/groups/$groupId'
-    | '/o/$orgId/groups'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/new-log'
-    | '/temp-redirect'
-    | '/join'
-    | '/o/$orgId'
-    | '/'
-    | '/o/$orgId/admin'
-    | '/o/$orgId/dashboard'
-    | '/o/$orgId/log'
-    | '/o/$orgId/trends'
-    | '/o/$orgId/welcome'
-    | '/o/$orgId/forgot-password'
-    | '/o/$orgId/sign-in'
-    | '/o/$orgId/sign-up'
-    | '/o/$orgId/groups/$groupId'
-    | '/o/$orgId/groups'
-  id:
-    | '__root__'
-    | '/_public'
-    | '/new-log'
-    | '/temp-redirect'
-    | '/_public/join'
-    | '/o/$orgId'
-    | '/_public/'
-    | '/o/$orgId/_authenticated'
-    | '/o/$orgId/_authenticated/admin'
-    | '/o/$orgId/_authenticated/dashboard'
-    | '/o/$orgId/_authenticated/log'
-    | '/o/$orgId/_authenticated/trends'
-    | '/o/$orgId/_authenticated/welcome'
-    | '/o/$orgId/_unauthenticated/forgot-password'
-    | '/o/$orgId/_unauthenticated/sign-in'
-    | '/o/$orgId/_unauthenticated/sign-up'
-    | '/o/$orgId/_authenticated/groups/$groupId'
-    | '/o/$orgId/_authenticated/groups/'
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  PublicRoute: typeof PublicRouteWithChildren
-  NewLogRoute: typeof NewLogRoute
-  TempRedirectRoute: typeof TempRedirectRoute
-  OOrgIdRoute: typeof OOrgIdRouteWithChildren
-}
+const TenantRouteWithChildren =
+  TenantRoute._addFileChildren(TenantRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  PublicRoute: PublicRouteWithChildren,
+  MarketingRoute: MarketingRouteWithChildren,
   NewLogRoute: NewLogRoute,
-  TempRedirectRoute: TempRedirectRoute,
-  OOrgIdRoute: OOrgIdRouteWithChildren,
+  TenantRoute: TenantRouteWithChildren,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/_public",
-        "/new-log",
-        "/temp-redirect",
-        "/o/$orgId"
-      ]
-    },
-    "/_public": {
-      "filePath": "_public.tsx",
-      "children": [
-        "/_public/join",
-        "/_public/"
-      ]
-    },
-    "/new-log": {
-      "filePath": "new-log.tsx"
-    },
-    "/temp-redirect": {
-      "filePath": "temp-redirect.tsx"
-    },
-    "/_public/join": {
-      "filePath": "_public.join.tsx",
-      "parent": "/_public"
-    },
-    "/o/$orgId": {
-      "filePath": "o.$orgId.tsx",
-      "children": [
-        "/o/$orgId/_authenticated",
-        "/o/$orgId/_unauthenticated/forgot-password",
-        "/o/$orgId/_unauthenticated/sign-in",
-        "/o/$orgId/_unauthenticated/sign-up"
-      ]
-    },
-    "/_public/": {
-      "filePath": "_public.index.tsx",
-      "parent": "/_public"
-    },
-    "/o/$orgId/_authenticated": {
-      "filePath": "o.$orgId/_authenticated.tsx",
-      "parent": "/o/$orgId",
-      "children": [
-        "/o/$orgId/_authenticated/admin",
-        "/o/$orgId/_authenticated/dashboard",
-        "/o/$orgId/_authenticated/log",
-        "/o/$orgId/_authenticated/trends",
-        "/o/$orgId/_authenticated/welcome",
-        "/o/$orgId/_authenticated/groups/$groupId",
-        "/o/$orgId/_authenticated/groups/"
-      ]
-    },
-    "/o/$orgId/_authenticated/admin": {
-      "filePath": "o.$orgId/_authenticated/admin.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    },
-    "/o/$orgId/_authenticated/dashboard": {
-      "filePath": "o.$orgId/_authenticated/dashboard.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    },
-    "/o/$orgId/_authenticated/log": {
-      "filePath": "o.$orgId/_authenticated/log.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    },
-    "/o/$orgId/_authenticated/trends": {
-      "filePath": "o.$orgId/_authenticated/trends.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    },
-    "/o/$orgId/_authenticated/welcome": {
-      "filePath": "o.$orgId/_authenticated/welcome.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    },
-    "/o/$orgId/_unauthenticated/forgot-password": {
-      "filePath": "o.$orgId/_unauthenticated/forgot-password.tsx",
-      "parent": "/o/$orgId"
-    },
-    "/o/$orgId/_unauthenticated/sign-in": {
-      "filePath": "o.$orgId/_unauthenticated/sign-in.tsx",
-      "parent": "/o/$orgId"
-    },
-    "/o/$orgId/_unauthenticated/sign-up": {
-      "filePath": "o.$orgId/_unauthenticated/sign-up.tsx",
-      "parent": "/o/$orgId"
-    },
-    "/o/$orgId/_authenticated/groups/$groupId": {
-      "filePath": "o.$orgId/_authenticated/groups/$groupId.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    },
-    "/o/$orgId/_authenticated/groups/": {
-      "filePath": "o.$orgId/_authenticated/groups/index.tsx",
-      "parent": "/o/$orgId/_authenticated"
-    }
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }
-ROUTE_MANIFEST_END */

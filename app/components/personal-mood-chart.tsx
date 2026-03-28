@@ -17,7 +17,7 @@ import { usersTimeZone } from '@/constants/userTimeZone';
 
 export function PersonalMoodChart() {
   const user = useLoaderData({
-    from: '/o/$orgId/_authenticated',
+    from: '/tenant/_authenticated',
   });
   const { data: getMoodTrends } = useSuspenseQuery(
     convexQuery(api.mood.getMoodTrends, {

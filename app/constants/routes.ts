@@ -1,30 +1,48 @@
 import { PlusCircle } from 'lucide-react';
 
-import { Users, Activity, LayoutDashboardIcon } from 'lucide-react';
+import {
+  Users,
+  Activity,
+  LayoutDashboardIcon,
+  CalendarDays,
+  Lightbulb,
+} from 'lucide-react';
 
 export const ROUTES = [
   {
     label: 'Dashboard',
     icon: LayoutDashboardIcon,
-    href: '/o/$orgId/dashboard',
+    href: '/tenant/dashboard',
     ignoreInSidebar: false,
   },
   {
     label: 'Log Your Mood',
     icon: PlusCircle,
-    href: '/o/$orgId/log',
+    href: '/tenant/log',
     ignoreInSidebar: true,
+  },
+  {
+    label: 'Calendar',
+    icon: CalendarDays,
+    href: '/tenant/calendar',
+    ignoreInSidebar: false,
+  },
+  {
+    label: 'Insights',
+    icon: Lightbulb,
+    href: '/tenant/insights',
+    ignoreInSidebar: false,
   },
   {
     label: 'Groups',
     icon: Users,
-    href: '/o/$orgId/groups',
+    href: '/tenant/groups',
     ignoreInSidebar: false,
   },
   {
     label: 'Global Trends',
     icon: Activity,
-    href: '/o/$orgId/trends',
+    href: '/tenant/trends',
     ignoreInSidebar: false,
   },
 ] as const;

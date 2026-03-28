@@ -9,10 +9,7 @@ export const getGroupHelper = async (
   ctx: QueryCtx,
   args: { groupId: Id<'groups'> }
 ) => {
-  const group = await ctx.db
-    .query('groups')
-    .filter((q) => q.eq(q.field('_id'), args.groupId))
-    .first();
+  const group = await ctx.db.get(args.groupId);
 
   if (!group) {
     throw new Error('Group not found');
@@ -144,6 +141,7 @@ export const createGroup = mutation({
     description: v.optional(v.string()),
     image: v.optional(v.string()),
     userId: v.id('users'),
+    organizationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getUserHelper(ctx, { userId: args.userId });
@@ -154,6 +152,7 @@ export const createGroup = mutation({
       isPrivate: args.isPrivate,
       image: args.image,
       creator: user._id,
+      organizationId: args.organizationId,
     });
 
     await ctx.db.insert('groupMemberInfo', {

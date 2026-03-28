@@ -19,7 +19,7 @@ import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import type { moodLiteral } from 'convex/schema';
 import type { Infer } from 'convex/values';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import {
@@ -38,11 +38,14 @@ import {
   PERSONAL_GROUP_ID,
 } from '@/constants/internal-group-ids';
 
-export function LogMood({ user }: { user: Doc<'users'> | null }) {
+export function LogMood({
+  user,
+  organizationId,
+}: {
+  user: Doc<'users'> | null;
+  organizationId?: string;
+}) {
   const isLoggedIn = !!user;
-  const { orgId } = useParams({
-    from: '/o/$orgId',
-  });
 
   const addMood = useMutation(api.mood.createMood);
 
@@ -85,6 +88,7 @@ export function LogMood({ user }: { user: Doc<'users'> | null }) {
         tags: tags.split(',').map((tag) => tag.trim()),
         ...(isLoggedIn &&
           group !== PERSONAL_GROUP_ID && { group: group as Id<'groups'> }),
+        organizationId,
       });
       if (!isLoggedIn) {
         const existingMoods = moods ? JSON.parse(moods) : [];
@@ -112,11 +116,7 @@ export function LogMood({ user }: { user: Doc<'users'> | null }) {
             <CardTitle>Log Your Mood</CardTitle>
             {!isLoggedIn && (
               <CardDescription>
-                <Link
-                  to="/o/$orgId/sign-in"
-                  params={{ orgId }}
-                  className="underline"
-                >
+                <Link to="/tenant/sign-in" className="underline">
                   Sign in
                 </Link>{' '}
                 to track your emotional state and see patterns over time
@@ -184,11 +184,7 @@ export function LogMood({ user }: { user: Doc<'users'> | null }) {
               Log Mood {isLoggedIn ? '' : ' Anonymously'}
             </Button>
             {!isLoggedIn && (
-              <Link
-                to="/o/$orgId/sign-up"
-                params={{ orgId }}
-                className="cursor-pointer w-full"
-              >
+              <Link to="/tenant/sign-up" className="cursor-pointer w-full">
                 <Button
                   type="submit"
                   variant="outline"

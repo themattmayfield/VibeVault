@@ -30,7 +30,7 @@ const MoodSchema = z.object({
 export const getPatterns = createServerFn({
   method: 'GET',
 })
-  .validator(MoodSchema)
+  .inputValidator(MoodSchema)
   .handler(async ({ data: { moods, usersTimeZone } }) => {
     // Prepare the prompt for Claude
     const prompt = `Analyze the following mood data and generate personalized insights about patterns:
@@ -65,7 +65,7 @@ export const getPatterns = createServerFn({
 export const getTriggers = createServerFn({
   method: 'GET',
 })
-  .validator(MoodSchema)
+  .inputValidator(MoodSchema)
   .handler(async ({ data: { moods, usersTimeZone } }) => {
     // Prepare the prompt for Claude
     const prompt = `Analyze the following mood data and identify triggers that affect the user's mood:
@@ -100,7 +100,7 @@ export const getTriggers = createServerFn({
 export const getSuggestions = createServerFn({
   method: 'GET',
 })
-  .validator(MoodSchema)
+  .inputValidator(MoodSchema)
   .handler(async ({ data: { moods, usersTimeZone } }) => {
     // Prepare the prompt for Claude
     const prompt = `Analyze the following mood data and generate personalized suggestions for mood improvement:

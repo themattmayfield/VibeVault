@@ -23,22 +23,19 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { authClient } from 'auth-client';
-import { useParams, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 import getInitials from '@/lib/getInitials';
+import { signOutAction } from '@/actions/auth';
 
 export function NavUser() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const { orgId } = useParams({
-    from: '/o/$orgId',
-  });
 
   const handleLogout = async () => {
-    await authClient.signOut();
+    await signOutAction();
     router.navigate({
-      to: '/o/$orgId/sign-in',
-      params: { orgId },
+      to: '/tenant/sign-in',
       reloadDocument: true,
     });
   };
@@ -96,15 +93,24 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.navigate({ to: '/tenant/settings' })}
+              >
                 <UserCircleIcon />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.navigate({ to: '/tenant/settings' })}
+              >
                 <CreditCardIcon />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.navigate({ to: '/tenant/settings' })}
+              >
                 <BellIcon />
                 Notifications
               </DropdownMenuItem>

@@ -1,23 +1,15 @@
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import {
-  Link,
-  useMatchRoute,
-  useParams,
-  useRouterState,
-} from '@tanstack/react-router';
+import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router';
 import { ROUTES } from '@/constants/routes';
 
 export function SiteHeader() {
-  const { orgId } = useParams({
-    from: '/o/$orgId',
-  });
   const location = useRouterState({ select: (s) => s.location });
 
   const matchRoute = useMatchRoute();
 
-  const params = matchRoute({ to: '/o/$orgId/groups/$groupId' });
+  const params = matchRoute({ to: '/tenant/groups/$groupId' });
   const groupId = params ? params.groupId : null;
 
   const activeRoute = groupId
@@ -33,11 +25,7 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-base font-medium flex-1">{activeRoute}</h1>
-        <Link
-          to="/o/$orgId/log"
-          params={{ orgId }}
-          activeProps={{ className: 'hidden' }}
-        >
+        <Link to="/tenant/log" activeProps={{ className: 'hidden' }}>
           <Button size="sm" className="cursor-pointer">
             Log Mood
           </Button>

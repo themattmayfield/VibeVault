@@ -29,21 +29,43 @@ const groupMemberStatus = v.union(
 );
 
 export default defineSchema({
-  organizations: defineTable({
-    name: v.string(),
+  // App-specific org settings. Better Auth (Neon Postgres) owns the canonical
+  // org/membership/invitation data. This table stores org config for the app.
+  orgSettings: defineTable({
+    betterAuthOrgId: v.string(), // links to Better Auth organization.id
     subdomain: v.string(),
-    creator: v.id('users'),
     branding: v.optional(
       v.object({
         logo: v.optional(v.string()),
       })
     ),
-  }),
+    featureFlags: v.optional(
+      v.object({
+        groupsEnabled: v.optional(v.boolean()),
+        globalTrendsEnabled: v.optional(v.boolean()),
+        publicMoodsEnabled: v.optional(v.boolean()),
+      })
+    ),
+  })
+    .index('by_subdomain', ['subdomain'])
+    .index('by_better_auth_org_id', ['betterAuthOrgId']),
   users: defineTable({
     neonUserId: v.string(),
     displayName: v.string(),
     image: v.optional(v.string()),
     availableGroups: v.optional(v.array(v.id('groups'))),
+    theme: v.optional(
+      v.union(v.literal('light'), v.literal('dark'), v.literal('system'))
+    ),
+    timezone: v.optional(v.string()),
+    notificationPrefs: v.optional(
+      v.object({
+        emailDigest: v.optional(
+          v.union(v.literal('daily'), v.literal('weekly'), v.literal('never'))
+        ),
+        moodReminders: v.optional(v.boolean()),
+      })
+    ),
   }).index('by_neon_user_id', ['neonUserId']),
   groups: defineTable({
     name: v.string(),
@@ -51,7 +73,8 @@ export default defineSchema({
     description: v.optional(v.string()),
     image: v.optional(v.string()),
     creator: v.id('users'),
-  }),
+    organizationId: v.optional(v.string()), // Better Auth org ID for multi-tenant scoping
+  }).index('by_organization', ['organizationId']),
   groupMemberInfo: defineTable({
     userId: v.id('users'),
     groupId: v.id('groups'),
@@ -64,7 +87,10 @@ export default defineSchema({
     tags: v.optional(v.array(v.string())),
     group: v.optional(v.id('groups')),
     userId: v.optional(v.id('users')),
-  }).index('by_user_id', ['userId']),
+    organizationId: v.optional(v.string()), // Better Auth org ID for multi-tenant scoping
+  })
+    .index('by_user_id', ['userId'])
+    .index('by_org_and_user', ['organizationId', 'userId']),
   patterns: defineTable({
     insight: v.string(),
     userId: v.optional(v.id('users')),

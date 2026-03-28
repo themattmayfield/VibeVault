@@ -11,7 +11,7 @@ const createPolarCheckoutSessionSchema = z.object({
 });
 
 export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
-  .validator(createPolarCheckoutSessionSchema)
+  .inputValidator(createPolarCheckoutSessionSchema)
   .handler(async ({ data }) => {
     const response = await polarClient.checkouts.create({
       customerBillingAddress: {
@@ -31,15 +31,42 @@ export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
   });
 
 export const getPolarCheckoutSession = createServerFn({ method: 'GET' })
-  .validator(z.object({ checkoutId: z.string() }))
+  .inputValidator(z.object({ checkoutId: z.string() }))
   .handler(async ({ data }) => {
     const response = await polarClient.checkouts.get({ id: data.checkoutId });
     return response;
   });
 
 export const getPolarCustomer = createServerFn({ method: 'GET' })
-  .validator(z.object({ customerId: z.string() }))
+  .inputValidator(z.object({ customerId: z.string() }))
   .handler(async ({ data }) => {
     const response = await polarClient.customers.get({ id: data.customerId });
     return response;
   });
+
+/** Get the Polar customer portal URL for the authenticated user */
+export const getCustomerPortalUrl = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { auth } = await import('auth');
+    const { getRequestHeaders } = await import('@tanstack/react-start/server');
+    const headers = getRequestHeaders();
+
+    const session = await auth.api.getSession({
+      headers: headers as unknown as Headers,
+    });
+
+    if (!session?.user?.id) {
+      throw new Error('Not authenticated');
+    }
+
+    // Use the Polar SDK to create a customer session directly
+    try {
+      const customerSession = await polarClient.customerSessions.create({
+        externalCustomerId: session.user.id,
+      });
+      return customerSession.customerPortalUrl;
+    } catch {
+      return null;
+    }
+  }
+);
