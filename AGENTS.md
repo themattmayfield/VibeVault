@@ -12,7 +12,7 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 ## Architecture Overview
 
-MoodSync is a multi-tenant mood-tracking SaaS using **subdomain-based tenancy** (e.g. `acme.moodsync.com`). It uses a dual-database architecture:
+MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g. `moodsync.com/org/acme`). It uses a dual-database architecture:
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -44,7 +44,7 @@ See `convex/schema.ts` for full definitions.
 
 | Table | Key Fields | Indexes | Purpose |
 |-------|-----------|---------|---------|
-| `orgSettings` | `betterAuthOrgId`, `subdomain`, `branding?`, `featureFlags?` | `by_subdomain`, `by_better_auth_org_id` | Per-org config |
+| `orgSettings` | `betterAuthOrgId`, `slug`, `branding?`, `featureFlags?` | `by_slug`, `by_better_auth_org_id` | Per-org config |
 | `users` | `neonUserId`, `displayName`, `image?` | `by_neon_user_id` | App user profiles |
 | `groups` | `name`, `isPrivate`, `creator`, `organizationId?` | `by_organization` | Mood-sharing groups |
 | `groupMemberInfo` | `userId`, `groupId`, `role`, `status` | `by_user_id_and_group_id` | Group membership |
@@ -95,7 +95,7 @@ See `auth-schema.ts` for full definitions. Managed by Better Auth.
 | `groups.getGroupTimelineLast7Days` | `convex/groups.ts` | Group 7-day timeline |
 | `groups.getActiveGroupMembers` | `convex/groups.ts` | Active members list |
 | `insights.getTodaysInsight` | `convex/insights.ts` | Cached daily insight |
-| `organization.getOrgSettingsBySubdomain` | `convex/organization.ts` | Org config lookup |
+| `organization.getOrgSettingsBySlug` | `convex/organization.ts` | Org config lookup |
 | `user.getUserFromNeonUserId` | `convex/user.ts` | User lookup by Neon ID |
 | `user.getUserGroups` | `convex/user.ts` | User's group list |
 
@@ -129,7 +129,7 @@ See `auth-schema.ts` for full definitions. Managed by Better Auth.
 
 ### Start development
 ```bash
-bun run dev          # Syncs Convex, starts Convex watcher + Vite dev server via Portless
+bun run dev          # Syncs Convex, starts Convex watcher + Vite dev server
 ```
 
 ### Build and type-check
@@ -196,10 +196,10 @@ curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
 ```
 app/                          # TanStack Start application
   routes/                     # File-based routing
-    __root.tsx                # Root layout (subdomain extraction)
+    __root.tsx                # Root layout
     index.tsx                 # Marketing landing page
     join.tsx                  # Multi-step org signup
-    tenant/                   # Tenant routes (behind subdomain)
+    org/$slug/                # Tenant routes (path-based: /org/{slug}/...)
       _authenticated/         # Auth-required routes
         dashboard.tsx         # Main dashboard
         log.tsx               # Log a mood
@@ -231,7 +231,7 @@ drizzle.config.ts             # Drizzle Kit configuration
 
 ## Multi-Tenancy Model
 
-Subdomain-based routing: `{slug}.moodsync.com` -> internally rewritten to `/tenant/*` routes. The subdomain is extracted in `__root.tsx` `beforeLoad` and used to load org settings from Convex (`orgSettings` table via `by_subdomain` index). All tenant data is scoped by `organizationId` (Better Auth org ID).
+Path-based routing: `moodsync.com/org/{slug}/*` where `$slug` is a TanStack Router dynamic param. The org layout route (`app/routes/org/$slug.tsx`) resolves the slug from URL params and loads org settings from Convex (`orgSettings` table via `by_slug` index). All tenant data is scoped by `organizationId` (Better Auth org ID). Components access the slug via `useParams({ strict: false })`.
 
 ## Environment Setup
 
