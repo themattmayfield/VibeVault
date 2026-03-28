@@ -14,12 +14,13 @@ import { api } from 'convex/_generated/api';
 import { useLoaderData } from '@tanstack/react-router';
 import { moodOptions } from '../lib/getMoodEmoji';
 import { usersTimeZone } from '@/constants/userTimeZone';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 export function PersonalMoodChart() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
-  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const { orgSettings } = useOrgSettings();
   const { data: getMoodTrends } = useSuspenseQuery(
     convexQuery(api.mood.getMoodTrends, {
       userId: user._id,

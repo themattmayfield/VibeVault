@@ -24,6 +24,7 @@ import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { getPlanFeatures } from '@/lib/plan-features';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/groups/')({
   component: RouteComponent,
@@ -33,9 +34,7 @@ function RouteComponent() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
-  const { orgSettings } = useLoaderData({
-    from: '/org/$slug',
-  });
+  const { orgSettings } = useOrgSettings();
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {
       userId: user._id,

@@ -9,6 +9,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 import { convexQuery } from '@convex-dev/react-query';
 import { format } from 'date-fns-tz';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 const moodColors: Record<string, string> = {
   happy: 'bg-green-500',
   excited: 'bg-yellow-500',
@@ -35,7 +36,7 @@ export function MoodCalendar() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
-  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const { orgSettings } = useOrgSettings();
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
       userId: user._id,

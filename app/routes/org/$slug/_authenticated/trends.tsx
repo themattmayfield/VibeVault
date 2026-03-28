@@ -1,9 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-  useLoaderData,
-  useParams,
-} from '@tanstack/react-router';
+import { createFileRoute, Link, useParams } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,6 +13,7 @@ import { MoodWordCloud } from '@/components/mood-word-cloud';
 import { MoodTimeline } from '@/components/mood-timeline';
 import { FeatureLockedPrompt } from '@/components/feature-locked-prompt';
 import { isAtLeastTier } from '@/lib/plan-features';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/trends')({
   component: Trends,
@@ -25,9 +21,7 @@ export const Route = createFileRoute('/org/$slug/_authenticated/trends')({
 
 function Trends() {
   const { slug } = useParams({ strict: false });
-  const { orgSettings } = useLoaderData({
-    from: '/org/$slug',
-  });
+  const { orgSettings } = useOrgSettings();
 
   // Check if global trends are enabled for this org's plan
   const globalTrendsEnabled =

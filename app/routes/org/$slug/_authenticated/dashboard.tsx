@@ -16,6 +16,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { CalendarDays, Lightbulb, ArrowRight } from 'lucide-react';
 import numeral from 'numeral';
 import pluralize from 'pluralize';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/dashboard')({
   component: () => (
@@ -30,7 +31,7 @@ function Home() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
-  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const { orgSettings } = useOrgSettings();
   const organizationId = orgSettings.betterAuthOrgId;
 
   const { data: totalMoodEntries } = useSuspenseQuery(

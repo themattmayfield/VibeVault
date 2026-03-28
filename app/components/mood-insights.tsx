@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLoaderData } from '@tanstack/react-router';
 import { useMoodInsights } from '../hooks/use-mood-insights';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 interface MoodInsightsSectionProps {
   title: string;
@@ -67,7 +68,7 @@ export function MoodInsights() {
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
-  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const { orgSettings } = useOrgSettings();
 
   const { hasMoods, patterns, triggers, suggestions } = useMoodInsights({
     userId: user._id,

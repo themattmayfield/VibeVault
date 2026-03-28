@@ -23,6 +23,7 @@ import {
   Users,
   Shield,
 } from 'lucide-react';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
   component: () => (
@@ -34,7 +35,7 @@ export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
 
 function SettingsPage() {
   const user = useLoaderData({ from: '/org/$slug/_authenticated' });
-  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const { orgSettings } = useOrgSettings();
   const { data: session } = authClient.useSession();
 
   const [memberRole, setMemberRole] = useState<string | null>(null);

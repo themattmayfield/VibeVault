@@ -122,6 +122,24 @@ export function isAtLeastTier(
   return currentIndex >= minimumIndex;
 }
 
+/**
+ * Derive the default Convex `orgSettings.featureFlags` for a given plan tier.
+ * Mirrors the logic in `convex/organization.ts:featureFlagsForPlan()`.
+ * Used by the dev plan switcher to compute flags when overriding the plan client-side.
+ */
+export function featureFlagsForPlan(plan: PlanTier) {
+  const features = getPlanFeatures(plan);
+  return {
+    groupsEnabled: true, // all plans get groups (with different limits)
+    globalTrendsEnabled: features.globalTrends,
+    publicMoodsEnabled: features.publicMoods,
+    aiInsightsEnabled: features.aiInsights,
+    adminDashboardEnabled: features.adminDashboard,
+    dataExportEnabled: features.dataExport !== false,
+    customBrandingEnabled: features.customBranding,
+  };
+}
+
 /** Plan pricing information for display purposes. */
 export const PLAN_PRICING = {
   free: { monthly: 0, annual: 0 },

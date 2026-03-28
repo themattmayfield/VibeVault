@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Link,
-  useRouterState,
-  useRouter,
-  useLoaderData,
-} from '@tanstack/react-router';
+import { Link, useRouterState, useRouter } from '@tanstack/react-router';
 
 import { GalleryVerticalEnd } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +24,7 @@ import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 import { z } from 'zod';
 import { useSubmittingDots } from '@/hooks/useSubmittingDots';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 const { fieldContext, formContext } = createFormHookContexts();
 
@@ -48,7 +44,7 @@ export function AuthForm() {
 
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
-  const { orgSettings } = useLoaderData({ from: '/org/$slug' });
+  const { orgSettings } = useOrgSettings();
 
   const isSignIn = location.pathname.endsWith('/sign-in');
 

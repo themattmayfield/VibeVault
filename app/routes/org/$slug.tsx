@@ -1,9 +1,15 @@
-import { createFileRoute, Outlet, notFound } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Outlet,
+  notFound,
+  useLoaderData,
+} from '@tanstack/react-router';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
 import { APP_INFO } from '@/constants/app-info';
 import { Button } from '@/components/ui/button';
 import { Link } from '@tanstack/react-router';
+import { OrgSettingsProvider } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug')({
   component: RouteComponent,
@@ -61,5 +67,10 @@ function OrgNotFound() {
 }
 
 function RouteComponent() {
-  return <Outlet />;
+  const { orgSettings } = Route.useLoaderData();
+  return (
+    <OrgSettingsProvider orgSettings={orgSettings} slug={orgSettings.slug}>
+      <Outlet />
+    </OrgSettingsProvider>
+  );
 }

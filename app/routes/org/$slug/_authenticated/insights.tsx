@@ -1,9 +1,5 @@
 import { Suspense } from 'react';
-import {
-  createFileRoute,
-  useLoaderData,
-  useParams,
-} from '@tanstack/react-router';
+import { createFileRoute, useParams } from '@tanstack/react-router';
 import {
   Card,
   CardContent,
@@ -15,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MoodInsights } from '@/components/mood-insights';
 import { FeatureLockedPrompt } from '@/components/feature-locked-prompt';
 import { isAtLeastTier } from '@/lib/plan-features';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/insights')({
   component: () => (
@@ -26,9 +23,7 @@ export const Route = createFileRoute('/org/$slug/_authenticated/insights')({
 
 function InsightsPage() {
   const { slug } = useParams({ strict: false });
-  const { orgSettings } = useLoaderData({
-    from: '/org/$slug',
-  });
+  const { orgSettings } = useOrgSettings();
 
   // Check if AI insights are enabled for this org's plan
   const aiInsightsEnabled =

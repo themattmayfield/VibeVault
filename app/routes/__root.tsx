@@ -9,7 +9,9 @@ import {
 import type * as React from 'react';
 import { Toaster } from '@/components/ui/sonner';
 
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import { PlanSwitcherPanel } from '@/components/dev-plan-switcher';
 import appCss from '@/styles/app.css?url';
 import { APP_INFO } from '@/constants/app-info';
 
@@ -75,7 +77,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <div className="texture" />
         {children}
-        <TanStackRouterDevtools position="bottom-right" />
+        <TanStackDevtools
+          plugins={[
+            {
+              name: 'Router',
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+            {
+              name: 'Plan Switcher',
+              render: <PlanSwitcherPanel />,
+            },
+          ]}
+        />
         <Scripts />
         <Toaster />
       </body>
