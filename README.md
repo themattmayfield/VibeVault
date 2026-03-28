@@ -1,6 +1,6 @@
 # MoodSync
 
-Multi-tenant mood tracking SaaS for institutions (schools, healthcare facilities). Built with TanStack Start, Convex, Better Auth, and Neon Postgres.
+Multi-tenant mood tracking SaaS for individuals and organizations. Built with TanStack Start, Convex, Better Auth, and Neon Postgres. Features a 4-tier pricing model (Free / Pro / Team / Enterprise) with plan-gated features like AI insights, groups, global trends, and admin dashboards.
 
 ## Architecture
 
@@ -29,16 +29,24 @@ Copy `.env.example` to `.env.local` and fill in:
 # Convex
 CONVEX_DEPLOYMENT=dev:your-deployment
 VITE_CONVEX_URL=https://your-deployment.convex.cloud
+VITE_CONVEX_SITE_URL=https://your-deployment.convex.site
 
 # Auth & services
-DATABASE_URL=postgresql://...          # Neon Postgres connection string
-POLAR_ACCESS_TOKEN=...
-POLAR_WEBHOOK_SECRET=...
+DATABASE_URL=postgresql://...              # Neon Postgres connection string
+POLAR_ACCESS_TOKEN=...                     # Polar API token
+POLAR_WEBHOOK_SECRET=...                   # Polar webhook verification secret
+POLAR_SERVER=sandbox                       # "sandbox" or "production"
+POLAR_PRO_MONTHLY_ID=...                   # Polar product IDs (6 total, per tier + billing cycle)
+POLAR_PRO_ANNUAL_ID=...
+POLAR_TEAM_MONTHLY_ID=...
+POLAR_TEAM_ANNUAL_ID=...
+POLAR_ENTERPRISE_MONTHLY_ID=...
+POLAR_ENTERPRISE_ANNUAL_ID=...
 RESEND_API_KEY=...
 ANTHROPIC_API_KEY=...
 
 # App display
-VITE_APP_DOMAIN=moodsync.com           # Used in UI for URL previews
+VITE_APP_DOMAIN=moodsync.com               # Used in UI for URL previews
 ```
 
 ## Local Development
@@ -79,7 +87,7 @@ Better Auth is configured for single-origin auth (no cross-subdomain cookies nee
 - **Realtime DB:** [Convex](https://convex.dev)
 - **SQL DB:** [Neon Postgres](https://neon.tech) via [Drizzle ORM](https://orm.drizzle.team)
 - **Auth:** [Better Auth](https://better-auth.com) (email/password, organization plugin)
-- **Payments:** [Polar](https://polar.sh)
+- **Payments:** [Polar](https://polar.sh) (Free / Pro / Team / Enterprise tiers)
 - **AI:** [Anthropic Claude](https://anthropic.com) for mood insights
 - **Email:** [Resend](https://resend.com)
 - **UI:** [shadcn/ui](https://ui.shadcn.com) (Radix + Tailwind CSS v4)

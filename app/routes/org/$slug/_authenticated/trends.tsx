@@ -1,4 +1,9 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  useLoaderData,
+  useParams,
+} from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,12 +16,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoodPieChart } from '@/components/mood-pie-chart';
 import { MoodWordCloud } from '@/components/mood-word-cloud';
 import { MoodTimeline } from '@/components/mood-timeline';
+import { FeatureLockedPrompt } from '@/components/feature-locked-prompt';
+import { isAtLeastTier } from '@/lib/plan-features';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/trends')({
   component: Trends,
 });
 
 function Trends() {
+  const { slug } = useParams({ strict: false });
+  const { orgSettings } = useLoaderData({
+    from: '/org/$slug',
+  });
+
+  // Check if global trends are enabled for this org's plan
+  const globalTrendsEnabled =
+    orgSettings.featureFlags?.globalTrendsEnabled ??
+    isAtLeastTier(orgSettings.plan, 'team');
+
+  if (!globalTrendsEnabled) {
+    return (
+      <FeatureLockedPrompt
+        featureName="Global Mood Dashboard"
+        description="View organization-wide mood trends, see how everyone is feeling, and explore collective mood patterns."
+        requiredTier="team"
+        currentPlan={orgSettings.plan}
+        slug={slug ?? ''}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col">
       <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -31,10 +60,7 @@ function Trends() {
           </div>
           <div className="flex items-center gap-2">
             <Button asChild>
-              <Link
-                to="/org/$slug/log"
-                params={{ slug: Route.useParams().slug }}
-              >
+              <Link to="/org/$slug/log" params={{ slug: slug ?? '' }}>
                 Log Your Mood
               </Link>
             </Button>

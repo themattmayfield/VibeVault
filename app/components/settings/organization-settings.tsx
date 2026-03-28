@@ -11,11 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { updateOrganization } from '@/actions/organization';
 import { useMutation } from 'convex/react';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
+import { getPlanFeatures, type PlanTier } from '@/lib/plan-features';
 
 interface OrganizationSettingsProps {
   orgSettings: Doc<'orgSettings'>;
@@ -34,15 +36,23 @@ export function OrganizationSettings({
   const [slug, setSlug] = useState(orgSlug);
   const [orgLoading, setOrgLoading] = useState(false);
 
+  const plan = (orgSettings.plan ?? 'free') as PlanTier;
+  const planFeatures = getPlanFeatures(plan);
   const flags = orgSettings.featureFlags;
   const [groupsEnabled, setGroupsEnabled] = useState(
     flags?.groupsEnabled ?? true
   );
   const [globalTrendsEnabled, setGlobalTrendsEnabled] = useState(
-    flags?.globalTrendsEnabled ?? true
+    flags?.globalTrendsEnabled ?? false
   );
   const [publicMoodsEnabled, setPublicMoodsEnabled] = useState(
     flags?.publicMoodsEnabled ?? false
+  );
+  const [aiInsightsEnabled, setAiInsightsEnabled] = useState(
+    flags?.aiInsightsEnabled ?? false
+  );
+  const [adminDashboardEnabled, setAdminDashboardEnabled] = useState(
+    flags?.adminDashboardEnabled ?? false
   );
   const [flagsLoading, setFlagsLoading] = useState(false);
 
@@ -84,6 +94,8 @@ export function OrganizationSettings({
           groupsEnabled,
           globalTrendsEnabled,
           publicMoodsEnabled,
+          aiInsightsEnabled,
+          adminDashboardEnabled,
         },
       });
       toast.success('Feature flags updated');
@@ -143,9 +155,13 @@ export function OrganizationSettings({
       {/* Feature Flags */}
       <Card>
         <CardHeader>
-          <CardTitle>Features</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Features
+            <Badge variant="outline">{planFeatures.label} Plan</Badge>
+          </CardTitle>
           <CardDescription>
-            Enable or disable features for your organization.
+            Enable or disable features for your organization. Some features
+            require a higher plan tier.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -164,7 +180,35 @@ export function OrganizationSettings({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="trends-flag">Global Trends</Label>
+              <Label htmlFor="insights-flag">
+                AI Insights
+                {!planFeatures.aiInsights && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    Pro+
+                  </Badge>
+                )}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Enable AI-powered mood pattern analysis and suggestions.
+              </p>
+            </div>
+            <Switch
+              id="insights-flag"
+              checked={aiInsightsEnabled}
+              onCheckedChange={setAiInsightsEnabled}
+              disabled={!planFeatures.aiInsights}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="trends-flag">
+                Global Trends
+                {!planFeatures.globalTrends && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    Team+
+                  </Badge>
+                )}
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Show organization-wide mood trend analytics.
               </p>
@@ -173,6 +217,28 @@ export function OrganizationSettings({
               id="trends-flag"
               checked={globalTrendsEnabled}
               onCheckedChange={setGlobalTrendsEnabled}
+              disabled={!planFeatures.globalTrends}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="admin-flag">
+                Admin Dashboard
+                {!planFeatures.adminDashboard && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    Team+
+                  </Badge>
+                )}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Enable the admin dashboard for organization management.
+              </p>
+            </div>
+            <Switch
+              id="admin-flag"
+              checked={adminDashboardEnabled}
+              onCheckedChange={setAdminDashboardEnabled}
+              disabled={!planFeatures.adminDashboard}
             />
           </div>
           <div className="flex items-center justify-between">

@@ -182,7 +182,12 @@ function SettingsPage() {
           {isOwner && (
             <>
               <TabsContent value="billing">
-                <BillingSettings />
+                <BillingSettings
+                  orgSettings={orgSettings}
+                  orgSlug={orgDetails?.slug}
+                  orgName={orgDetails?.name}
+                  orgEmail={authEmail}
+                />
               </TabsContent>
 
               <TabsContent value="organization">

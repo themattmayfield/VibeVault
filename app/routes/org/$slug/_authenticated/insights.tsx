@@ -1,5 +1,9 @@
 import { Suspense } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  useLoaderData,
+  useParams,
+} from '@tanstack/react-router';
 import {
   Card,
   CardContent,
@@ -9,6 +13,8 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoodInsights } from '@/components/mood-insights';
+import { FeatureLockedPrompt } from '@/components/feature-locked-prompt';
+import { isAtLeastTier } from '@/lib/plan-features';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/insights')({
   component: () => (
@@ -19,6 +25,28 @@ export const Route = createFileRoute('/org/$slug/_authenticated/insights')({
 });
 
 function InsightsPage() {
+  const { slug } = useParams({ strict: false });
+  const { orgSettings } = useLoaderData({
+    from: '/org/$slug',
+  });
+
+  // Check if AI insights are enabled for this org's plan
+  const aiInsightsEnabled =
+    orgSettings.featureFlags?.aiInsightsEnabled ??
+    isAtLeastTier(orgSettings.plan, 'pro');
+
+  if (!aiInsightsEnabled) {
+    return (
+      <FeatureLockedPrompt
+        featureName="Mood Insights"
+        description="Get AI-powered insights into your mood patterns, triggers, and personalized suggestions to improve your wellbeing."
+        requiredTier="pro"
+        currentPlan={orgSettings.plan}
+        slug={slug ?? ''}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col">
       <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">

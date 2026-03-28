@@ -49,7 +49,7 @@ function RouteComponent() {
 
   const [formData, setFormData] = useState({
     // Plan selection
-    plan: 'small',
+    plan: 'team',
     billingCycle: 'annual',
 
     // Organization details
@@ -67,36 +67,33 @@ function RouteComponent() {
 
   const plans = [
     {
-      id: 'small',
-      name: 'Small Institution',
-      price: { annual: 499, monthly: 599 },
-      description: 'Up to 250 users',
+      id: 'team',
+      name: 'Team',
+      price: { annual: 264, monthly: 29 },
+      priceDisplay: { annual: '$22/seat/mo', monthly: '$29/seat/mo' },
+      description: 'For organizations',
       features: [
-        '5 administrator accounts',
-        'Basic analytics',
-        'Email support',
-      ],
-    },
-    {
-      id: 'medium',
-      name: 'Medium Institution',
-      price: { annual: 999, monthly: 1199 },
-      description: 'Up to 1,000 users',
-      features: [
-        '15 administrator accounts',
-        'Advanced analytics',
+        'Unlimited groups',
+        'Global trends dashboard',
+        'Admin dashboard',
+        'AI-powered insights',
         'Priority support',
+        'Data export (JSON)',
       ],
     },
     {
       id: 'enterprise',
-      name: 'Large Institution',
-      price: { annual: 1999, monthly: 2399 },
-      description: 'Unlimited users',
+      name: 'Enterprise',
+      price: { annual: 990, monthly: 99 },
+      priceDisplay: { annual: '$82.50/mo', monthly: '$99/mo' },
+      description: 'For organizations',
       features: [
-        'Unlimited administrator accounts',
-        'Enterprise analytics',
-        'Dedicated support',
+        'Everything in Team',
+        'Unlimited seats',
+        'Custom branding',
+        'Dedicated account manager',
+        'API access',
+        'SLA guarantees',
       ],
     },
   ];
@@ -263,11 +260,14 @@ function RouteComponent() {
       const result = await createPolarCheckoutSession({
         data: {
           country: 'US',
-          plan: formData.plan as 'small' | 'medium' | 'enterprise',
+          plan: formData.plan as 'team' | 'enterprise',
           billingCycle: formData.billingCycle as 'annual' | 'monthly',
           successUrl: `${window.location.origin}/org/${formData.slug}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}`,
           customerEmail: formData.email,
           customerName: name,
+          metadata: {
+            betterAuthOrgId: betterAuthOrgId,
+          },
         },
       });
       window.location.href = result.url;
@@ -361,7 +361,7 @@ function RouteComponent() {
               Select Your Plan
             </CardTitle>
             <CardDescription>
-              Choose the plan that best fits your institution's needs
+              Choose the plan that best fits your organization's needs
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -403,9 +403,10 @@ function RouteComponent() {
 
             <div className="grid gap-4">
               {plans.map((plan) => (
-                <div
+                <button
                   key={plan.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  type="button"
+                  className={`border rounded-lg p-4 cursor-pointer transition-all text-left ${
                     formData.plan === plan.id
                       ? 'border-primary bg-primary/5 ring-1 ring-primary'
                       : 'hover:border-primary/50'
@@ -421,10 +422,7 @@ function RouteComponent() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold">
-                        ${plan.price[formData.billingCycle]}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          /mo
-                        </span>
+                        {plan.priceDisplay[formData.billingCycle]}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {formData.billingCycle === 'annual'
@@ -441,7 +439,7 @@ function RouteComponent() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>

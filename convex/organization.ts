@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { mutation, query, type MutationCtx } from './_generated/server';
 import { createUserHelper } from './user';
+import { planLiteral } from './schema';
 
 const createOrgSettings = async (
   ctx: MutationCtx,
@@ -92,6 +93,10 @@ export const updateOrgSettings = mutation({
         groupsEnabled: v.optional(v.boolean()),
         globalTrendsEnabled: v.optional(v.boolean()),
         publicMoodsEnabled: v.optional(v.boolean()),
+        aiInsightsEnabled: v.optional(v.boolean()),
+        adminDashboardEnabled: v.optional(v.boolean()),
+        dataExportEnabled: v.optional(v.boolean()),
+        customBrandingEnabled: v.optional(v.boolean()),
       })
     ),
   },
@@ -116,5 +121,92 @@ export const updateOrgSettings = mutation({
     }
 
     await ctx.db.patch(existing._id, updates);
+  },
+});
+
+/** Derive feature flags from the plan tier. */
+function featureFlagsForPlan(plan: string) {
+  switch (plan) {
+    case 'enterprise':
+      return {
+        groupsEnabled: true,
+        globalTrendsEnabled: true,
+        publicMoodsEnabled: true,
+        aiInsightsEnabled: true,
+        adminDashboardEnabled: true,
+        dataExportEnabled: true,
+        customBrandingEnabled: true,
+      };
+    case 'team':
+      return {
+        groupsEnabled: true,
+        globalTrendsEnabled: true,
+        publicMoodsEnabled: true,
+        aiInsightsEnabled: true,
+        adminDashboardEnabled: true,
+        dataExportEnabled: true,
+        customBrandingEnabled: true,
+      };
+    case 'pro':
+      return {
+        groupsEnabled: true,
+        globalTrendsEnabled: false,
+        publicMoodsEnabled: true,
+        aiInsightsEnabled: true,
+        adminDashboardEnabled: false,
+        dataExportEnabled: true,
+        customBrandingEnabled: false,
+      };
+    case 'free':
+    default:
+      return {
+        groupsEnabled: true,
+        globalTrendsEnabled: false,
+        publicMoodsEnabled: false,
+        aiInsightsEnabled: false,
+        adminDashboardEnabled: false,
+        dataExportEnabled: false,
+        customBrandingEnabled: false,
+      };
+  }
+}
+
+/**
+ * Update an org's plan and sync feature flags.
+ * Called by the Polar webhook handler when a subscription event fires.
+ */
+export const updateOrgPlan = mutation({
+  args: {
+    betterAuthOrgId: v.string(),
+    plan: planLiteral,
+    polarSubscriptionId: v.optional(v.string()),
+    polarCustomerId: v.optional(v.string()),
+    seatCount: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query('orgSettings')
+      .withIndex('by_better_auth_org_id', (q) =>
+        q.eq('betterAuthOrgId', args.betterAuthOrgId)
+      )
+      .first();
+
+    if (!existing) {
+      throw new Error(
+        `Organization settings not found for betterAuthOrgId: ${args.betterAuthOrgId}`
+      );
+    }
+
+    await ctx.db.patch(existing._id, {
+      plan: args.plan,
+      ...(args.polarSubscriptionId !== undefined && {
+        polarSubscriptionId: args.polarSubscriptionId,
+      }),
+      ...(args.polarCustomerId !== undefined && {
+        polarCustomerId: args.polarCustomerId,
+      }),
+      ...(args.seatCount !== undefined && { seatCount: args.seatCount }),
+      featureFlags: featureFlagsForPlan(args.plan),
+    });
   },
 });

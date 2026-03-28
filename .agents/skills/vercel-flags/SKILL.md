@@ -51,12 +51,16 @@ This project has **two layers** of feature flags:
 
 1. **Vercel Feature Flags** (this skill) -- global app-level flags for deployment rollouts, A/B testing, and infrastructure features. Managed via `vercel flags` CLI.
 
-2. **Convex per-org flags** -- stored in `orgSettings.featureFlags` in Convex. These are tenant-scoped (per-organization). Currently defined:
+2. **Convex per-org flags** -- stored in `orgSettings.featureFlags` in Convex. These are tenant-scoped (per-organization) and auto-derived from the org's plan tier when the plan changes. Currently defined:
    - `groupsEnabled` (boolean)
-   - `globalTrendsEnabled` (boolean)
+   - `globalTrendsEnabled` (boolean) -- Team+ only
    - `publicMoodsEnabled` (boolean)
+   - `aiInsightsEnabled` (boolean) -- Pro+ only
+   - `adminDashboardEnabled` (boolean) -- Team+ only
+   - `dataExportEnabled` (boolean) -- Pro+ only
+   - `customBrandingEnabled` (boolean) -- Team+ only
 
-   Manage these via `npx convex run organization:...` (see `convex-ops` skill).
+   These flags are automatically set when a plan changes (via `organization.updateOrgPlan`). Org admins can toggle off flags their plan includes, but cannot enable flags above their tier. Manage manually via `npx convex run organization:updateOrgSettings` (see `convex-ops` skill).
 
 ## Flag Types
 

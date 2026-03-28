@@ -32,7 +32,7 @@ MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g.
 | Neon | `neonctl` | `DATABASE_URL`, `NEON_API_KEY` | `neon-cli` |
 | Drizzle | `npx drizzle-kit` | uses `DATABASE_URL` | `drizzle-cli` |
 | Vercel | `vercel` | `VERCEL_TOKEN` | `vercel-deploy`, `vercel-flags` |
-| Polar | curl (REST API) | `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`, `POLAR_PRODUCT_ID` | `polar-api` |
+| Polar | curl (REST API) | `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`, `POLAR_PRO_MONTHLY_ID`, `POLAR_PRO_ANNUAL_ID`, `POLAR_TEAM_MONTHLY_ID`, `POLAR_TEAM_ANNUAL_ID`, `POLAR_ENTERPRISE_MONTHLY_ID`, `POLAR_ENTERPRISE_ANNUAL_ID` | `polar-api` |
 | Anthropic | SDK only | `ANTHROPIC_API_KEY` | -- |
 | Resend | SDK only | `RESEND_API_KEY` | -- |
 
@@ -44,8 +44,8 @@ See `convex/schema.ts` for full definitions.
 
 | Table | Key Fields | Indexes | Purpose |
 |-------|-----------|---------|---------|
-| `orgSettings` | `betterAuthOrgId`, `slug`, `branding?`, `featureFlags?` | `by_slug`, `by_better_auth_org_id` | Per-org config |
-| `users` | `neonUserId`, `displayName`, `image?` | `by_neon_user_id` | App user profiles |
+| `orgSettings` | `betterAuthOrgId`, `slug`, `plan?`, `polarSubscriptionId?`, `polarCustomerId?`, `seatCount?`, `isPersonal?`, `branding?`, `featureFlags?` | `by_slug`, `by_better_auth_org_id` | Per-org config + subscription |
+| `users` | `neonUserId`, `displayName`, `plan?`, `polarSubscriptionId?`, `polarCustomerId?`, `image?` | `by_neon_user_id` | App user profiles + individual plan |
 | `groups` | `name`, `isPrivate`, `creator`, `organizationId?` | `by_organization` | Mood-sharing groups |
 | `groupMemberInfo` | `userId`, `groupId`, `role`, `status` | `by_user_id_and_group_id` | Group membership |
 | `moods` | `mood` (9 values), `note?`, `tags?`, `userId?`, `organizationId?` | `by_user_id`, `by_org_and_user` | Mood entries |
@@ -54,6 +54,10 @@ See `convex/schema.ts` for full definitions.
 | `suggestions` | `insight`, `userId?` | `by_user_id` | AI suggestion insights |
 
 Mood values: `happy`, `excited`, `calm`, `neutral`, `tired`, `stressed`, `sad`, `angry`, `anxious`
+
+Plan values: `free`, `pro`, `team`, `enterprise`
+
+Feature flags on `orgSettings.featureFlags`: `groupsEnabled`, `globalTrendsEnabled`, `publicMoodsEnabled`, `aiInsightsEnabled`, `adminDashboardEnabled`, `dataExportEnabled`, `customBrandingEnabled`
 
 ### Neon/Drizzle Tables (Auth Data)
 
@@ -107,6 +111,8 @@ See `auth-schema.ts` for full definitions. Managed by Better Auth.
 | `groups.createGroup` | `convex/groups.ts` | Create group + owner membership |
 | `insights.createInsight` | `convex/insights.ts` | Store AI insight |
 | `organization.handleOrganizationOnboard` | `convex/organization.ts` | Create user + org settings |
+| `organization.updateOrgSettings` | `convex/organization.ts` | Update branding + feature flags |
+| `organization.updateOrgPlan` | `convex/organization.ts` | Update plan + subscription + auto-derive feature flags (called by webhook) |
 | `user.createUser` | `convex/user.ts` | Create user profile |
 
 ## Available Agent Skills
@@ -204,11 +210,17 @@ app/                          # TanStack Start application
         dashboard.tsx         # Main dashboard
         log.tsx               # Log a mood
         groups/               # Group routes
-        trends.tsx            # Global trends
-        admin.tsx             # Admin dashboard (stub)
+        insights.tsx          # AI insights (Pro+ gated)
+        trends.tsx            # Global trends (Team+ gated)
+        admin.tsx             # Admin dashboard (Team+ gated)
+        calendar.tsx          # Mood calendar
+        settings.tsx          # Settings hub (7 tabs, role-gated)
+        welcome.tsx           # Post-checkout welcome
   components/                 # React components
   actions/                    # Server functions (auth, AI, payments, flags)
-  lib/                        # Shared utilities (flags, domain, etc.)
+  lib/                        # Shared utilities
+    plan-features.ts          # Plan tier definitions + feature gating (PLAN_FEATURES, getPlanFeatures, hasFeature, isAtLeastTier)
+    polar-products.ts         # Polar product ID mappings + reverse lookup (PLAN_PRODUCT_MAP, resolvePlanFromProductId)
   hooks/                      # Custom React hooks
   styles/                     # CSS/Tailwind
   constants/                  # App constants
@@ -265,15 +277,13 @@ The build is handled by `scripts/vercel-build.mjs`:
 1. **Vercel Feature Flags** (`app/lib/flags.ts`) -- global app-level flags for deployment rollouts. Managed via `npx vercel flags` CLI. Evaluated server-side via `@vercel/flags-core`.
 2. **Convex per-org flags** (`orgSettings.featureFlags`) -- tenant-scoped customization per organization. Managed via Convex mutations.
 
-### Adding Production Polar Credentials
+### Polar Product IDs (Per-Environment)
 
-Three Vercel env vars still need production Polar values (currently only preview/sandbox is configured):
+All Polar env vars are configured in both Vercel environments. Sandbox product IDs are used for preview, production IDs for production. The 6 product env vars are:
 
-```bash
-echo '<your-prod-token>' | npx vercel env add POLAR_ACCESS_TOKEN production
-echo '<your-prod-secret>' | npx vercel env add POLAR_WEBHOOK_SECRET production
-echo '<your-prod-product-id>' | npx vercel env add POLAR_PRODUCT_ID production
-```
+`POLAR_PRO_MONTHLY_ID`, `POLAR_PRO_ANNUAL_ID`, `POLAR_TEAM_MONTHLY_ID`, `POLAR_TEAM_ANNUAL_ID`, `POLAR_ENTERPRISE_MONTHLY_ID`, `POLAR_ENTERPRISE_ANNUAL_ID`
+
+Plus the shared: `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`
 
 ## Environment Setup
 

@@ -5,7 +5,8 @@ description: >
   the REST API using curl. Use this skill when the user asks to list products, create a
   checkout session, check subscription status, list orders, manage customers, inspect
   webhook events, or perform any Polar payment-related operations. This project uses
-  Polar in sandbox mode for subscriptions and checkout.
+  Polar with a multi-tier pricing model (Free/Pro/Team/Enterprise) across sandbox and
+  production environments.
 ---
 
 # Polar API
@@ -21,20 +22,32 @@ Manage Polar payments and subscriptions via the REST API using curl. Polar has n
 - Debugging webhook deliveries
 - Managing product benefits
 - Checking subscription status
+- Creating or archiving products
 
 ## When Not to Use
 
-- Modifying application payment code -- edit `app/actions/` files directly
+- Modifying application payment code -- edit `app/actions/polar.ts` or `app/lib/polar-products.ts` directly
 - Better Auth Polar plugin config -- edit `auth.ts` directly
+- Plan feature definitions -- edit `app/lib/plan-features.ts`
 - Convex data operations -- use `convex-ops`
 
 ## Prerequisites
 
-**Authentication:** The `POLAR_ACCESS_TOKEN` and `POLAR_PRODUCT_ID` env vars are available in `.env.local`. Source them before running commands:
+**Authentication:** Source the env vars from `.env.local`:
 
 ```bash
 export POLAR_ACCESS_TOKEN=$(grep POLAR_ACCESS_TOKEN .env.local | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'")
-export POLAR_PRODUCT_ID=$(grep POLAR_PRODUCT_ID .env.local | head -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+```
+
+To load all product IDs at once:
+
+```bash
+export POLAR_PRO_MONTHLY_ID=$(grep POLAR_PRO_MONTHLY_ID .env.local | cut -d'=' -f2-)
+export POLAR_PRO_ANNUAL_ID=$(grep POLAR_PRO_ANNUAL_ID .env.local | cut -d'=' -f2-)
+export POLAR_TEAM_MONTHLY_ID=$(grep POLAR_TEAM_MONTHLY_ID .env.local | cut -d'=' -f2-)
+export POLAR_TEAM_ANNUAL_ID=$(grep POLAR_TEAM_ANNUAL_ID .env.local | cut -d'=' -f2-)
+export POLAR_ENTERPRISE_MONTHLY_ID=$(grep POLAR_ENTERPRISE_MONTHLY_ID .env.local | cut -d'=' -f2-)
+export POLAR_ENTERPRISE_ANNUAL_ID=$(grep POLAR_ENTERPRISE_ANNUAL_ID .env.local | cut -d'=' -f2-)
 ```
 
 Tokens can be managed at: https://sandbox.polar.sh/dashboard/settings (sandbox) or https://dashboard.polar.sh/settings (production).
@@ -46,19 +59,53 @@ Tokens can be managed at: https://sandbox.polar.sh/dashboard/settings (sandbox) 
 | Sandbox | `https://sandbox-api.polar.sh` |
 | Production | `https://api.polar.sh` |
 
-This project uses **sandbox mode**. All examples below use the sandbox URL.
+This project uses **sandbox mode** for dev/preview. All examples below use the sandbox URL. Add a trailing `/` to paths (the API returns 307 redirects without it).
 
 **Rate limits:** 100 requests/minute (sandbox), 500 requests/minute (production).
 
 ## Project Context
 
-### Polar Configuration
+### Pricing Model (4 Tiers)
 
-- **Mode:** Sandbox (env-driven -- see `POLAR_SERVER` in `.env.local`)
-- **Product ID:** Stored in `POLAR_PRODUCT_ID` env var -- always query the API for current product details (name, pricing, etc.)
-- **Integration:** Better Auth Polar plugin in `auth.ts`
-- **Server actions:** `app/actions/polar.ts` -- `createPolarCheckoutSession`, `getPolarCheckoutSession`, `getPolarCustomer`
-- **Webhook handler:** Configured via Better Auth's Polar plugin
+| Tier | Monthly | Annual | Target |
+|------|---------|--------|--------|
+| **Free** | $0 | $0 | Individuals (no Polar product) |
+| **Pro** | $8/mo | $72/yr | Power users / small teams |
+| **Team** | $29/seat/mo | $264/seat/yr | Organizations (5-100 seats) |
+| **Enterprise** | $99/mo | $990/yr | Large organizations (100+ seats) |
+
+Free tier has no Polar product -- it's the default state when no subscription exists.
+
+### Product IDs (6 Products)
+
+Each paid tier has a monthly and annual product in Polar. The env vars are:
+
+| Env Var | Tier | Interval |
+|---------|------|----------|
+| `POLAR_PRO_MONTHLY_ID` | Pro | Monthly |
+| `POLAR_PRO_ANNUAL_ID` | Pro | Yearly |
+| `POLAR_TEAM_MONTHLY_ID` | Team | Monthly |
+| `POLAR_TEAM_ANNUAL_ID` | Team | Yearly |
+| `POLAR_ENTERPRISE_MONTHLY_ID` | Enterprise | Monthly |
+| `POLAR_ENTERPRISE_ANNUAL_ID` | Enterprise | Yearly |
+
+Sandbox and production have separate product IDs (same names, different UUIDs). The IDs are set in:
+- `.env.local` -- sandbox IDs for local dev
+- Vercel Preview env -- sandbox IDs
+- Vercel Production env -- production IDs
+
+### Polar Integration Architecture
+
+- **Mode:** Env-driven via `POLAR_SERVER` (`"sandbox"` or `"production"`)
+- **Product mapping:** `app/lib/polar-products.ts` -- `PLAN_PRODUCT_MAP` (tier+cycle -> product ID) and `resolvePlanFromProductId()` (product ID -> tier+cycle)
+- **Plan features:** `app/lib/plan-features.ts` -- `PLAN_FEATURES` defines feature limits per tier, `getPlanFeatures()`, `hasFeature()`, `isAtLeastTier()`
+- **Server actions:** `app/actions/polar.ts` -- `createPolarCheckoutSession`, `getPolarCheckoutSession`, `getPolarCustomer`, `getCustomerPortalUrl`
+- **Webhook handler:** `auth.ts` -- Better Auth Polar plugin `onPayload` handler processes `subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked` events
+- **Plan persistence:** Webhook handler calls `api.organization.updateOrgPlan` in Convex to update `orgSettings.plan`, `orgSettings.polarSubscriptionId`, `orgSettings.polarCustomerId`, and auto-derives `orgSettings.featureFlags`
+
+### Subscription -> Org Linking
+
+When a checkout is created, `betterAuthOrgId` is passed in the checkout metadata. When the subscription webhook fires, the handler reads `metadata.betterAuthOrgId` to find and update the correct org in Convex.
 
 ### Authentication Header
 
@@ -73,170 +120,228 @@ Authorization: Bearer $POLAR_ACCESS_TOKEN
 
 ```bash
 # List all products
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/products" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/products/" | jq '.items[] | {id, name, is_archived, recurring_interval, prices: [.prices[] | {amount: .price_amount, interval: .recurring_interval}]}'
 
-# Get the configured product (uses POLAR_PRODUCT_ID from .env.local)
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/products/$POLAR_PRODUCT_ID" | jq
+# Get a specific product by ID (e.g., Team Monthly)
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/products/$POLAR_TEAM_MONTHLY_ID/" | jq
 
-# List products with pagination
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/products?page=1&limit=10" | jq
+# List only active (non-archived) products
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/products/?is_archived=false" | jq
 ```
 
 ### Checkouts
 
 ```bash
-# Create a checkout session (uses POLAR_PRODUCT_ID from .env.local)
-curl -s -X POST \
+# Create a checkout session for Team Monthly plan
+curl -sL -X POST \
   -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
-    \"product_id\": \"$POLAR_PRODUCT_ID\",
-    \"success_url\": \"https://moodsync.com/welcome\",
+    \"products\": [\"$POLAR_TEAM_MONTHLY_ID\"],
+    \"success_url\": \"https://moodsync.com/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
+    \"customer_email\": \"test@example.com\",
+    \"customer_name\": \"Test User\",
+    \"metadata\": {
+      \"plan\": \"team\",
+      \"billingCycle\": \"monthly\",
+      \"betterAuthOrgId\": \"<org-id>\"
+    }
+  }" \
+  "https://sandbox-api.polar.sh/v1/checkouts/" | jq '{id, url, status}'
+
+# Create a checkout for Pro Annual plan
+curl -sL -X POST \
+  -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"products\": [\"$POLAR_PRO_ANNUAL_ID\"],
+    \"success_url\": \"https://moodsync.com/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
     \"customer_email\": \"test@example.com\"
   }" \
-  "https://sandbox-api.polar.sh/v1/checkouts/custom" | jq
+  "https://sandbox-api.polar.sh/v1/checkouts/" | jq '.url'
 
 # Get a checkout session by ID
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/checkouts/custom/<checkout-id>" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/checkouts/<checkout-id>/" | jq
 ```
 
 ### Orders
 
 ```bash
 # List all orders
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/orders" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/orders/" | jq
 
 # List orders with pagination
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/orders?page=1&limit=20" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/orders/?page=1&limit=20" | jq
 
 # Get a specific order
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/orders/<order-id>" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/orders/<order-id>/" | jq
 ```
 
 ### Subscriptions
 
 ```bash
 # List all subscriptions
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/subscriptions" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/subscriptions/" | jq
 
 # Filter active subscriptions
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/subscriptions?active=true" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/subscriptions/?active=true" | jq
 
-# Get a specific subscription
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/subscriptions/<subscription-id>" | jq
+# Get a specific subscription (includes product info and metadata)
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/subscriptions/<subscription-id>/" | jq '{id, status, product: .product.name, metadata, customer_id}'
 
 # Cancel a subscription
-curl -s -X DELETE \
+curl -sL -X DELETE \
   -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/subscriptions/<subscription-id>" | jq
+  "https://sandbox-api.polar.sh/v1/subscriptions/<subscription-id>/" | jq
 ```
 
 ### Customers
 
 ```bash
 # List all customers
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/customers" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/customers/" | jq
 
 # Search customers by email
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/customers?email=user@example.com" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/customers/?email=user@example.com" | jq
 
 # Get a specific customer
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/customers/<customer-id>" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/customers/<customer-id>/" | jq
 ```
 
 ### Benefits
 
 ```bash
 # List all benefits
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/benefits" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/benefits/" | jq
 
 # Get a specific benefit
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/benefits/<benefit-id>" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/benefits/<benefit-id>/" | jq
 ```
 
 ### Webhooks
 
 ```bash
 # List webhook endpoints
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/webhooks/endpoints" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/webhooks/endpoints/" | jq
 
 # List webhook deliveries (recent events)
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/webhooks/deliveries" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/webhooks/deliveries/" | jq
 ```
 
 ### Metrics
 
 ```bash
 # Get metrics overview
-curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-  "https://sandbox-api.polar.sh/v1/metrics?start_date=2024-01-01&end_date=2024-12-31&interval=month" | jq
+curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+  "https://sandbox-api.polar.sh/v1/metrics/?start_date=2024-01-01&end_date=2026-12-31&interval=month" | jq
 ```
 
 ## Workflow: Debug a Payment Issue
 
 1. Look up the customer:
    ```bash
-   curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-     "https://sandbox-api.polar.sh/v1/customers?email=user@example.com" | jq
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/customers/?email=user@example.com" | jq
    ```
 
 2. Check their subscriptions:
    ```bash
-   curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-     "https://sandbox-api.polar.sh/v1/subscriptions?customer_id=<customer-id>" | jq
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/subscriptions/?customer_id=<customer-id>" | jq '.items[] | {id, status, product: .product.name, metadata}'
    ```
 
 3. Check their orders:
    ```bash
-   curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-     "https://sandbox-api.polar.sh/v1/orders?customer_id=<customer-id>" | jq
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/orders/?customer_id=<customer-id>" | jq
    ```
 
 4. Review recent webhook deliveries:
    ```bash
-   curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-     "https://sandbox-api.polar.sh/v1/webhooks/deliveries?limit=5" | jq
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/webhooks/deliveries/?limit=5" | jq
+   ```
+
+5. Cross-reference with Convex org settings:
+   ```bash
+   npx convex run organization:getOrgSettingsByBetterAuthOrgId '{"betterAuthOrgId": "<org-id>"}'
    ```
 
 ## Workflow: Create a Test Checkout
 
-1. Verify the product exists:
+1. Decide which tier and billing cycle to test. Available products:
+
+   | Plan | Monthly Env Var | Annual Env Var |
+   |------|----------------|----------------|
+   | Pro | `POLAR_PRO_MONTHLY_ID` | `POLAR_PRO_ANNUAL_ID` |
+   | Team | `POLAR_TEAM_MONTHLY_ID` | `POLAR_TEAM_ANNUAL_ID` |
+   | Enterprise | `POLAR_ENTERPRISE_MONTHLY_ID` | `POLAR_ENTERPRISE_ANNUAL_ID` |
+
+2. Verify the product exists:
    ```bash
-   curl -s -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
-     "https://sandbox-api.polar.sh/v1/products/$POLAR_PRODUCT_ID" | jq '{ name: .name, prices: [.prices[] | { amount: .price_amount, currency: .price_currency, interval: .recurring_interval }] }'
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/products/$POLAR_TEAM_MONTHLY_ID/" | jq '{name, prices: [.prices[] | {amount: .price_amount, currency: .price_currency, interval: .recurring_interval}]}'
    ```
 
-2. Create a checkout session:
+3. Create a checkout session:
    ```bash
-   curl -s -X POST \
+   curl -sL -X POST \
      -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d "{
-       \"product_id\": \"$POLAR_PRODUCT_ID\",
-       \"success_url\": \"https://moodsync.com/welcome\",
-       \"customer_email\": \"test@example.com\"
+       \"products\": [\"$POLAR_TEAM_MONTHLY_ID\"],
+       \"success_url\": \"https://moodsync.com/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
+       \"customer_email\": \"test@example.com\",
+       \"customer_name\": \"Test User\",
+       \"metadata\": {
+         \"plan\": \"team\",
+         \"billingCycle\": \"monthly\",
+         \"betterAuthOrgId\": \"test-org-id\"
+       }
      }" \
-     "https://sandbox-api.polar.sh/v1/checkouts/custom" | jq '.url'
+     "https://sandbox-api.polar.sh/v1/checkouts/" | jq '.url'
    ```
 
-3. The response includes a `.url` field -- this is the checkout page URL.
+4. Open the returned URL to complete the test checkout.
+
+## Workflow: Verify Subscription -> Plan Sync
+
+After a checkout completes, verify the webhook updated the org:
+
+1. Find the subscription:
+   ```bash
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/subscriptions/?active=true" | jq '.items[-1] | {id, status, product: .product.name, metadata}'
+   ```
+
+2. Check webhook delivery:
+   ```bash
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/webhooks/deliveries/?limit=3" | jq '.items[] | {event_type: .event, success: .success, created_at}'
+   ```
+
+3. Verify the Convex org was updated:
+   ```bash
+   npx convex run organization:getOrgSettingsByBetterAuthOrgId '{"betterAuthOrgId": "<betterAuthOrgId-from-metadata>"}'
+   # Should show plan: "team" (or whatever tier was purchased)
+   ```
 
 ## Pagination
 
@@ -258,13 +363,19 @@ Replace the base URL:
 - Sandbox: `https://sandbox-api.polar.sh`
 - Production: `https://api.polar.sh`
 
-And use the production `POLAR_ACCESS_TOKEN`.
+And use the production `POLAR_ACCESS_TOKEN`. Production product IDs are different from sandbox -- get them from Vercel production env vars:
+```bash
+vercel env pull --environment=production /tmp/prod-env && grep POLAR_ /tmp/prod-env
+```
 
 ## Checklist
 
 - [ ] Set `POLAR_ACCESS_TOKEN` env var
+- [ ] Exported the correct product ID env vars for the tier being tested
 - [ ] Used correct base URL (sandbox vs production)
+- [ ] Added trailing `/` to API paths (avoids 307 redirects)
 - [ ] Piped output through `jq` for readable JSON
-- [ ] Used `-s` (silent) flag on curl to suppress progress bars
+- [ ] Used `-sL` flags on curl (silent + follow redirects)
 - [ ] Included `Content-Type: application/json` header on POST/PATCH requests
+- [ ] Included `betterAuthOrgId` in checkout metadata for subscription -> org linking
 - [ ] Checked rate limits (100/min sandbox, 500/min production)

@@ -13,6 +13,13 @@ export const moodLiteral = v.union(
   v.literal('anxious')
 );
 
+export const planLiteral = v.union(
+  v.literal('free'),
+  v.literal('pro'),
+  v.literal('team'),
+  v.literal('enterprise')
+);
+
 const groupRoleLiteral = v.union(
   v.literal('owner'),
   v.literal('admin'),
@@ -40,11 +47,19 @@ export default defineSchema({
         logo: v.optional(v.string()),
       })
     ),
+    plan: v.optional(planLiteral),
+    polarSubscriptionId: v.optional(v.string()),
+    polarCustomerId: v.optional(v.string()),
+    seatCount: v.optional(v.number()),
     featureFlags: v.optional(
       v.object({
         groupsEnabled: v.optional(v.boolean()),
         globalTrendsEnabled: v.optional(v.boolean()),
         publicMoodsEnabled: v.optional(v.boolean()),
+        aiInsightsEnabled: v.optional(v.boolean()),
+        adminDashboardEnabled: v.optional(v.boolean()),
+        dataExportEnabled: v.optional(v.boolean()),
+        customBrandingEnabled: v.optional(v.boolean()),
       })
     ),
   })
@@ -55,6 +70,9 @@ export default defineSchema({
     displayName: v.string(),
     image: v.optional(v.string()),
     role: v.optional(v.string()),
+    plan: v.optional(v.union(v.literal('free'), v.literal('pro'))),
+    polarSubscriptionId: v.optional(v.string()),
+    polarCustomerId: v.optional(v.string()),
     availableGroups: v.optional(v.array(v.id('groups'))),
     theme: v.optional(
       v.union(v.literal('light'), v.literal('dark'), v.literal('system'))

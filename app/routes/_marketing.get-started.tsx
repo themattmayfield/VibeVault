@@ -56,26 +56,27 @@ function GetStartedPage() {
               </div>
               <CardTitle className="text-xl">For Myself</CardTitle>
               <CardDescription>
-                Track your mood, spot patterns, and get personal insights.
+                Track your mood, view calendar, basic stats. Upgrade to Pro
+                anytime for AI insights and more.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
-                  <span>AI-powered mood insights</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <BarChart3 className="h-4 w-4 text-primary flex-shrink-0" />
-                  <span>Personal trends and analytics</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                   <span>Mood calendar and streaks</span>
                 </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <BarChart3 className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span>Basic mood statistics</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span>Upgrade to Pro for AI insights</span>
+                </div>
               </div>
               <div className="mt-4 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                Free to start
+                Free
               </div>
             </CardContent>
             <CardFooter>
@@ -96,15 +97,15 @@ function GetStartedPage() {
               </div>
               <CardTitle className="text-xl">For My Organization</CardTitle>
               <CardDescription>
-                Monitor and support emotional wellbeing across your team or
-                institution.
+                Unlimited groups, global trends, admin dashboard, and more.
+                Per-seat pricing starting at $22/seat/mo.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-primary flex-shrink-0" />
-                  <span>Team analytics and group management</span>
+                  <span>Unlimited groups and team analytics</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
@@ -116,13 +117,13 @@ function GetStartedPage() {
                 </div>
               </div>
               <div className="mt-4 inline-flex items-center rounded-full bg-muted-foreground/10 px-3 py-1 text-xs font-medium text-muted-foreground">
-                14-day free trial
+                Team & Enterprise
               </div>
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full">
                 <Link to="/join">
-                  Set up organization
+                  Choose a plan
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

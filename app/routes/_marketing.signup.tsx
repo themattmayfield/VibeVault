@@ -225,6 +225,10 @@ function SignupPage() {
                     ? `Creating account${dots}`
                     : 'Get started free'}
                 </Button>
+                <div className="mt-3 rounded-md bg-muted p-3 text-center text-xs text-muted-foreground">
+                  Want AI insights and more? Upgrade to Pro for $8/mo after
+                  signing up.
+                </div>
               </div>
             </form>
             <div className="mt-4 text-center text-sm">

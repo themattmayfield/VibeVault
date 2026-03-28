@@ -1,40 +1,43 @@
 import { polarClient } from 'auth';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { PLAN_PRODUCT_MAP } from '@/lib/polar-products';
 
-/** Default product ID from environment.
- *  TODO: Create separate Polar products for each tier and add per-plan env vars. */
-const DEFAULT_PRODUCT_ID = process.env.POLAR_PRODUCT_ID!;
+// Re-export for convenience
+export {
+  PLAN_PRODUCT_MAP,
+  PRODUCT_PLAN_MAP,
+  resolvePlanFromProductId,
+} from '@/lib/polar-products';
 
-const PLAN_PRODUCT_MAP: Record<string, Record<string, string>> = {
-  small: {
-    annual: DEFAULT_PRODUCT_ID,
-    monthly: DEFAULT_PRODUCT_ID,
-  },
-  medium: {
-    annual: DEFAULT_PRODUCT_ID,
-    monthly: DEFAULT_PRODUCT_ID,
-  },
-  enterprise: {
-    annual: DEFAULT_PRODUCT_ID,
-    monthly: DEFAULT_PRODUCT_ID,
-  },
-};
+// ---------------------------------------------------------------------------
+// Server functions
+// ---------------------------------------------------------------------------
 
 const createPolarCheckoutSessionSchema = z.object({
   country: z.literal('US'),
-  plan: z.enum(['small', 'medium', 'enterprise']),
+  plan: z.enum(['pro', 'team', 'enterprise']),
   billingCycle: z.enum(['annual', 'monthly']),
   successUrl: z.string().min(1),
   customerEmail: z.string().email(),
   customerName: z.string().min(1),
+  metadata: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Additional metadata to attach to the checkout (e.g. betterAuthOrgId)'
+    ),
 });
 
 export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
   .inputValidator(createPolarCheckoutSessionSchema)
   .handler(async ({ data }) => {
-    const productId =
-      PLAN_PRODUCT_MAP[data.plan]?.[data.billingCycle] ?? DEFAULT_PRODUCT_ID;
+    const productId = PLAN_PRODUCT_MAP[data.plan]?.[data.billingCycle];
+    if (!productId) {
+      throw new Error(
+        `No Polar product configured for plan="${data.plan}" billingCycle="${data.billingCycle}"`
+      );
+    }
 
     const response = await polarClient.checkouts.create({
       customerBillingAddress: {
@@ -47,6 +50,7 @@ export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
       metadata: {
         plan: data.plan,
         billingCycle: data.billingCycle,
+        ...(data.metadata ?? {}),
       },
     });
 

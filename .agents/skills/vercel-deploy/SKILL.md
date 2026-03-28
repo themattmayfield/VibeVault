@@ -66,8 +66,16 @@ All of these must be set in Vercel for the app to function:
 | `DATABASE_URL` | Yes | Neon PostgreSQL connection string |
 | `POLAR_ACCESS_TOKEN` | Yes | Polar API token |
 | `POLAR_WEBHOOK_SECRET` | Yes | Polar webhook secret |
+| `POLAR_SERVER` | Yes | `"sandbox"` (preview) or `"production"` (prod) |
+| `POLAR_PRO_MONTHLY_ID` | Yes | Polar product ID for Pro Monthly |
+| `POLAR_PRO_ANNUAL_ID` | Yes | Polar product ID for Pro Annual |
+| `POLAR_TEAM_MONTHLY_ID` | Yes | Polar product ID for Team Monthly |
+| `POLAR_TEAM_ANNUAL_ID` | Yes | Polar product ID for Team Annual |
+| `POLAR_ENTERPRISE_MONTHLY_ID` | Yes | Polar product ID for Enterprise Monthly |
+| `POLAR_ENTERPRISE_ANNUAL_ID` | Yes | Polar product ID for Enterprise Annual |
 | `ANTHROPIC_API_KEY` | Yes | Claude AI API key |
 | `RESEND_API_KEY` | Yes | Resend email API key |
+| `FLAGS_SECRET` | No | Secret for Vercel feature flag endpoint verification |
 | `VITE_APP_DOMAIN` | No | e.g. `moodsync.com` (client-side, used for URL display only) |
 
 ## Command Reference

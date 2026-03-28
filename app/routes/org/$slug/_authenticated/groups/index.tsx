@@ -1,4 +1,8 @@
-import { createFileRoute, useLoaderData } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  useLoaderData,
+  useParams,
+} from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,12 +23,13 @@ import { useState } from 'react';
 import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
+import { getPlanFeatures } from '@/lib/plan-features';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/groups/')({
   component: RouteComponent,
 });
 function RouteComponent() {
-  const { slug } = Route.useParams();
+  const { slug } = useParams({ strict: false });
   const user = useLoaderData({
     from: '/org/$slug/_authenticated',
   });
@@ -43,13 +48,26 @@ function RouteComponent() {
   const name = user.displayName ?? '';
   const image = user.image ?? '';
 
+  // Get the max groups for this plan
+  const planFeatures = getPlanFeatures(orgSettings.plan);
+  const maxGroups = planFeatures.maxGroups;
+  const canCreateMoreGroups = groups.length < maxGroups;
+
   return (
     <div className="flex flex-col">
       <div className="flex-1 space-y-4 px-4">
         <div className="flex items-center justify-between gap-2">
           <Input placeholder="Search groups..." className="max-w-sm" />
-          <div className="flex items-center">
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+          <div className="flex items-center gap-2">
+            {maxGroups !== Infinity && (
+              <span className="text-sm text-muted-foreground">
+                {groups.length} / {maxGroups} groups
+              </span>
+            )}
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={!canCreateMoreGroups}
+            >
               Create New Group
             </Button>
           </div>
@@ -116,7 +134,7 @@ function RouteComponent() {
                     <Button asChild className="w-full">
                       <Link
                         to="/org/$slug/groups/$groupId"
-                        params={{ slug, groupId: group._id }}
+                        params={{ slug: slug ?? '', groupId: group._id }}
                       >
                         View Group
                       </Link>
