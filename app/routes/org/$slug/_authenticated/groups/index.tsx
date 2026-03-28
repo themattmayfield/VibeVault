@@ -34,6 +34,7 @@ function RouteComponent() {
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {
       userId: user._id,
+      organizationId: orgSettings.betterAuthOrgId,
     })
   );
 

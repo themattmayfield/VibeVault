@@ -6,7 +6,7 @@ import {
 } from './_generated/server';
 import { v } from 'convex/values';
 import { getGroupHelper } from './groups';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { moodLiteral } from './schema';
 
 export const getUserFromNeonUserIdHelper = async (
@@ -73,17 +73,25 @@ export const createUser = mutation({
 export const getUserGroups = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await getUserHelper(ctx, args);
+    // Query groupMemberInfo for all active memberships, then filter by org
+    const memberships = await ctx.db
+      .query('groupMemberInfo')
+      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .filter((q) => q.eq(q.field('status'), 'active'))
+      .collect();
 
-    const availableGroups = user.availableGroups ?? [];
+    const groups: Doc<'groups'>[] = [];
+    for (const membership of memberships) {
+      const group = await ctx.db.get(membership.groupId);
+      if (!group) continue;
+      if (group.organizationId !== args.organizationId) continue;
+      groups.push(group);
+    }
 
-    return await Promise.all(
-      availableGroups.map(
-        async (group) => await getGroupHelper(ctx, { groupId: group })
-      )
-    );
+    return groups;
   },
 });
 

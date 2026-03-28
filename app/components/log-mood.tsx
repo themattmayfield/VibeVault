@@ -53,9 +53,10 @@ export function LogMood({
   const { data: getUserGroups } = useQuery(
     convexQuery(
       api.user.getUserGroups,
-      isLoggedIn
+      isLoggedIn && organizationId
         ? {
             userId: user._id,
+            organizationId,
           }
         : 'skip'
     )

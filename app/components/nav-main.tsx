@@ -6,12 +6,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useLocation, useParams } from '@tanstack/react-router';
 import { getRoutes } from '@/constants/routes';
 
 export function NavMain() {
   const { slug } = useParams({ strict: false }) as { slug?: string };
   const routes = getRoutes(slug ?? '');
+  const location = useLocation();
 
   return (
     <SidebarGroup>
@@ -42,6 +43,7 @@ export function NavMain() {
                   <SidebarMenuButton
                     tooltip={item.label}
                     className="cursor-pointer"
+                    isActive={location.pathname.startsWith(item.href)}
                   >
                     {item.icon && <item.icon />}
                     <span>{item.label}</span>

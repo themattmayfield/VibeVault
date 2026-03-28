@@ -82,7 +82,9 @@ export default defineSchema({
     groupId: v.id('groups'),
     role: groupRoleLiteral,
     status: groupMemberStatus,
-  }).index('by_user_id_and_group_id', ['userId', 'groupId']),
+  })
+    .index('by_user_id_and_group_id', ['userId', 'groupId'])
+    .index('by_user_id', ['userId']),
   moods: defineTable({
     mood: moodLiteral,
     note: v.optional(v.string()),

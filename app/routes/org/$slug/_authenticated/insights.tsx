@@ -25,7 +25,7 @@ function InsightsPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Mood Insights</h2>
           <p className="text-muted-foreground">
-            AI-powered analysis of your mood patterns
+            Discover what drives your moods
           </p>
         </div>
 

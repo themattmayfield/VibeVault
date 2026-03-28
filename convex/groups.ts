@@ -1,5 +1,5 @@
 import { mutation, query, type QueryCtx } from './_generated/server';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { v } from 'convex/values';
 import { getUserHelper } from './user';
 import { oneDayAgo, oneMonthAgo, oneWeekAgo } from './dateHelpers';
@@ -175,49 +175,57 @@ export const createGroup = mutation({
 export const getUsersGroups = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await getUserHelper(ctx, { userId: args.userId });
+    // Get all active memberships for this user
+    const memberships = await ctx.db
+      .query('groupMemberInfo')
+      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .filter((q) => q.eq(q.field('status'), 'active'))
+      .collect();
 
-    if (!user) {
-      throw new Error('User not found');
+    // Resolve groups and filter to ones belonging to this org
+    const userGroups: Array<
+      Doc<'groups'> & {
+        members: { image: string | undefined; displayName: string }[];
+        activityLevel: 'Low' | 'Medium' | 'High';
+      }
+    > = [];
+    for (const membership of memberships) {
+      const group = await ctx.db.get(membership.groupId);
+      if (!group) continue;
+
+      // Only include groups that belong to the current organization
+      if (group.organizationId !== args.organizationId) continue;
+
+      const activeMembers = await getActiveGroupMembersHelper(ctx, {
+        groupId: group._id,
+      });
+
+      const firstThreeMembers = activeMembers.slice(0, 3);
+      const members = await Promise.all(
+        firstThreeMembers.map(async (member) => {
+          const memberUser = await getUserHelper(ctx, {
+            userId: member.userId,
+          });
+          return {
+            image: memberUser.image,
+            displayName: memberUser.displayName,
+          };
+        })
+      );
+
+      const activityLevel = await getGroupActivityLevelHelper(ctx, {
+        groupId: group._id,
+      });
+
+      userGroups.push({
+        ...group,
+        members,
+        activityLevel,
+      });
     }
-
-    const availableGroups = user.availableGroups ?? [];
-
-    const userGroups = await Promise.all(
-      availableGroups.map(async (groupId) => {
-        const group = await getGroupHelper(ctx, { groupId });
-
-        const activeMembers = await getActiveGroupMembersHelper(ctx, {
-          groupId,
-        });
-
-        const firstThreeMembers = activeMembers.slice(0, 3);
-        const getMembers = await Promise.all(
-          firstThreeMembers.map(async (member) => {
-            const memberUser = await getUserHelper(ctx, {
-              userId: member.userId,
-            });
-
-            return {
-              image: memberUser.image,
-              displayName: memberUser.displayName,
-            };
-          })
-        );
-
-        const activityLevel = await getGroupActivityLevelHelper(ctx, {
-          groupId,
-        });
-
-        return {
-          ...group,
-          members: getMembers,
-          activityLevel,
-        };
-      })
-    );
 
     return userGroups;
   },

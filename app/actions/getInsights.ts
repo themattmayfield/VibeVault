@@ -56,7 +56,7 @@ export const getPatterns = createServerFn({
     const assistantMessage =
       response.content[0].type === 'text'
         ? response.content[0].text
-        : 'No response from AI';
+        : 'No insights available';
     const analysis = JSON.parse(assistantMessage);
 
     return analysis;
@@ -91,7 +91,7 @@ export const getTriggers = createServerFn({
     const assistantMessage =
       response.content[0].type === 'text'
         ? response.content[0].text
-        : 'No response from AI';
+        : 'No insights available';
     const analysis = JSON.parse(assistantMessage);
 
     return analysis;
@@ -127,7 +127,7 @@ export const getSuggestions = createServerFn({
     const assistantMessage =
       response.content[0].type === 'text'
         ? response.content[0].text
-        : 'No response from AI';
+        : 'No insights available';
     const analysis = JSON.parse(assistantMessage);
 
     return analysis;

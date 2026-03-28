@@ -144,29 +144,52 @@ function Home() {
               <CardDescription>Your last 5 mood logs</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {lastFiveMoods?.map((entry, i) => (
-                  <div key={i} className="flex items-start space-x-4">
-                    <div className="min-w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      {getMoodEmoji(entry.mood)}
+              {lastFiveMoods && lastFiveMoods.length > 0 ? (
+                <div className="space-y-4">
+                  {lastFiveMoods.map((entry, i) => (
+                    <div key={i} className="flex items-start space-x-4">
+                      <div className="min-w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        {getMoodEmoji(entry.mood)}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {
+                            moodOptions.find(
+                              (mood) => mood.value === entry.mood
+                            )?.label
+                          }
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {entry.note}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.relativeTime}
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {
-                          moodOptions.find((mood) => mood.value === entry.mood)
-                            ?.label
-                        }
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.note}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.relativeTime}
-                      </p>
-                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="text-4xl mb-3">
+                    <CalendarDays className="h-10 w-10 text-muted-foreground/50" />
                   </div>
-                ))}
-              </div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    No mood entries yet
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mb-4 max-w-[200px]">
+                    Start tracking how you feel to see your entries here
+                  </p>
+                  <Link
+                    to="/org/$slug/log"
+                    params={{ slug }}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    Log your first mood
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -197,7 +220,7 @@ function Home() {
                 <div className="flex-1">
                   <CardTitle className="text-base">Mood Insights</CardTitle>
                   <CardDescription>
-                    AI-powered analysis of your mood patterns
+                    Discover what drives your moods
                   </CardDescription>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
