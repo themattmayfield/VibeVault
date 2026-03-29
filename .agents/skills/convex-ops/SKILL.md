@@ -61,10 +61,10 @@ npx convex run mood:getUserMoods '{"userId": "j57b3..."}' --prod
 
 **Arguments are JSON strings.** Convex document IDs look like `"j57b3..."`. Reference IDs use the table name prefix: `{"userId": "j57b3..."}`.
 
-**To look up a user by their Neon (Better Auth) ID first:**
+**To look up a user by their Clerk user ID first:**
 
 ```bash
-npx convex run user:getUserFromNeonUserId '{"neonUserId": "user_abc123"}'
+npx convex run user:getUserByClerkId '{"clerkUserId": "user_abc123"}'
 # Returns the Convex user doc with _id you can use in other queries
 ```
 
@@ -79,7 +79,7 @@ npx convex run user:getUserFromNeonUserId '{"neonUserId": "user_abc123"}'
 | `mood:createMood` | mutation | `{mood, note?, tags?, userId?, organizationId?}` | Log a mood |
 | `groups:getUsersGroups` | query | `{userId}` (Convex ID) | User's groups |
 | `groups:createGroup` | mutation | `{name, isPrivate, userId, description?, image?, organizationId?}` | Create group |
-| `user:getUserFromNeonUserId` | query | `{neonUserId}` | Lookup user by Neon ID |
+| `user:getUserByClerkId` | query | `{clerkUserId}` | Lookup user by Clerk ID |
 | `organization:getOrgSettingsBySlug` | query | `{slug}` | Org config by URL slug |
 | `insights:getTodaysInsight` | query | `{table, userId}` | Daily insight (`table`: "patterns", "triggers", or "suggestions") |
 

@@ -16,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
-import { signInEmail, signUpEmail } from '@/actions/auth';
+import { useSignIn, useSignUp } from '@clerk/tanstack-react-start';
+import { getAuthUser } from '@/actions/getAuthUser';
 import { addMemberToOrganization } from '@/actions/organization';
 import { toast } from 'sonner';
 import { APP_INFO } from '@/constants/app-info';
@@ -25,6 +26,7 @@ import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 import { z } from 'zod';
 import { useSubmittingDots } from '@/hooks/useSubmittingDots';
 import { useOrgSettings } from '@/hooks/use-org-settings';
+import { EmailVerificationStep } from '@/components/email-verification-step';
 
 const { fieldContext, formContext } = createFormHookContexts();
 
@@ -48,13 +50,62 @@ export function AuthForm() {
 
   const isSignIn = location.pathname.endsWith('/sign-in');
 
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
+
   const createUser = useMutation(api.user.createUser);
-  const createMoodsFromLocalStorageUsingNeonUserId = useMutation(
-    api.mood.createMoodsFromLocalStorageUsingNeonUserId
+  const createMoodsFromLocalStorage = useMutation(
+    api.mood.createMoodsFromLocalStorage
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingName, setPendingName] = useState('');
   const dots = useSubmittingDots(isSubmitting);
+
+  const slug = new URL(window.location.href).pathname.split('/')[2];
+
+  /** Shared post-auth setup: migrate moods + navigate to dashboard */
+  const completePostAuth = async (clerkUserId: string) => {
+    await createMoodsFromLocalStorage({
+      clerkUserId,
+      moods: JSON.parse(moods || '[]'),
+      organizationId: orgSettings.clerkOrgId ?? '',
+    });
+    localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
+
+    router.navigate({
+      to: '/org/$slug/dashboard',
+      params: { slug },
+    });
+  };
+
+  /** Handle social login (Apple / Google) */
+  const handleSocialAuth = async (strategy: 'oauth_apple' | 'oauth_google') => {
+    const callbackUrl = `/org/${slug}/sso-callback`;
+    try {
+      if (isSignIn) {
+        if (!signIn) return;
+        const { error } = await signIn.sso({
+          strategy,
+          redirectUrl: callbackUrl,
+          redirectCallbackUrl: callbackUrl,
+        });
+        if (error) throw new Error(error.message ?? 'Social sign-in failed');
+      } else {
+        if (!signUp) return;
+        const { error } = await signUp.sso({
+          strategy,
+          redirectUrl: callbackUrl,
+          redirectCallbackUrl: callbackUrl,
+        });
+        if (error) throw new Error(error.message ?? 'Social sign-up failed');
+      }
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
 
   const form = useAppForm({
     defaultValues: {
@@ -85,46 +136,88 @@ export function AuthForm() {
     onSubmit: async ({ value }) => {
       try {
         setIsSubmitting(true);
-        let neonUserId: string;
+
         if (isSignIn) {
-          neonUserId = await signInEmail({
-            data: {
-              email: value.email,
-              password: value.password,
-            },
+          if (!signIn) return;
+
+          const { error } = await signIn.password({
+            emailAddress: value.email,
+            password: value.password,
           });
+          if (error)
+            throw new Error(error.message ?? 'Invalid email or password');
+
+          if (signIn.status === 'complete') {
+            await signIn.finalize();
+          } else {
+            throw new Error(`Unexpected sign-in status: ${signIn.status}`);
+          }
         } else {
-          neonUserId = await signUpEmail({
-            data: {
-              email: value.email,
-              password: value.password,
-              name: value.name,
-            },
+          if (!signUp) return;
+
+          const { error } = await signUp.password({
+            emailAddress: value.email,
+            password: value.password,
+            firstName: value.name.split(' ')[0],
+            lastName: value.name.split(' ').slice(1).join(' ') || undefined,
           });
 
-          await createUser({ neonUserId, displayName: value.name });
+          if (error) {
+            if (error.code === 'form_identifier_exists') {
+              setIsSubmitting(false);
+              toast.error('An account with this email already exists', {
+                description: 'Please sign in instead.',
+              });
+              return;
+            }
+            throw new Error(error.message ?? 'Sign-up failed');
+          }
+
+          if (signUp.status === 'complete') {
+            await signUp.finalize();
+          } else if (
+            signUp.status === 'missing_requirements' &&
+            signUp.unverifiedFields.includes('email_address')
+          ) {
+            // Email verification required -- send code and show verification UI
+            const { error: sendError } =
+              await signUp.verifications.sendEmailCode();
+            if (sendError)
+              throw new Error(
+                sendError.message ?? 'Failed to send verification'
+              );
+
+            setPendingEmail(value.email);
+            setPendingName(value.name);
+            setPendingVerification(true);
+            setIsSubmitting(false);
+            return;
+          } else {
+            throw new Error(`Unexpected sign-up status: ${signUp.status}`);
+          }
+
+          // Wait for session, then get userId
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          const clerkUserId = signUp.createdUserId ?? '';
+
+          await createUser({ clerkUserId, displayName: value.name });
 
           // Add the new user as a member of this organization
           await addMemberToOrganization({
             data: {
-              userId: neonUserId,
-              organizationId: orgSettings.betterAuthOrgId,
+              userId: clerkUserId,
+              organizationId: orgSettings.clerkOrgId ?? '',
               role: 'member',
             },
           });
         }
-        await createMoodsFromLocalStorageUsingNeonUserId({
-          neonUserId,
-          moods: JSON.parse(moods || '[]'),
-          organizationId: orgSettings.betterAuthOrgId,
-        });
-        localStorage.removeItem(LOCAL_STORAGE_MOODS_KEY);
 
-        const slug = new URL(window.location.href).pathname.split('/')[2];
-        router.navigate({
-          to: '/org/$slug/dashboard',
-          params: { slug },
-        });
+        // Wait for session to propagate, then run post-auth setup
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const authUser = await getAuthUser();
+        const clerkUserId = authUser?.id ?? '';
+
+        await completePostAuth(clerkUserId);
         toast.success(
           isSignIn ? 'Successfully signed in' : 'Successfully signed up'
         );
@@ -134,6 +227,63 @@ export function AuthForm() {
       }
     },
   });
+
+  /** Called after the user successfully verifies their email during sign-up */
+  const handleVerified = async () => {
+    try {
+      if (!signUp) throw new Error('Sign-up not initialized');
+
+      // Wait for session, then get userId
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const clerkUserId = signUp.createdUserId ?? '';
+
+      await createUser({ clerkUserId, displayName: pendingName });
+
+      // Add the new user as a member of this organization
+      await addMemberToOrganization({
+        data: {
+          userId: clerkUserId,
+          organizationId: orgSettings.clerkOrgId ?? '',
+          role: 'member',
+        },
+      });
+
+      // Migrate local storage moods and navigate to dashboard
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const authUser = await getAuthUser();
+      const authUserId = authUser?.id ?? '';
+
+      await completePostAuth(authUserId);
+      toast.success('Successfully signed up');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error('Sign-up failed', { description: message });
+    }
+  };
+
+  if (pendingVerification && signUp) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+        <div className="flex w-full max-w-sm flex-col gap-6">
+          <a
+            href="##"
+            className="flex items-center gap-2 self-center font-medium"
+          >
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            {APP_INFO.name}
+          </a>
+          <EmailVerificationStep
+            signUp={signUp}
+            email={pendingEmail}
+            onVerified={handleVerified}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
@@ -168,7 +318,12 @@ export function AuthForm() {
               >
                 <div className="grid gap-6">
                   <div className="flex flex-col gap-4">
-                    <Button variant="outline" className="w-full cursor-pointer">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full cursor-pointer"
+                      onClick={() => handleSocialAuth('oauth_apple')}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -180,7 +335,12 @@ export function AuthForm() {
                       </svg>
                       {isSignIn ? 'Login with Apple' : 'Sign up with Apple'}
                     </Button>
-                    <Button variant="outline" className="w-full cursor-pointer">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full cursor-pointer"
+                      onClick={() => handleSocialAuth('oauth_google')}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -296,11 +456,7 @@ export function AuthForm() {
                         to={
                           isSignIn ? '/org/$slug/sign-up' : '/org/$slug/sign-in'
                         }
-                        params={{
-                          slug: new URL(window.location.href).pathname.split(
-                            '/'
-                          )[2],
-                        }}
+                        params={{ slug }}
                         className="underline underline-offset-4"
                       >
                         {isSignIn ? 'Sign up' : 'Login'}
@@ -310,11 +466,7 @@ export function AuthForm() {
                       {isSignIn && (
                         <Link
                           to="/org/$slug/forgot-password"
-                          params={{
-                            slug: new URL(window.location.href).pathname.split(
-                              '/'
-                            )[2],
-                          }}
+                          params={{ slug }}
                           className="ml-auto text-xs underline-offset-4 hover:underline"
                         >
                           Forgot your password?

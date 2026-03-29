@@ -34,7 +34,11 @@ export function useMoodInsights({
     })
   );
 
-  const { data: patterns, isLoading: patternsLoading } = useQuery(
+  const {
+    data: patterns,
+    isLoading: patternsLoading,
+    error: patternsError,
+  } = useQuery(
     queryOptions({
       enabled: !todaysPatterns && moods.length > 0,
       queryKey: ['patterns', organizationId],
@@ -58,6 +62,7 @@ export function useMoodInsights({
         return result;
       },
       staleTime: 24 * 60 * 60 * 1000, // Cache for 24 hours
+      retry: 1,
     })
   );
 
@@ -70,7 +75,11 @@ export function useMoodInsights({
     })
   );
 
-  const { data: triggers, isLoading: triggersLoading } = useQuery(
+  const {
+    data: triggers,
+    isLoading: triggersLoading,
+    error: triggersError,
+  } = useQuery(
     queryOptions({
       enabled: !todaysTriggers && moods.length > 0,
       queryKey: ['triggers', organizationId],
@@ -94,6 +103,7 @@ export function useMoodInsights({
         return result;
       },
       staleTime: 24 * 60 * 60 * 1000, // Cache for 24 hours
+      retry: 1,
     })
   );
 
@@ -106,7 +116,11 @@ export function useMoodInsights({
     })
   );
 
-  const { data: suggestions, isLoading: suggestionsLoading } = useQuery(
+  const {
+    data: suggestions,
+    isLoading: suggestionsLoading,
+    error: suggestionsError,
+  } = useQuery(
     queryOptions({
       enabled: !todaysSuggestions && moods.length > 0,
       queryKey: ['suggestions', organizationId],
@@ -130,6 +144,7 @@ export function useMoodInsights({
         return result;
       },
       staleTime: 24 * 60 * 60 * 1000, // Cache for 24 hours
+      retry: 1,
     })
   );
 
@@ -140,18 +155,21 @@ export function useMoodInsights({
         ? JSON.parse(todaysPatterns?.insight || '{}')
         : patterns,
       isLoading: patternsLoading,
+      error: patternsError,
     },
     triggers: {
       data: todaysTriggers
         ? JSON.parse(todaysTriggers?.insight || '{}')
         : triggers,
       isLoading: triggersLoading,
+      error: triggersError,
     },
     suggestions: {
       data: todaysSuggestions
         ? JSON.parse(todaysSuggestions?.insight || '{}')
         : suggestions,
       isLoading: suggestionsLoading,
+      error: suggestionsError,
     },
   };
 }

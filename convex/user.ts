@@ -9,13 +9,13 @@ import { getGroupHelper } from './groups';
 import type { Doc, Id } from './_generated/dataModel';
 import { moodLiteral } from './schema';
 
-export const getUserFromNeonUserIdHelper = async (
+export const getUserByClerkIdHelper = async (
   ctx: QueryCtx,
-  args: { neonUserId: string }
+  args: { clerkUserId: string }
 ) => {
   const user = await ctx.db
     .query('users')
-    .withIndex('by_neon_user_id', (q) => q.eq('neonUserId', args.neonUserId))
+    .withIndex('by_clerk_user_id', (q) => q.eq('clerkUserId', args.clerkUserId))
     .first();
 
   if (!user) {
@@ -27,10 +27,10 @@ export const getUserFromNeonUserIdHelper = async (
 
 export const createUserHelper = async (
   ctx: MutationCtx,
-  args: { neonUserId: string; displayName: string; role?: string }
+  args: { clerkUserId: string; displayName: string; role?: string }
 ) => {
   return await ctx.db.insert('users', {
-    neonUserId: args.neonUserId,
+    clerkUserId: args.clerkUserId,
     displayName: args.displayName,
     availableGroups: [],
     ...(args.role && { role: args.role }),
@@ -50,18 +50,18 @@ export const getUserHelper = async (
   return user;
 };
 
-export const getUserFromNeonUserId = query({
+export const getUserByClerkId = query({
   args: {
-    neonUserId: v.string(),
+    clerkUserId: v.string(),
   },
   handler: async (ctx, args) => {
-    return await getUserFromNeonUserIdHelper(ctx, args);
+    return await getUserByClerkIdHelper(ctx, args);
   },
 });
 
 export const createUser = mutation({
   args: {
-    neonUserId: v.string(),
+    clerkUserId: v.string(),
     displayName: v.string(),
   },
   handler: async (ctx, args) => {

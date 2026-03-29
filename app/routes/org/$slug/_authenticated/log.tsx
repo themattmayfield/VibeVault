@@ -14,7 +14,7 @@ function RouteComponent() {
   });
   return (
     <div className="px-4">
-      <LogMood user={user} organizationId={orgSettings.betterAuthOrgId} />
+      <LogMood user={user} organizationId={orgSettings.clerkOrgId} />
     </div>
   );
 }

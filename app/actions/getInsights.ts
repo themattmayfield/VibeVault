@@ -27,6 +27,23 @@ const MoodSchema = z.object({
   usersTimeZone: z.string(),
 });
 
+function parseAIResponse(raw: string, label: string): Record<string, string> {
+  // Claude sometimes wraps JSON in markdown code fences -- strip them
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*\n?/i, '')
+    .replace(/\n?```\s*$/i, '')
+    .trim();
+
+  try {
+    return JSON.parse(cleaned) as Record<string, string>;
+  } catch {
+    console.error(`[Insights:${label}] Failed to parse AI response:`, raw);
+    throw new Error(
+      'The AI returned an unexpected format. Please try again later.'
+    );
+  }
+}
+
 export const getPatterns = createServerFn({
   method: 'GET',
 })
@@ -46,20 +63,30 @@ export const getPatterns = createServerFn({
     Each should contain a natural, personalized insight about the patterns observed.
     Please insure proper punctuation and grammar.`;
 
-    const response = await anthropic.messages.create({
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-      model: 'claude-sonnet-4-6',
-    });
+    let response;
+    try {
+      response = await anthropic.messages.create({
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+        model: 'claude-sonnet-4-6',
+      });
+    } catch (error) {
+      console.error('[Insights:Patterns] Anthropic API error:', error);
+      throw new Error(
+        'Failed to generate pattern insights. Please try again later.'
+      );
+    }
 
-    // Get the assistant's response content
     const assistantMessage =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : 'No insights available';
-    const analysis = JSON.parse(assistantMessage);
+      response.content[0]?.type === 'text' ? response.content[0].text : null;
 
-    return analysis;
+    if (!assistantMessage) {
+      throw new Error(
+        'No pattern insights received from AI. Please try again later.'
+      );
+    }
+
+    return parseAIResponse(assistantMessage, 'Patterns');
   });
 
 export const getTriggers = createServerFn({
@@ -81,20 +108,30 @@ export const getTriggers = createServerFn({
     Each should contain a natural, personalized insight about the triggers observed.
     Please insure proper punctuation and grammar.`;
 
-    const response = await anthropic.messages.create({
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-      model: 'claude-sonnet-4-6',
-    });
+    let response;
+    try {
+      response = await anthropic.messages.create({
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+        model: 'claude-sonnet-4-6',
+      });
+    } catch (error) {
+      console.error('[Insights:Triggers] Anthropic API error:', error);
+      throw new Error(
+        'Failed to generate trigger insights. Please try again later.'
+      );
+    }
 
-    // Get the assistant's response content
     const assistantMessage =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : 'No insights available';
-    const analysis = JSON.parse(assistantMessage);
+      response.content[0]?.type === 'text' ? response.content[0].text : null;
 
-    return analysis;
+    if (!assistantMessage) {
+      throw new Error(
+        'No trigger insights received from AI. Please try again later.'
+      );
+    }
+
+    return parseAIResponse(assistantMessage, 'Triggers');
   });
 
 export const getSuggestions = createServerFn({
@@ -117,18 +154,28 @@ export const getSuggestions = createServerFn({
     Focus on specific, implementable actions rather than general advice
     Please insure proper punctuation and grammar.`;
 
-    const response = await anthropic.messages.create({
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-      model: 'claude-sonnet-4-6',
-    });
+    let response;
+    try {
+      response = await anthropic.messages.create({
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+        model: 'claude-sonnet-4-6',
+      });
+    } catch (error) {
+      console.error('[Insights:Suggestions] Anthropic API error:', error);
+      throw new Error(
+        'Failed to generate suggestion insights. Please try again later.'
+      );
+    }
 
-    // Get the assistant's response content
     const assistantMessage =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : 'No insights available';
-    const analysis = JSON.parse(assistantMessage);
+      response.content[0]?.type === 'text' ? response.content[0].text : null;
 
-    return analysis;
+    if (!assistantMessage) {
+      throw new Error(
+        'No suggestion insights received from AI. Please try again later.'
+      );
+    }
+
+    return parseAIResponse(assistantMessage, 'Suggestions');
   });

@@ -40,7 +40,7 @@ export function MoodCalendar() {
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.mood.getUserMoods, {
       userId: user._id,
-      organizationId: orgSettings.betterAuthOrgId,
+      organizationId: orgSettings.clerkOrgId ?? '',
     })
   );
   type Mood = Omit<(typeof moods)[number], 'time'> & { time: string };

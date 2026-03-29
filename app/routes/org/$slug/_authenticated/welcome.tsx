@@ -12,7 +12,6 @@ import { ArrowLeft, CheckCircle, Globe } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { APP_INFO } from '@/constants/app-info';
 import { z } from 'zod';
-import { verifyEmail } from '@/actions/auth';
 import { getPolarCheckoutSession, getPolarCustomer } from '@/actions/polar';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/welcome')({
@@ -36,27 +35,9 @@ function RouteComponent() {
   const { checkout_id } = Route.useSearch();
 
   const sendVerificationEmail = async () => {
-    const checkoutSession = await getPolarCheckoutSession({
-      data: {
-        checkoutId: checkout_id,
-      },
-    });
-    const customerId = checkoutSession.customerId;
-    if (!customerId) {
-      throw new Error('Customer ID not found');
-    }
-    const customer = await getPolarCustomer({
-      data: {
-        customerId: customerId,
-      },
-    });
-
-    await verifyEmail({
-      data: {
-        email: customer.email,
-        callbackURL: `/org/${slug}/dashboard`,
-      },
-    });
+    // Clerk handles email verification automatically
+    // This is kept as a placeholder for the welcome page UI
+    console.log('Email verification is handled by Clerk');
   };
 
   return (

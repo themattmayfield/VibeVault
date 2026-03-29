@@ -38,7 +38,7 @@ function RouteComponent() {
   const { data: groups } = useSuspenseQuery(
     convexQuery(api.groups.getUsersGroups, {
       userId: user._id,
-      organizationId: orgSettings.betterAuthOrgId,
+      organizationId: orgSettings.clerkOrgId ?? '',
     })
   );
 
@@ -273,7 +273,7 @@ function RouteComponent() {
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        organizationId={orgSettings.betterAuthOrgId}
+        organizationId={orgSettings.clerkOrgId ?? ''}
       />
     </div>
   );

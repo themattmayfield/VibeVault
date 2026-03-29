@@ -24,7 +24,7 @@ export function PersonalMoodChart() {
   const { data: getMoodTrends } = useSuspenseQuery(
     convexQuery(api.mood.getMoodTrends, {
       userId: user._id,
-      organizationId: orgSettings.betterAuthOrgId,
+      organizationId: orgSettings.clerkOrgId ?? '',
       usersTimeZone,
     })
   );

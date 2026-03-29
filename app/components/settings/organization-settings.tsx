@@ -23,14 +23,14 @@ interface OrganizationSettingsProps {
   orgSettings: Doc<'orgSettings'>;
   orgName: string;
   orgSlug: string;
-  betterAuthOrgId: string;
+  clerkOrgId: string;
 }
 
 export function OrganizationSettings({
   orgSettings,
   orgName,
   orgSlug,
-  betterAuthOrgId,
+  clerkOrgId,
 }: OrganizationSettingsProps) {
   const [name, setName] = useState(orgName);
   const [slug, setSlug] = useState(orgSlug);
@@ -70,7 +70,7 @@ export function OrganizationSettings({
     try {
       await updateOrganization({
         data: {
-          organizationId: betterAuthOrgId,
+          organizationId: clerkOrgId,
           name: name.trim(),
           slug: slug.trim(),
         },
@@ -89,7 +89,7 @@ export function OrganizationSettings({
     setFlagsLoading(true);
     try {
       await updateConvexOrgSettings({
-        betterAuthOrgId,
+        clerkOrgId,
         featureFlags: {
           groupsEnabled,
           globalTrendsEnabled,

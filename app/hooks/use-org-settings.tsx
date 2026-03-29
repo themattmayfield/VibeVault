@@ -87,6 +87,87 @@ export function useDevPlanOverride(): PlanTier | null {
 }
 
 // ---------------------------------------------------------------------------
+// Dev role override store (module-level, survives re-renders)
+// ---------------------------------------------------------------------------
+
+export type OrgRole = 'owner' | 'member';
+
+const roleListeners = new Set<Listener>();
+let currentRoleOverride: OrgRole | null = null;
+
+function notifyRoleListeners() {
+  for (const fn of roleListeners) fn();
+}
+
+function subscribeRole(fn: Listener) {
+  roleListeners.add(fn);
+  return () => {
+    roleListeners.delete(fn);
+  };
+}
+
+function getRoleSnapshot(): OrgRole | null {
+  return currentRoleOverride;
+}
+
+function getRoleServerSnapshot(): OrgRole | null {
+  return null;
+}
+
+function getRoleStorageKey(slug: string) {
+  return `dev:roleOverride:${slug}`;
+}
+
+/** Read a saved role override from localStorage. */
+export function getSavedRoleOverride(slug: string): OrgRole | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem(getRoleStorageKey(slug));
+    if (saved && ['owner', 'member'].includes(saved)) {
+      return saved as OrgRole;
+    }
+  } catch {
+    // SSR or storage disabled
+  }
+  return null;
+}
+
+/** Hydrate the role override store from localStorage on first load. */
+export function hydrateRoleOverride(slug: string) {
+  const saved = getSavedRoleOverride(slug);
+  if (saved && currentRoleOverride !== saved) {
+    currentRoleOverride = saved;
+    notifyRoleListeners();
+  }
+}
+
+/** Set (or clear) the dev role override. Notifies all subscribers. */
+export function setDevRoleOverride(slug: string, role: OrgRole | null) {
+  currentRoleOverride = role;
+  if (typeof window !== 'undefined') {
+    try {
+      if (role) {
+        localStorage.setItem(getRoleStorageKey(slug), role);
+      } else {
+        localStorage.removeItem(getRoleStorageKey(slug));
+      }
+    } catch {
+      // ignore
+    }
+  }
+  notifyRoleListeners();
+}
+
+/** Hook to read the current dev role override reactively. */
+export function useDevRoleOverride(): OrgRole | null {
+  return useSyncExternalStore(
+    subscribeRole,
+    getRoleSnapshot,
+    getRoleServerSnapshot
+  );
+}
+
+// ---------------------------------------------------------------------------
 // React Context
 // ---------------------------------------------------------------------------
 
@@ -111,6 +192,7 @@ export function OrgSettingsProvider({
 
   // Hydrate from localStorage on first render (safe in useMemo initializer)
   useMemo(() => hydrateOverride(slug), [slug]);
+  useMemo(() => hydrateRoleOverride(slug), [slug]);
 
   const value = useMemo(() => {
     if (!override) return orgSettings;

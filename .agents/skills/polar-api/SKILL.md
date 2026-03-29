@@ -27,7 +27,7 @@ Manage Polar payments and subscriptions via the REST API using curl. Polar has n
 ## When Not to Use
 
 - Modifying application payment code -- edit `app/actions/polar.ts` or `app/lib/polar-products.ts` directly
-- Better Auth Polar plugin config -- edit `auth.ts` directly
+- Polar webhook handler config -- edit `app/actions/polar-webhook.ts`
 - Plan feature definitions -- edit `app/lib/plan-features.ts`
 - Convex data operations -- use `convex-ops`
 
@@ -100,12 +100,12 @@ Sandbox and production have separate product IDs (same names, different UUIDs). 
 - **Product mapping:** `app/lib/polar-products.ts` -- `PLAN_PRODUCT_MAP` (tier+cycle -> product ID) and `resolvePlanFromProductId()` (product ID -> tier+cycle)
 - **Plan features:** `app/lib/plan-features.ts` -- `PLAN_FEATURES` defines feature limits per tier, `getPlanFeatures()`, `hasFeature()`, `isAtLeastTier()`
 - **Server actions:** `app/actions/polar.ts` -- `createPolarCheckoutSession`, `getPolarCheckoutSession`, `getPolarCustomer`, `getCustomerPortalUrl`
-- **Webhook handler:** `auth.ts` -- Better Auth Polar plugin `onPayload` handler processes `subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked` events
+- **Webhook handler:** `app/actions/polar-webhook.ts` -- standalone handler processes `subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked` events
 - **Plan persistence:** Webhook handler calls `api.organization.updateOrgPlan` in Convex to update `orgSettings.plan`, `orgSettings.polarSubscriptionId`, `orgSettings.polarCustomerId`, and auto-derives `orgSettings.featureFlags`
 
 ### Subscription -> Org Linking
 
-When a checkout is created, `betterAuthOrgId` is passed in the checkout metadata. When the subscription webhook fires, the handler reads `metadata.betterAuthOrgId` to find and update the correct org in Convex.
+When a checkout is created, `clerkOrgId` is passed in the checkout metadata. When the subscription webhook fires, the handler reads `metadata.clerkOrgId` to find and update the correct org in Convex.
 
 ### Authentication Header
 
@@ -147,7 +147,7 @@ curl -sL -X POST \
     \"metadata\": {
       \"plan\": \"team\",
       \"billingCycle\": \"monthly\",
-      \"betterAuthOrgId\": \"<org-id>\"
+      \"clerkOrgId\": \"<org-id>\"
     }
   }" \
   "https://sandbox-api.polar.sh/v1/checkouts/" | jq '{id, url, status}'
@@ -281,7 +281,7 @@ curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
 
 5. Cross-reference with Convex org settings:
    ```bash
-   npx convex run organization:getOrgSettingsByBetterAuthOrgId '{"betterAuthOrgId": "<org-id>"}'
+   npx convex run organization:getOrgSettingsByClerkOrgId '{      "clerkOrgId": "<org-id>"}'
    ```
 
 ## Workflow: Create a Test Checkout
@@ -313,7 +313,7 @@ curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
        \"metadata\": {
          \"plan\": \"team\",
          \"billingCycle\": \"monthly\",
-         \"betterAuthOrgId\": \"test-org-id\"
+         \"clerkOrgId\": \"test-org-id\"
        }
      }" \
      "https://sandbox-api.polar.sh/v1/checkouts/" | jq '.url'
@@ -339,7 +339,7 @@ After a checkout completes, verify the webhook updated the org:
 
 3. Verify the Convex org was updated:
    ```bash
-   npx convex run organization:getOrgSettingsByBetterAuthOrgId '{"betterAuthOrgId": "<betterAuthOrgId-from-metadata>"}'
+   npx convex run organization:getOrgSettingsByClerkOrgId '{"clerkOrgId": "<clerkOrgId-from-metadata>"}'
    # Should show plan: "team" (or whatever tier was purchased)
    ```
 
@@ -377,5 +377,5 @@ vercel env pull --environment=production /tmp/prod-env && grep POLAR_ /tmp/prod-
 - [ ] Piped output through `jq` for readable JSON
 - [ ] Used `-sL` flags on curl (silent + follow redirects)
 - [ ] Included `Content-Type: application/json` header on POST/PATCH requests
-- [ ] Included `betterAuthOrgId` in checkout metadata for subscription -> org linking
+- [ ] Included `clerkOrgId` in checkout metadata for subscription -> org linking
 - [ ] Checked rate limits (100/min sandbox, 500/min production)

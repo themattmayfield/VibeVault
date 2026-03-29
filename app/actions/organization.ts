@@ -1,64 +1,74 @@
 import { createServerFn } from '@tanstack/react-start';
-import { getRequestHeaders } from '@tanstack/react-start/server';
-import { auth } from 'auth';
+import { auth } from '@clerk/tanstack-react-start/server';
+import { createClerkClient } from '@clerk/backend';
 import { z } from 'zod';
-import { db } from '../../drizzle';
-import { organization, member } from '../../auth-schema';
-import { eq } from 'drizzle-orm';
+
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY!,
+});
 
 /** Set the active organization on the user's session based on org ID */
 export const setActiveOrganization = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ organizationId: z.string() }))
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
-
-    const result = await auth.api.setActiveOrganization({
-      headers: headers as unknown as Headers,
-      body: { organizationId: data.organizationId },
-    });
-
-    return result;
+    // With Clerk, the active organization is set client-side via
+    // useOrganizationList().setActive() or <OrganizationSwitcher />.
+    // This server function is a no-op kept for compatibility.
+    return { organizationId: data.organizationId };
   });
 
 /** Get the full organization details including members */
 export const getFullOrganization = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ organizationId: z.string() }))
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
-
-    const result = await auth.api.getFullOrganization({
-      headers: headers as unknown as Headers,
-      query: { organizationId: data.organizationId },
+    const org = await clerkClient.organizations.getOrganization({
+      organizationId: data.organizationId,
     });
 
-    return result;
+    const memberships =
+      await clerkClient.organizations.getOrganizationMembershipList({
+        organizationId: data.organizationId,
+      });
+
+    return {
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      imageUrl: org.imageUrl,
+      createdAt: org.createdAt,
+      members: memberships.data.map((m) => ({
+        id: m.id,
+        userId: m.publicUserData?.userId ?? '',
+        role: m.role,
+        user: {
+          name: `${m.publicUserData?.firstName ?? ''} ${m.publicUserData?.lastName ?? ''}`.trim(),
+          email: m.publicUserData?.identifier ?? '',
+          image: m.publicUserData?.imageUrl ?? null,
+        },
+      })),
+    };
   });
 
 /** Get the current user's role in an organization */
 export const getOrgMemberRole = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ organizationId: z.string() }))
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
+    const { userId } = await auth();
+    if (!userId) return null;
 
-    const session = await auth.api.getSession({
-      headers: headers as unknown as Headers,
-    });
-    if (!session) return null;
+    const memberships =
+      await clerkClient.organizations.getOrganizationMembershipList({
+        organizationId: data.organizationId,
+      });
 
-    const org = await auth.api.getFullOrganization({
-      headers: headers as unknown as Headers,
-      query: { organizationId: data.organizationId },
-    });
-
-    if (!org) return null;
-
-    const member = org.members.find(
-      (m: { userId: string }) => m.userId === session.user.id
+    const membership = memberships.data.find(
+      (m) => m.publicUserData?.userId === userId
     );
-    return member?.role ?? null;
+
+    const rawRole = membership?.role ?? null;
+    if (rawRole === 'org:admin') return 'owner';
+    if (rawRole === 'org:member') return 'member';
+    return rawRole;
   });
 
 /** Update organization name/slug/logo */
@@ -72,23 +82,19 @@ export const updateOrganization = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
+    const result = await clerkClient.organizations.updateOrganization(
+      data.organizationId,
+      {
+        name: data.name,
+        slug: data.slug,
+      }
+    );
 
-    const body: Record<string, string> = {};
-    if (data.name) body.name = data.name;
-    if (data.slug) body.slug = data.slug;
-    if (data.logo) body.logo = data.logo;
-
-    const result = await auth.api.updateOrganization({
-      headers: headers as unknown as Headers,
-      body: {
-        organizationId: data.organizationId,
-        data: body,
-      },
-    });
-
-    return result;
+    return {
+      id: result.id,
+      name: result.name,
+      slug: result.slug,
+    };
   });
 
 /** Invite a member to the organization */
@@ -101,19 +107,24 @@ export const inviteMember = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
+    // Map 'owner' to 'org:admin' for Clerk's role system
+    const clerkRole =
+      data.role === 'owner' ? 'org:admin' : (`org:${data.role}` as string);
 
-    const result = await auth.api.createInvitation({
-      headers: headers as unknown as Headers,
-      body: {
+    const result = await clerkClient.organizations.createOrganizationInvitation(
+      {
         organizationId: data.organizationId,
-        email: data.email,
-        role: data.role,
-      },
-    });
+        emailAddress: data.email,
+        role: clerkRole,
+        inviterUserId: (await auth()).userId!,
+      }
+    );
 
-    return result;
+    return {
+      id: result.id,
+      emailAddress: result.emailAddress,
+      role: result.role,
+    };
   });
 
 /** Remove a member from the organization */
@@ -125,15 +136,10 @@ export const removeMember = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
-
-    await auth.api.removeMember({
-      headers: headers as unknown as Headers,
-      body: {
-        organizationId: data.organizationId,
-        memberIdOrEmail: data.memberIdOrEmail,
-      },
+    // Clerk uses userId to remove members
+    await clerkClient.organizations.deleteOrganizationMembership({
+      organizationId: data.organizationId,
+      userId: data.memberIdOrEmail,
     });
   });
 
@@ -147,16 +153,13 @@ export const updateMemberRole = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
+    const clerkRole =
+      data.role === 'owner' ? 'org:admin' : (`org:${data.role}` as string);
 
-    await auth.api.updateMemberRole({
-      headers: headers as unknown as Headers,
-      body: {
-        organizationId: data.organizationId,
-        memberId: data.memberId,
-        role: data.role,
-      },
+    await clerkClient.organizations.updateOrganizationMembership({
+      organizationId: data.organizationId,
+      userId: data.memberId,
+      role: clerkRole,
     });
   });
 
@@ -166,39 +169,33 @@ export const checkSlugAvailable = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const normalized = data.slug.toLowerCase();
 
-    // Check if the slug is already taken in the Neon organization table
-    const existing = await db
-      .select({ id: organization.id })
-      .from(organization)
-      .where(eq(organization.slug, normalized))
-      .limit(1);
-
-    return existing.length === 0;
+    try {
+      // Try to get an org with this slug -- if it exists, slug is taken
+      await clerkClient.organizations.getOrganization({
+        slug: normalized,
+      });
+      return false; // Org exists, slug is taken
+    } catch {
+      return true; // Org not found, slug is available
+    }
   });
 
 /** Get all organizations the authenticated user belongs to (with slugs) */
 export const getUserOrganizations = createServerFn({ method: 'GET' }).handler(
   async () => {
-    const headers = getRequestHeaders();
-    if (!headers) return [];
+    const { userId } = await auth();
+    if (!userId) return [];
 
-    const session = await auth.api.getSession({
-      headers: headers as unknown as Headers,
+    const memberships = await clerkClient.users.getOrganizationMembershipList({
+      userId,
     });
-    if (!session) return [];
 
-    const memberships = await db
-      .select({
-        orgId: organization.id,
-        orgName: organization.name,
-        orgSlug: organization.slug,
-        role: member.role,
-      })
-      .from(member)
-      .innerJoin(organization, eq(member.organizationId, organization.id))
-      .where(eq(member.userId, session.user.id));
-
-    return memberships;
+    return memberships.data.map((m) => ({
+      orgId: m.organization.id,
+      orgName: m.organization.name,
+      orgSlug: m.organization.slug,
+      role: m.role,
+    }));
   }
 );
 
@@ -212,17 +209,23 @@ export const addMemberToOrganization = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    if (!headers) return null;
+    const clerkRole =
+      data.role === 'owner'
+        ? 'org:admin'
+        : data.role === 'admin'
+          ? 'org:admin'
+          : 'org:member';
 
-    const result = await auth.api.addMember({
-      headers: headers as unknown as Headers,
-      body: {
-        userId: data.userId,
+    const result = await clerkClient.organizations.createOrganizationMembership(
+      {
         organizationId: data.organizationId,
-        role: data.role,
-      },
-    });
+        userId: data.userId,
+        role: clerkRole,
+      }
+    );
 
-    return result;
+    return {
+      id: result.id,
+      role: result.role,
+    };
   });

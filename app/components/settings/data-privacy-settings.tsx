@@ -30,11 +30,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { deleteAccount } from '@/actions/auth';
-import { signOutAction } from '@/actions/auth';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
-import { useRouter, useParams } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { Download, Trash2 } from 'lucide-react';
 
 interface DataPrivacySettingsProps {
@@ -46,7 +45,6 @@ export function DataPrivacySettings({ user }: DataPrivacySettingsProps) {
   const [exportLoading, setExportLoading] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const router = useRouter();
   const { slug } = useParams({ strict: false }) as { slug?: string };
 
   const exportData = useQuery(api.user.exportUserData, { userId: user._id });
@@ -121,13 +119,9 @@ export function DataPrivacySettings({ user }: DataPrivacySettingsProps) {
       await deleteUserData({ userId: user._id });
       // Then delete auth account
       await deleteAccount({ data: { password: deletePassword } });
-      await signOutAction();
       toast.success('Account deleted');
-      router.navigate({
-        to: slug ? '/org/$slug/sign-in' : '/',
-        params: slug ? { slug } : undefined,
-        reloadDocument: true,
-      });
+      // Clerk session is invalidated when user is deleted -- reload to clear
+      window.location.href = slug ? `/org/${slug}/sign-in` : '/';
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : 'Failed to delete account'

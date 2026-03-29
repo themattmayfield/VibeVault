@@ -1,69 +1,11 @@
-import { auth } from 'auth';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequestHeaders } from '@tanstack/react-start/server';
+import { auth } from '@clerk/tanstack-react-start/server';
+import { createClerkClient } from '@clerk/backend';
 import { z } from 'zod';
 
-/** Server-side sign-out — runs on the same origin so the session cookie is accessible */
-export const signOutAction = createServerFn({ method: 'POST' }).handler(
-  async () => {
-    const headers = getRequestHeaders();
-    await auth.api.signOut({
-      headers: headers as unknown as Headers,
-    });
-  }
-);
-
-const signInEmailSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY!,
 });
-
-const signUpEmailSchema = z.object({
-  ...signInEmailSchema.shape,
-  name: z.string().min(1),
-});
-
-export const signInEmail = createServerFn({ method: 'POST' })
-  .inputValidator(signInEmailSchema)
-  .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    const response = await auth.api.signInEmail({
-      headers: headers as unknown as Headers,
-      body: {
-        email: data.email,
-        password: data.password,
-        rememberMe: true,
-      },
-    });
-
-    return response.user.id;
-  });
-
-export const signUpEmail = createServerFn({ method: 'POST' })
-  .inputValidator(signUpEmailSchema)
-  .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    const response = await auth.api.signUpEmail({
-      headers: headers as unknown as Headers,
-      body: {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-      },
-    });
-
-    return response.user.id;
-  });
-
-export const verifyEmail = createServerFn({ method: 'POST' })
-  .inputValidator(
-    z.object({ email: z.string().email(), callbackURL: z.string() })
-  )
-  .handler(async ({ data }) => {
-    await auth.api.sendVerificationEmail({
-      body: { email: data.email, callbackURL: data.callbackURL },
-    });
-  });
 
 const createOrgSchema = z.object({
   name: z.string().min(1),
@@ -71,20 +13,16 @@ const createOrgSchema = z.object({
   userId: z.string().min(1),
 });
 
-/** Create a Better Auth organization and return its ID */
+/** Create a Clerk organization and return its ID */
 export const createOrganization = createServerFn({ method: 'POST' })
   .inputValidator(createOrgSchema)
   .handler(async ({ data }) => {
-    const org = await auth.api.createOrganization({
-      body: {
-        name: data.name,
-        slug: data.slug,
-        userId: data.userId,
-      },
+    const org = await clerkClient.organizations.createOrganization({
+      name: data.name,
+      slug: data.slug,
+      createdBy: data.userId,
     });
-    if (!org) {
-      throw new Error('Failed to create organization');
-    }
+
     return org.id;
   });
 
@@ -97,15 +35,20 @@ export const updateAuthProfile = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    const result = await auth.api.updateUser({
-      headers: headers as unknown as Headers,
-      body: {
-        name: data.name,
-        ...(data.image !== undefined && { image: data.image }),
-      },
+    const { userId } = await auth();
+    if (!userId) throw new Error('Not authenticated');
+
+    const names = data.name.split(' ');
+    const result = await clerkClient.users.updateUser(userId, {
+      firstName: names[0],
+      lastName: names.slice(1).join(' ') || undefined,
+      ...(data.image !== undefined && { imageUrl: data.image }),
     });
-    return result;
+    return {
+      id: result.id,
+      firstName: result.firstName,
+      lastName: result.lastName,
+    };
   });
 
 /** Change the authenticated user's password */
@@ -117,13 +60,21 @@ export const changePassword = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    await auth.api.changePassword({
-      headers: headers as unknown as Headers,
-      body: {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      },
+    const { userId } = await auth();
+    if (!userId) throw new Error('Not authenticated');
+
+    // Verify current password first
+    const verified = await clerkClient.users.verifyPassword({
+      userId,
+      password: data.currentPassword,
+    });
+
+    if (!verified.verified) {
+      throw new Error('Current password is incorrect');
+    }
+
+    await clerkClient.users.updateUser(userId, {
+      password: data.newPassword,
     });
   });
 
@@ -135,12 +86,14 @@ export const changeEmail = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    await auth.api.changeEmail({
-      headers: headers as unknown as Headers,
-      body: {
-        newEmail: data.newEmail,
-      },
+    const { userId } = await auth();
+    if (!userId) throw new Error('Not authenticated');
+
+    // Create a new email address for the user
+    await clerkClient.emailAddresses.createEmailAddress({
+      userId,
+      emailAddress: data.newEmail,
+      verified: false,
     });
   });
 
@@ -152,33 +105,18 @@ export const deleteAccount = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    await auth.api.deleteUser({
-      headers: headers as unknown as Headers,
-      body: {
-        password: data.password,
-      },
-    });
-  });
+    const { userId } = await auth();
+    if (!userId) throw new Error('Not authenticated');
 
-/** List active sessions for the authenticated user */
-export const listSessions = createServerFn({ method: 'GET' }).handler(
-  async () => {
-    const headers = getRequestHeaders();
-    const sessions = await auth.api.listSessions({
-      headers: headers as unknown as Headers,
+    // Verify password before deletion
+    const verified = await clerkClient.users.verifyPassword({
+      userId,
+      password: data.password,
     });
-    return sessions;
-  }
-);
 
-/** Revoke a specific session */
-export const revokeSession = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ sessionToken: z.string() }))
-  .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    await auth.api.revokeSession({
-      headers: headers as unknown as Headers,
-      body: { token: data.sessionToken },
-    });
+    if (!verified.verified) {
+      throw new Error('Password is incorrect');
+    }
+
+    await clerkClient.users.deleteUser(userId);
   });

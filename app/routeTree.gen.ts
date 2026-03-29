@@ -13,6 +13,7 @@ import { Route as NewLogRouteImport } from './routes/new-log'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing.index'
 import { Route as OrgSlugRouteImport } from './routes/org/$slug'
+import { Route as MarketingSsoCallbackRouteImport } from './routes/_marketing.sso-callback'
 import { Route as MarketingSignupRouteImport } from './routes/_marketing.signup'
 import { Route as MarketingLoginRouteImport } from './routes/_marketing.login'
 import { Route as MarketingJoinRouteImport } from './routes/_marketing.join'
@@ -20,7 +21,7 @@ import { Route as MarketingGetStartedRouteImport } from './routes/_marketing.get
 import { Route as OrgSlugIndexRouteImport } from './routes/org/$slug/index'
 import { Route as ApiFlagsIndexRouteImport } from './routes/api/flags/index'
 import { Route as OrgSlugAuthenticatedRouteImport } from './routes/org/$slug/_authenticated'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as OrgSlugUnauthenticatedSsoCallbackRouteImport } from './routes/org/$slug/_unauthenticated/sso-callback'
 import { Route as OrgSlugUnauthenticatedSignUpRouteImport } from './routes/org/$slug/_unauthenticated/sign-up'
 import { Route as OrgSlugUnauthenticatedSignInRouteImport } from './routes/org/$slug/_unauthenticated/sign-in'
 import { Route as OrgSlugUnauthenticatedForgotPasswordRouteImport } from './routes/org/$slug/_unauthenticated/forgot-password'
@@ -53,6 +54,11 @@ const OrgSlugRoute = OrgSlugRouteImport.update({
   id: '/org/$slug',
   path: '/org/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingSsoCallbackRoute = MarketingSsoCallbackRouteImport.update({
+  id: '/sso-callback',
+  path: '/sso-callback',
+  getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingSignupRoute = MarketingSignupRouteImport.update({
   id: '/signup',
@@ -88,11 +94,12 @@ const OrgSlugAuthenticatedRoute = OrgSlugAuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => OrgSlugRoute,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const OrgSlugUnauthenticatedSsoCallbackRoute =
+  OrgSlugUnauthenticatedSsoCallbackRouteImport.update({
+    id: '/_unauthenticated/sso-callback',
+    path: '/sso-callback',
+    getParentRoute: () => OrgSlugRoute,
+  } as any)
 const OrgSlugUnauthenticatedSignUpRoute =
   OrgSlugUnauthenticatedSignUpRouteImport.update({
     id: '/_unauthenticated/sign-up',
@@ -178,8 +185,8 @@ export interface FileRoutesByFullPath {
   '/join': typeof MarketingJoinRoute
   '/login': typeof MarketingLoginRoute
   '/signup': typeof MarketingSignupRoute
+  '/sso-callback': typeof MarketingSsoCallbackRoute
   '/org/$slug': typeof OrgSlugAuthenticatedRouteWithChildren
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/flags/': typeof ApiFlagsIndexRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/org/$slug/forgot-password': typeof OrgSlugUnauthenticatedForgotPasswordRoute
   '/org/$slug/sign-in': typeof OrgSlugUnauthenticatedSignInRoute
   '/org/$slug/sign-up': typeof OrgSlugUnauthenticatedSignUpRoute
+  '/org/$slug/sso-callback': typeof OrgSlugUnauthenticatedSsoCallbackRoute
   '/org/$slug/groups/$groupId': typeof OrgSlugAuthenticatedGroupsGroupIdRoute
   '/org/$slug/groups/': typeof OrgSlugAuthenticatedGroupsIndexRoute
 }
@@ -202,8 +210,8 @@ export interface FileRoutesByTo {
   '/join': typeof MarketingJoinRoute
   '/login': typeof MarketingLoginRoute
   '/signup': typeof MarketingSignupRoute
+  '/sso-callback': typeof MarketingSsoCallbackRoute
   '/': typeof MarketingIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/$slug': typeof OrgSlugIndexRoute
   '/api/flags': typeof ApiFlagsIndexRoute
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
@@ -217,6 +225,7 @@ export interface FileRoutesByTo {
   '/org/$slug/forgot-password': typeof OrgSlugUnauthenticatedForgotPasswordRoute
   '/org/$slug/sign-in': typeof OrgSlugUnauthenticatedSignInRoute
   '/org/$slug/sign-up': typeof OrgSlugUnauthenticatedSignUpRoute
+  '/org/$slug/sso-callback': typeof OrgSlugUnauthenticatedSsoCallbackRoute
   '/org/$slug/groups/$groupId': typeof OrgSlugAuthenticatedGroupsGroupIdRoute
   '/org/$slug/groups': typeof OrgSlugAuthenticatedGroupsIndexRoute
 }
@@ -228,9 +237,9 @@ export interface FileRoutesById {
   '/_marketing/join': typeof MarketingJoinRoute
   '/_marketing/login': typeof MarketingLoginRoute
   '/_marketing/signup': typeof MarketingSignupRoute
+  '/_marketing/sso-callback': typeof MarketingSsoCallbackRoute
   '/org/$slug': typeof OrgSlugRouteWithChildren
   '/_marketing/': typeof MarketingIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/$slug/_authenticated': typeof OrgSlugAuthenticatedRouteWithChildren
   '/api/flags/': typeof ApiFlagsIndexRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
@@ -245,6 +254,7 @@ export interface FileRoutesById {
   '/org/$slug/_unauthenticated/forgot-password': typeof OrgSlugUnauthenticatedForgotPasswordRoute
   '/org/$slug/_unauthenticated/sign-in': typeof OrgSlugUnauthenticatedSignInRoute
   '/org/$slug/_unauthenticated/sign-up': typeof OrgSlugUnauthenticatedSignUpRoute
+  '/org/$slug/_unauthenticated/sso-callback': typeof OrgSlugUnauthenticatedSsoCallbackRoute
   '/org/$slug/_authenticated/groups/$groupId': typeof OrgSlugAuthenticatedGroupsGroupIdRoute
   '/org/$slug/_authenticated/groups/': typeof OrgSlugAuthenticatedGroupsIndexRoute
 }
@@ -257,8 +267,8 @@ export interface FileRouteTypes {
     | '/join'
     | '/login'
     | '/signup'
+    | '/sso-callback'
     | '/org/$slug'
-    | '/api/auth/$'
     | '/api/flags/'
     | '/org/$slug/'
     | '/org/$slug/admin'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/org/$slug/forgot-password'
     | '/org/$slug/sign-in'
     | '/org/$slug/sign-up'
+    | '/org/$slug/sso-callback'
     | '/org/$slug/groups/$groupId'
     | '/org/$slug/groups/'
   fileRoutesByTo: FileRoutesByTo
@@ -281,8 +292,8 @@ export interface FileRouteTypes {
     | '/join'
     | '/login'
     | '/signup'
+    | '/sso-callback'
     | '/'
-    | '/api/auth/$'
     | '/org/$slug'
     | '/api/flags'
     | '/org/$slug/admin'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/org/$slug/forgot-password'
     | '/org/$slug/sign-in'
     | '/org/$slug/sign-up'
+    | '/org/$slug/sso-callback'
     | '/org/$slug/groups/$groupId'
     | '/org/$slug/groups'
   id:
@@ -306,9 +318,9 @@ export interface FileRouteTypes {
     | '/_marketing/join'
     | '/_marketing/login'
     | '/_marketing/signup'
+    | '/_marketing/sso-callback'
     | '/org/$slug'
     | '/_marketing/'
-    | '/api/auth/$'
     | '/org/$slug/_authenticated'
     | '/api/flags/'
     | '/org/$slug/'
@@ -323,6 +335,7 @@ export interface FileRouteTypes {
     | '/org/$slug/_unauthenticated/forgot-password'
     | '/org/$slug/_unauthenticated/sign-in'
     | '/org/$slug/_unauthenticated/sign-up'
+    | '/org/$slug/_unauthenticated/sso-callback'
     | '/org/$slug/_authenticated/groups/$groupId'
     | '/org/$slug/_authenticated/groups/'
   fileRoutesById: FileRoutesById
@@ -331,7 +344,6 @@ export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
   NewLogRoute: typeof NewLogRoute
   OrgSlugRoute: typeof OrgSlugRouteWithChildren
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFlagsIndexRoute: typeof ApiFlagsIndexRoute
 }
 
@@ -364,6 +376,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/org/$slug'
       preLoaderRoute: typeof OrgSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_marketing/sso-callback': {
+      id: '/_marketing/sso-callback'
+      path: '/sso-callback'
+      fullPath: '/sso-callback'
+      preLoaderRoute: typeof MarketingSsoCallbackRouteImport
+      parentRoute: typeof MarketingRoute
     }
     '/_marketing/signup': {
       id: '/_marketing/signup'
@@ -414,12 +433,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugAuthenticatedRouteImport
       parentRoute: typeof OrgSlugRoute
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
+    '/org/$slug/_unauthenticated/sso-callback': {
+      id: '/org/$slug/_unauthenticated/sso-callback'
+      path: '/sso-callback'
+      fullPath: '/org/$slug/sso-callback'
+      preLoaderRoute: typeof OrgSlugUnauthenticatedSsoCallbackRouteImport
+      parentRoute: typeof OrgSlugRoute
     }
     '/org/$slug/_unauthenticated/sign-up': {
       id: '/org/$slug/_unauthenticated/sign-up'
@@ -520,6 +539,7 @@ interface MarketingRouteChildren {
   MarketingJoinRoute: typeof MarketingJoinRoute
   MarketingLoginRoute: typeof MarketingLoginRoute
   MarketingSignupRoute: typeof MarketingSignupRoute
+  MarketingSsoCallbackRoute: typeof MarketingSsoCallbackRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
 }
 
@@ -528,6 +548,7 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingJoinRoute: MarketingJoinRoute,
   MarketingLoginRoute: MarketingLoginRoute,
   MarketingSignupRoute: MarketingSignupRoute,
+  MarketingSsoCallbackRoute: MarketingSsoCallbackRoute,
   MarketingIndexRoute: MarketingIndexRoute,
 }
 
@@ -571,6 +592,7 @@ interface OrgSlugRouteChildren {
   OrgSlugUnauthenticatedForgotPasswordRoute: typeof OrgSlugUnauthenticatedForgotPasswordRoute
   OrgSlugUnauthenticatedSignInRoute: typeof OrgSlugUnauthenticatedSignInRoute
   OrgSlugUnauthenticatedSignUpRoute: typeof OrgSlugUnauthenticatedSignUpRoute
+  OrgSlugUnauthenticatedSsoCallbackRoute: typeof OrgSlugUnauthenticatedSsoCallbackRoute
 }
 
 const OrgSlugRouteChildren: OrgSlugRouteChildren = {
@@ -580,6 +602,8 @@ const OrgSlugRouteChildren: OrgSlugRouteChildren = {
     OrgSlugUnauthenticatedForgotPasswordRoute,
   OrgSlugUnauthenticatedSignInRoute: OrgSlugUnauthenticatedSignInRoute,
   OrgSlugUnauthenticatedSignUpRoute: OrgSlugUnauthenticatedSignUpRoute,
+  OrgSlugUnauthenticatedSsoCallbackRoute:
+    OrgSlugUnauthenticatedSsoCallbackRoute,
 }
 
 const OrgSlugRouteWithChildren =
@@ -589,7 +613,6 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
   NewLogRoute: NewLogRoute,
   OrgSlugRoute: OrgSlugRouteWithChildren,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFlagsIndexRoute: ApiFlagsIndexRoute,
 }
 export const routeTree = rootRouteImport
@@ -597,10 +620,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

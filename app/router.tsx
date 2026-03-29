@@ -6,33 +6,35 @@ import { ConvexProvider } from 'convex/react';
 import { routeTree } from './routeTree.gen';
 import type { RootRouteContext } from './routes/__root';
 
+// Export the convexQueryClient so __root.tsx can access the underlying ConvexReactClient
+// for use with ConvexProviderWithClerk inside the route tree.
+let _convexQueryClient: ConvexQueryClient;
+export function getConvexQueryClient() {
+  return _convexQueryClient;
+}
+
 export function getRouter() {
   const CONVEX_URL = import.meta.env.VITE_CONVEX_URL;
   if (!CONVEX_URL) {
     console.error('missing envar VITE_CONVEX_URL');
   }
-  const convexQueryClient = new ConvexQueryClient(CONVEX_URL);
+  _convexQueryClient = new ConvexQueryClient(CONVEX_URL);
 
   const queryClient: QueryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        queryKeyHashFn: convexQueryClient.hashFn(),
-        queryFn: convexQueryClient.queryFn(),
+        queryKeyHashFn: _convexQueryClient.hashFn(),
+        queryFn: _convexQueryClient.queryFn(),
       },
     },
   });
-  convexQueryClient.connect(queryClient);
+  _convexQueryClient.connect(queryClient);
 
   const router = routerWithQueryClient(
     createTanStackRouter({
       routeTree,
       defaultPreload: 'intent',
       context: { queryClient } satisfies RootRouteContext,
-      Wrap: ({ children }) => (
-        <ConvexProvider client={convexQueryClient.convexClient}>
-          {children}
-        </ConvexProvider>
-      ),
       scrollRestoration: true,
       scrollRestorationBehavior: 'smooth',
       defaultHashScrollIntoView: {

@@ -9,7 +9,7 @@ Run a comprehensive audit of the codebase. Check for the following categories of
 Check all documentation files for accuracy against the actual source code:
 
 - **README.md**: Compare architecture description, tech stack, scripts table, environment variable descriptions, and development workflow against `package.json`, route files, and config files.
-- **AGENTS.md**: Verify the function tables, schema descriptions, project structure, and multi-tenancy model match the actual Convex functions in `convex/`, route files in `app/routes/`, and `auth-schema.ts`.
+- **AGENTS.md**: Verify the function tables, schema descriptions, project structure, and multi-tenancy model match the actual Convex functions in `convex/`, route files in `app/routes/`, and `convex/schema.ts`.
 - **Agent skill files** (`.agents/skills/*/SKILL.md`): Verify that documented function names, argument types, and CLI examples match the actual source code. Pay special attention to the `convex-ops` function table.
 - **`.env.example`**: Verify every listed env var is actually consumed by source code. Flag any that are vestigial.
 - **`convex/README.md`**: Check if it contains project-specific content or is just generic boilerplate.

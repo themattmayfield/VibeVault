@@ -29,15 +29,19 @@ import { APP_INFO } from '@/constants/app-info';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { createPolarCheckoutSession } from '@/actions/polar';
-import { signUpEmail, createOrganization } from '@/actions/auth';
+import { createOrganization } from '@/actions/auth';
 import { checkSlugAvailable } from '@/actions/organization';
 import { useRef, useCallback } from 'react';
+import { useSignUp } from '@clerk/tanstack-react-start';
+import { getAuthUser } from '@/actions/getAuthUser';
+import { EmailVerificationStep } from '@/components/email-verification-step';
 
 export const Route = createFileRoute('/_marketing/join')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const { signUp } = useSignUp();
   const handleOrganizationOnboard = useMutation(
     api.organization.handleOrganizationOnboard
   );
@@ -46,6 +50,7 @@ function RouteComponent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
+  const [pendingVerification, setPendingVerification] = useState(false);
 
   const [formData, setFormData] = useState({
     // Plan selection
@@ -122,14 +127,14 @@ function RouteComponent() {
     }
   };
 
-  const handlePlanSelect = (plan) => {
+  const handlePlanSelect = (plan: string) => {
     setFormData({
       ...formData,
       plan,
     });
   };
 
-  const handleBillingCycleChange = (cycle) => {
+  const handleBillingCycleChange = (cycle: string) => {
     setFormData({
       ...formData,
       billingCycle: cycle,
@@ -214,45 +219,33 @@ function RouteComponent() {
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateCurrentStep()) {
-      toast.error('Please complete all required fields', {
-        description:
-          'Make sure all required information is provided before submitting.',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  /** After account is created and verified, create org + redirect to payment */
+  const completeOnboarding = async () => {
     try {
       const name = `${formData.firstName} ${formData.lastName}`;
 
-      // 1. Create user in Better Auth (Neon Postgres)
-      const neonUserId = await signUpEmail({
-        data: {
-          email: formData.email,
-          password: formData.password,
-          name,
-        },
-      });
+      // Wait for session to propagate
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 2. Create organization in Better Auth
-      const betterAuthOrgId = await createOrganization({
+      const authUser = await getAuthUser();
+      if (!authUser) throw new Error('Failed to establish session');
+      const clerkUserId = authUser.id;
+
+      // 2. Create organization via Clerk Backend API
+      const clerkOrgId = await createOrganization({
         data: {
           name: formData.organizationName,
           slug: formData.slug,
-          userId: neonUserId,
+          userId: clerkUserId,
         },
       });
 
-      // 3. Create Convex user + org settings (linked to Better Auth org)
+      // 3. Create Convex user + org settings
       await handleOrganizationOnboard({
-        neonUserId,
+        clerkUserId,
         displayName: name,
         slug: formData.slug,
-        betterAuthOrgId,
+        clerkOrgId,
         role: formData.role,
       });
 
@@ -266,11 +259,74 @@ function RouteComponent() {
           customerEmail: formData.email,
           customerName: name,
           metadata: {
-            betterAuthOrgId: betterAuthOrgId,
+            clerkOrgId: clerkOrgId,
           },
         },
       });
       window.location.href = result.url;
+    } catch (error) {
+      setIsSubmitting(false);
+      setPendingVerification(false);
+      const message =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error('Registration failed', {
+        description: message,
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateCurrentStep()) {
+      toast.error('Please complete all required fields', {
+        description:
+          'Make sure all required information is provided before submitting.',
+      });
+      return;
+    }
+
+    if (!signUp) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Create user in Clerk (client-side, establishes session)
+      const { error } = await signUp.password({
+        emailAddress: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      });
+
+      if (error) {
+        if (error.code === 'form_identifier_exists') {
+          setIsSubmitting(false);
+          toast.error('An account with this email already exists', {
+            description: 'Please sign in with your existing account.',
+          });
+          return;
+        }
+        throw new Error(error.message ?? 'Sign-up failed');
+      }
+
+      if (signUp.status === 'complete') {
+        // No email verification required -- finalize and continue
+        await signUp.finalize();
+        await completeOnboarding();
+      } else if (
+        signUp.status === 'missing_requirements' &&
+        signUp.unverifiedFields.includes('email_address')
+      ) {
+        // Email verification required -- send code and show verification UI
+        const { error: sendError } = await signUp.verifications.sendEmailCode();
+        if (sendError)
+          throw new Error(sendError.message ?? 'Failed to send verification');
+
+        setPendingVerification(true);
+        setIsSubmitting(false);
+      } else {
+        throw new Error(`Unexpected sign-up status: ${signUp.status}`);
+      }
     } catch (error) {
       setIsSubmitting(false);
       const message =
@@ -351,9 +407,19 @@ function RouteComponent() {
         </p>
       </div>
 
-      {currentStep < 4 && renderStepIndicator()}
+      {!pendingVerification && currentStep < 4 && renderStepIndicator()}
 
-      {currentStep === 1 && (
+      {pendingVerification && signUp && (
+        <div className="mx-auto max-w-sm">
+          <EmailVerificationStep
+            signUp={signUp}
+            email={formData.email}
+            onVerified={completeOnboarding}
+          />
+        </div>
+      )}
+
+      {!pendingVerification && currentStep === 1 && (
         <Card className="mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -497,7 +563,7 @@ function RouteComponent() {
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     )}
                     {!isCheckingSlug && isSlugAvailable === false && (
-                      <span className="text-red-500 text-sm">✕</span>
+                      <span className="text-red-500 text-sm">&#10005;</span>
                     )}
                   </div>
                 </div>
@@ -540,7 +606,7 @@ function RouteComponent() {
         </Card>
       )}
 
-      {currentStep === 3 && (
+      {!pendingVerification && currentStep === 3 && (
         <Card className="mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

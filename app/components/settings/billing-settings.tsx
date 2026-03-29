@@ -192,7 +192,7 @@ export function BillingSettings({
           customerEmail: orgEmail,
           customerName: orgName,
           metadata: {
-            betterAuthOrgId: orgSettings?.betterAuthOrgId ?? '',
+            clerkOrgId: orgSettings?.clerkOrgId ?? '',
           },
         },
       });

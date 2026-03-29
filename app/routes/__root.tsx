@@ -8,10 +8,14 @@ import {
 } from '@tanstack/react-router';
 import type * as React from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start';
+import { ConvexProviderWithClerk } from 'convex/react-clerk';
+import { getConvexQueryClient } from '@/router';
 
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { PlanSwitcherPanel } from '@/components/dev-plan-switcher';
+import { RoleSwitcherPanel } from '@/components/dev-role-switcher';
 import appCss from '@/styles/app.css?url';
 import { APP_INFO } from '@/constants/app-info';
 
@@ -59,12 +63,18 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
 });
 
 function RootComponent() {
+  const convexClient = getConvexQueryClient().convexClient;
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
-    </div>
+    <ClerkProvider signInUrl="/login" signUpUrl="/signup">
+      <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
+        <div className="flex min-h-screen flex-col">
+          <main className="flex-1 overflow-y-auto">
+            <Outlet />
+          </main>
+        </div>
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
   );
 }
 
@@ -86,6 +96,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             {
               name: 'Plan Switcher',
               render: <PlanSwitcherPanel />,
+            },
+            {
+              name: 'Role Switcher',
+              render: <RoleSwitcherPanel />,
             },
           ]}
         />

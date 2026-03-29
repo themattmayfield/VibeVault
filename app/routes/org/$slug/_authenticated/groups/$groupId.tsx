@@ -36,8 +36,8 @@ export const Route = createFileRoute(
       });
     }
     const user = await context.queryClient.fetchQuery(
-      convexQuery(api.user.getUserFromNeonUserId, {
-        neonUserId: authUser?.id ?? '',
+      convexQuery(api.user.getUserByClerkId, {
+        clerkUserId: authUser?.id ?? '',
       })
     );
 

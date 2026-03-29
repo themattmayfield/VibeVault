@@ -12,16 +12,15 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 ## Architecture Overview
 
-MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g. `moodsync.com/org/acme`). It uses a dual-database architecture:
+MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g. `moodsync.com/org/acme`). It uses the following stack:
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | **App database** | Convex | Moods, groups, insights, org settings (real-time) |
-| **Auth database** | Neon PostgreSQL + Drizzle ORM | Users, sessions, accounts, organizations, memberships (via Better Auth) |
+| **Auth** | Clerk | Authentication, user management, organizations (fully managed) |
 | **Frontend** | TanStack Start (React 19 + Vite) | File-based routing, SSR, server functions |
 | **Payments** | Polar (env-driven: sandbox/production) | Checkout sessions, subscriptions, customer portal |
 | **AI** | Anthropic Claude | Mood pattern analysis, triggers, suggestions |
-| **Email** | Resend | Verification emails |
 | **Deployment** | Vercel | Hosting, preview deploys, feature flags |
 
 ## Service Inventory
@@ -29,12 +28,10 @@ MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g.
 | Service | CLI | Env Vars | Skill |
 |---------|-----|----------|-------|
 | Convex | `npx convex` | `CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL`, `VITE_CONVEX_SITE_URL` | `convex-ops` + 5 specialized skills |
-| Neon | `neonctl` | `DATABASE_URL`, `NEON_API_KEY` | `neon-cli` |
-| Drizzle | `npx drizzle-kit` | uses `DATABASE_URL` | `drizzle-cli` |
+| Clerk | Clerk Dashboard | `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_FRONTEND_API_URL` | -- |
 | Vercel | `vercel` | `VERCEL_TOKEN` | `vercel-deploy`, `vercel-flags` |
 | Polar | curl (REST API) | `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`, `POLAR_PRO_MONTHLY_ID`, `POLAR_PRO_ANNUAL_ID`, `POLAR_TEAM_MONTHLY_ID`, `POLAR_TEAM_ANNUAL_ID`, `POLAR_ENTERPRISE_MONTHLY_ID`, `POLAR_ENTERPRISE_ANNUAL_ID` | `polar-api` |
 | Anthropic | SDK only | `ANTHROPIC_API_KEY` | -- |
-| Resend | SDK only | `RESEND_API_KEY` | -- |
 
 ## Database Schemas
 
@@ -44,8 +41,8 @@ See `convex/schema.ts` for full definitions.
 
 | Table | Key Fields | Indexes | Purpose |
 |-------|-----------|---------|---------|
-| `orgSettings` | `betterAuthOrgId`, `slug`, `plan?`, `polarSubscriptionId?`, `polarCustomerId?`, `seatCount?`, `isPersonal?`, `branding?`, `featureFlags?` | `by_slug`, `by_better_auth_org_id` | Per-org config + subscription |
-| `users` | `neonUserId`, `displayName`, `plan?`, `polarSubscriptionId?`, `polarCustomerId?`, `image?` | `by_neon_user_id` | App user profiles + individual plan |
+| `orgSettings` | `clerkOrgId`, `slug`, `plan?`, `polarSubscriptionId?`, `polarCustomerId?`, `seatCount?`, `isPersonal?`, `branding?`, `featureFlags?` | `by_slug`, `by_clerk_org_id` | Per-org config + subscription |
+| `users` | `clerkUserId`, `displayName`, `plan?`, `polarSubscriptionId?`, `polarCustomerId?`, `image?` | `by_clerk_user_id` | App user profiles + individual plan |
 | `groups` | `name`, `isPrivate`, `creator`, `organizationId?` | `by_organization` | Mood-sharing groups |
 | `groupMemberInfo` | `userId`, `groupId`, `role`, `status` | `by_user_id_and_group_id` | Group membership |
 | `moods` | `mood` (9 values), `note?`, `tags?`, `userId?`, `organizationId?` | `by_user_id`, `by_org_and_user` | Mood entries |
@@ -59,25 +56,13 @@ Plan values: `free`, `pro`, `team`, `enterprise`
 
 Feature flags on `orgSettings.featureFlags`: `groupsEnabled`, `globalTrendsEnabled`, `publicMoodsEnabled`, `aiInsightsEnabled`, `adminDashboardEnabled`, `dataExportEnabled`, `customBrandingEnabled`
 
-### Neon/Drizzle Tables (Auth Data)
-
-See `auth-schema.ts` for full definitions. Managed by Better Auth.
-
-| Table | Purpose |
-|-------|---------|
-| `user` | Identity (id, name, email, emailVerified, image) |
-| `session` | Active sessions with org context |
-| `account` | Auth provider accounts (email/password) |
-| `verification` | Email verification tokens |
-| `organization` | Tenant orgs (name, slug, logo) |
-| `member` | Org membership (userId, orgId, role) |
-| `invitation` | Pending org invitations |
-
 ### Cross-Database Links
 
-- `users.neonUserId` (Convex) <-> `user.id` (Neon) -- user identity bridge
-- `orgSettings.betterAuthOrgId` (Convex) <-> `organization.id` (Neon) -- org config bridge
-- `moods.organizationId` / `groups.organizationId` (Convex) <-> `organization.id` (Neon) -- tenant scoping
+Auth data (users, sessions, organizations, memberships) is managed by Clerk and not stored in the app database.
+
+- `users.clerkUserId` (Convex) <-> Clerk user ID -- user identity bridge
+- `orgSettings.clerkOrgId` (Convex) <-> Clerk organization ID -- org config bridge
+- `moods.organizationId` / `groups.organizationId` (Convex) <-> Clerk organization ID -- tenant scoping
 
 ## Convex Functions
 
@@ -100,14 +85,14 @@ See `auth-schema.ts` for full definitions. Managed by Better Auth.
 | `groups.getActiveGroupMembers` | `convex/groups.ts` | Active members list |
 | `insights.getTodaysInsight` | `convex/insights.ts` | Cached daily insight |
 | `organization.getOrgSettingsBySlug` | `convex/organization.ts` | Org config lookup |
-| `user.getUserFromNeonUserId` | `convex/user.ts` | User lookup by Neon ID |
+| `user.getUserByClerkId` | `convex/user.ts` | User lookup by Clerk ID |
 | `user.getUserGroups` | `convex/user.ts` | User's group list |
 
 ### Mutations
 | Function | File | Purpose |
 |----------|------|---------|
 | `mood.createMood` | `convex/mood.ts` | Log a mood |
-| `mood.createMoodsFromLocalStorageUsingNeonUserId` | `convex/mood.ts` | Migrate anon moods |
+| `mood.createMoodsFromLocalStorage` | `convex/mood.ts` | Migrate anon moods |
 | `groups.createGroup` | `convex/groups.ts` | Create group + owner membership |
 | `insights.createInsight` | `convex/insights.ts` | Store AI insight |
 | `organization.handleOrganizationOnboard` | `convex/organization.ts` | Create user + org settings |
@@ -120,8 +105,6 @@ See `auth-schema.ts` for full definitions. Managed by Better Auth.
 | Skill | Location | Trigger Keywords | Purpose |
 |-------|----------|-----------------|---------|
 | `convex-ops` | `.agents/skills/convex-ops/` | "query convex", "run function", "check data", "convex env", "convex logs" | General Convex CLI operations (run, data, env, logs, deploy) |
-| `neon-cli` | `.agents/skills/neon-cli/` | "query database", "neon branch", "schema diff", "connection string" | Neon PostgreSQL management via neonctl |
-| `drizzle-cli` | `.agents/skills/drizzle-cli/` | "generate migration", "push schema", "introspect db", "drizzle studio" | Drizzle ORM migrations and schema management |
 | `vercel-deploy` | `.agents/skills/vercel-deploy/` | "deploy", "preview", "rollback", "vercel env", "production" | Vercel deployment lifecycle |
 | `vercel-flags` | `.agents/skills/vercel-flags/` | "feature flag", "toggle feature", "create flag", "enable flag" | Vercel Feature Flags management |
 | `polar-api` | `.agents/skills/polar-api/` | "checkout", "subscription", "payment", "order", "polar" | Polar payments via REST API |
@@ -152,27 +135,11 @@ bun run format       # biome format + check with auto-fix
 
 ### Convex operations
 ```bash
-npx convex run mood:getUserMoods '{"neonUserId": "user_123"}'   # Run a query
-npx convex data moods                                            # Inspect table
-npx convex env list                                              # List env vars
-npx convex logs                                                  # Tail logs
-npx convex deploy                                                # Deploy to production
-```
-
-### Neon operations
-```bash
-neonctl branches list --output json                # List branches
-neonctl branches schema-diff main dev              # Compare schemas
-neonctl connection-string                          # Get connection string
-```
-
-### Drizzle operations
-```bash
-npx drizzle-kit generate                           # Generate migration from schema changes
-npx drizzle-kit migrate                            # Run pending migrations
-npx drizzle-kit push                               # Push schema directly (dev only)
-npx drizzle-kit introspect                         # Pull schema from database
-npx drizzle-kit studio                             # Open DB browser GUI
+npx convex run mood:getUserMoods '{"clerkUserId": "user_123"}'   # Run a query
+npx convex data moods                                             # Inspect table
+npx convex env list                                               # List env vars
+npx convex logs                                                   # Tail logs
+npx convex deploy                                                 # Deploy to production
 ```
 
 ### Vercel deployment
@@ -233,18 +200,14 @@ convex/                       # Convex backend
   user.ts                     # User management
   _generated/                 # Auto-generated Convex files
     ai/guidelines.md          # AI agent guidelines for Convex
-drizzle/                      # Drizzle migration SQL files
-auth.ts                       # Better Auth server configuration
-auth-schema.ts                # Drizzle schema for auth tables
-auth-client.ts                # Better Auth client
-drizzle.ts                    # Drizzle client setup
-drizzle.config.ts             # Drizzle Kit configuration
+  auth.config.ts              # Clerk JWT provider config
+  start.ts                    # Clerk middleware for TanStack Start
 .agents/skills/               # Agent skills (see table above)
 ```
 
 ## Multi-Tenancy Model
 
-Path-based routing: `moodsync.com/org/{slug}/*` where `$slug` is a TanStack Router dynamic param. The org layout route (`app/routes/org/$slug.tsx`) resolves the slug from URL params and loads org settings from Convex (`orgSettings` table via `by_slug` index). All tenant data is scoped by `organizationId` (Better Auth org ID). Components access the slug via `useParams({ strict: false })`.
+Path-based routing: `moodsync.com/org/{slug}/*` where `$slug` is a TanStack Router dynamic param. The org layout route (`app/routes/org/$slug.tsx`) resolves the slug from URL params and loads org settings from Convex (`orgSettings` table via `by_slug` index). All tenant data is scoped by `organizationId` (Clerk organization ID). Components access the slug via `useParams({ strict: false })`.
 
 ## Deployment Model
 
@@ -256,14 +219,13 @@ Two environments with continuous deployment. No promotion flow -- feature flags 
 |---|---|---|
 | **Trigger** | Push to `main` | Push to any other branch / PR |
 | **Convex** | `fine-lobster-719` (production) | `moonlit-fox-464` (dev) |
-| **Neon** | `production` branch | `development` branch |
 | **Polar** | Production org | Sandbox org |
 | **Feature flags** | Vercel flags control rollout | All flags ON |
 
 ### How It Works
 
-1. **Push to `main`** -- Vercel builds with production env vars, runs `npx convex deploy` to push Convex functions to production, builds the app pointing at production Convex/Neon/Polar.
-2. **Push to any other branch / open PR** -- Vercel creates a preview deployment with staging env vars (dev Convex, dev Neon, sandbox Polar). Convex deploy is skipped (uses existing dev deployment).
+1. **Push to `main`** -- Vercel builds with production env vars, runs `npx convex deploy` to push Convex functions to production, builds the app pointing at production Convex/Polar.
+2. **Push to any other branch / open PR** -- Vercel creates a preview deployment with staging env vars (dev Convex, sandbox Polar). Convex deploy is skipped (uses existing dev deployment).
 3. **Feature gating** -- Use `npx vercel flags create/enable/disable` to control what's visible in production. Test everything in preview, then flip the flag.
 
 ### Build Pipeline

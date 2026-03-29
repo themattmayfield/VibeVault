@@ -32,7 +32,7 @@ function Home() {
     from: '/org/$slug/_authenticated',
   });
   const { orgSettings } = useOrgSettings();
-  const organizationId = orgSettings.betterAuthOrgId;
+  const organizationId = orgSettings.clerkOrgId ?? '';
 
   const { data: totalMoodEntries } = useSuspenseQuery(
     convexQuery(api.mood.getUsersTotalMoodEntries, {

@@ -13,7 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { APP_INFO } from '@/constants/app-info';
-import { signUpEmail, signInEmail, createOrganization } from '@/actions/auth';
+import { useSignUp, useSignIn } from '@clerk/tanstack-react-start';
+import { createOrganization } from '@/actions/auth';
+import { getAuthUser } from '@/actions/getAuthUser';
 import {
   checkSlugAvailable,
   getUserOrganizations,
@@ -21,6 +23,7 @@ import {
 import { useSubmittingDots } from '@/hooks/useSubmittingDots';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
+import { EmailVerificationStep } from '@/components/email-verification-step';
 
 export const Route = createFileRoute('/_marketing/signup')({
   component: SignupPage,
@@ -39,6 +42,8 @@ function generatePersonalSlug(name: string): string {
 
 function SignupPage() {
   const router = useRouter();
+  const { signUp } = useSignUp();
+  const { signIn } = useSignIn();
   const handleOrganizationOnboard = useMutation(
     api.organization.handleOrganizationOnboard
   );
@@ -47,7 +52,75 @@ function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
   const dots = useSubmittingDots(isSubmitting);
+
+  /** After sign-up (or sign-in) is finalized, create the personal org */
+  const completeOnboarding = async (isExistingUser: boolean) => {
+    // Wait for session to propagate
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Get the user ID from the now-active session
+    const authUser = await getAuthUser();
+    if (!authUser) throw new Error('Failed to establish session');
+    const clerkUserId = authUser.id;
+
+    // If existing user, check if they already have a personal org
+    if (isExistingUser) {
+      const existingOrgs = await getUserOrganizations();
+      const personalOrg = existingOrgs.find(
+        (o) => o.orgName?.includes("'s Space") && o.orgSlug
+      );
+      if (personalOrg?.orgSlug) {
+        router.navigate({
+          to: '/org/$slug/dashboard',
+          params: { slug: personalOrg.orgSlug },
+        });
+        toast.success('Welcome back! Opening your personal workspace.');
+        return;
+      }
+    }
+
+    // Generate a unique slug for the personal org
+    let slug = generatePersonalSlug(name);
+    let attempts = 0;
+    while (attempts < 5) {
+      const available = await checkSlugAvailable({ data: { slug } });
+      if (available) break;
+      slug = generatePersonalSlug(name);
+      attempts++;
+    }
+
+    // Create personal organization via Clerk Backend API
+    const clerkOrgId = await createOrganization({
+      data: {
+        name: `${name.trim()}'s Space`,
+        slug,
+        userId: clerkUserId,
+      },
+    });
+
+    // Create Convex user + org settings (marked as personal)
+    await handleOrganizationOnboard({
+      clerkUserId,
+      displayName: name.trim(),
+      slug,
+      clerkOrgId,
+      isPersonal: true,
+    });
+
+    // Redirect straight to dashboard
+    router.navigate({
+      to: '/org/$slug/dashboard',
+      params: { slug },
+    });
+
+    toast.success(
+      isExistingUser
+        ? 'Personal workspace created!'
+        : `Account created! Welcome to ${APP_INFO.name}`
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,92 +138,49 @@ function SignupPage() {
       return;
     }
 
+    if (!signUp || !signIn) return;
+
     setIsSubmitting(true);
 
     try {
-      // 1. Create or authenticate user
-      let neonUserId: string;
-      let isExistingUser = false;
+      // Try creating a new account
+      const { error } = await signUp.password({
+        emailAddress: email,
+        password,
+        firstName: name.trim().split(' ')[0],
+        lastName: name.trim().split(' ').slice(1).join(' ') || undefined,
+      });
 
-      try {
-        // Try creating a new account first
-        neonUserId = await signUpEmail({
-          data: { email, password, name: name.trim() },
-        });
-      } catch {
-        // User likely already exists -- try signing them in instead
-        try {
-          neonUserId = await signInEmail({
-            data: { email, password },
-          });
-          isExistingUser = true;
-        } catch {
-          // Sign-in also failed -- wrong password for existing account
+      if (error) {
+        // Check if the user already exists
+        if (error.code === 'form_identifier_exists') {
           setIsSubmitting(false);
           toast.error('An account with this email already exists', {
-            description:
-              'Please sign in with your existing password to create a personal workspace.',
+            description: 'Please sign in instead.',
           });
           return;
         }
+        throw new Error(error.message ?? 'Sign-up failed');
       }
 
-      // 2. If existing user, check if they already have a personal org
-      if (isExistingUser) {
-        const existingOrgs = await getUserOrganizations();
-        const personalOrg = existingOrgs.find(
-          (o) => o.orgName?.includes("'s Space") && o.orgSlug
-        );
-        if (personalOrg?.orgSlug) {
-          // Already has a personal org -- just redirect there
-          router.navigate({
-            to: '/org/$slug/dashboard',
-            params: { slug: personalOrg.orgSlug },
-          });
-          toast.success('Welcome back! Opening your personal workspace.');
-          return;
-        }
+      if (signUp.status === 'complete') {
+        // No email verification required -- finalize directly
+        await signUp.finalize();
+        await completeOnboarding(false);
+      } else if (
+        signUp.status === 'missing_requirements' &&
+        signUp.unverifiedFields.includes('email_address')
+      ) {
+        // Email verification required -- send code and show verification UI
+        const { error: sendError } = await signUp.verifications.sendEmailCode();
+        if (sendError)
+          throw new Error(sendError.message ?? 'Failed to send verification');
+
+        setPendingVerification(true);
+        setIsSubmitting(false);
+      } else {
+        throw new Error(`Unexpected sign-up status: ${signUp.status}`);
       }
-
-      // 3. Generate a unique slug for the personal org
-      let slug = generatePersonalSlug(name);
-      let attempts = 0;
-      while (attempts < 5) {
-        const available = await checkSlugAvailable({ data: { slug } });
-        if (available) break;
-        slug = generatePersonalSlug(name);
-        attempts++;
-      }
-
-      // 4. Create personal organization in Better Auth
-      const betterAuthOrgId = await createOrganization({
-        data: {
-          name: `${name.trim()}'s Space`,
-          slug,
-          userId: neonUserId,
-        },
-      });
-
-      // 5. Create Convex user + org settings (marked as personal)
-      await handleOrganizationOnboard({
-        neonUserId,
-        displayName: name.trim(),
-        slug,
-        betterAuthOrgId,
-        isPersonal: true,
-      });
-
-      // 6. Redirect straight to dashboard -- no payment for personal tier
-      router.navigate({
-        to: '/org/$slug/dashboard',
-        params: { slug },
-      });
-
-      toast.success(
-        isExistingUser
-          ? 'Personal workspace created!'
-          : `Account created! Welcome to ${APP_INFO.name}`
-      );
     } catch (error) {
       setIsSubmitting(false);
       const message =
@@ -158,6 +188,40 @@ function SignupPage() {
       toast.error('Signup failed', { description: message });
     }
   };
+
+  /** Called after the user successfully verifies their email */
+  const handleVerified = async () => {
+    try {
+      await completeOnboarding(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error('Signup failed', { description: message });
+    }
+  };
+
+  if (pendingVerification && signUp) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+        <div className="flex w-full max-w-sm flex-col gap-6">
+          <Link
+            to="/"
+            className="flex items-center gap-2 self-center font-medium"
+          >
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            {APP_INFO.name}
+          </Link>
+          <EmailVerificationStep
+            signUp={signUp}
+            email={email}
+            onVerified={handleVerified}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">

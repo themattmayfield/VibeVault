@@ -26,7 +26,7 @@ Manage the full Vercel deployment lifecycle: preview deploys, production deploys
 
 - Managing feature flags -- use `vercel-flags`
 - Convex deployments -- use `convex-ops` (`npx convex deploy`)
-- Database operations -- use `neon-cli` or `drizzle-cli`
+- Database operations -- use `convex-ops`
 
 ## Prerequisites
 
@@ -52,7 +52,7 @@ This is a **TanStack Start** app (React 19 + Vite SSR). When deploying to Vercel
 - Framework: Vite (auto-detected)
 - Build command: `vite build && tsc --noEmit`
 - Output: `.output/` directory
-- The app requires env vars from multiple services (Convex, Neon, Polar, Anthropic, Resend)
+- The app requires env vars from multiple services (Convex, Clerk, Polar, Anthropic)
 
 ### Required Vercel Environment Variables
 
@@ -63,7 +63,10 @@ All of these must be set in Vercel for the app to function:
 | `CONVEX_DEPLOYMENT` | Yes | Convex deployment name |
 | `VITE_CONVEX_URL` | Yes | Convex cloud URL (exposed to client) |
 | `VITE_CONVEX_SITE_URL` | Yes | Convex site URL (exposed to client) |
-| `DATABASE_URL` | Yes | Neon PostgreSQL connection string |
+| `CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key |
+| `CLERK_SECRET_KEY` | Yes | Clerk secret key |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key (exposed to client) |
+| `CLERK_FRONTEND_API_URL` | Yes | Clerk Frontend API URL (for Convex JWT) |
 | `POLAR_ACCESS_TOKEN` | Yes | Polar API token |
 | `POLAR_WEBHOOK_SECRET` | Yes | Polar webhook secret |
 | `POLAR_SERVER` | Yes | `"sandbox"` (preview) or `"production"` (prod) |
@@ -74,7 +77,7 @@ All of these must be set in Vercel for the app to function:
 | `POLAR_ENTERPRISE_MONTHLY_ID` | Yes | Polar product ID for Enterprise Monthly |
 | `POLAR_ENTERPRISE_ANNUAL_ID` | Yes | Polar product ID for Enterprise Annual |
 | `ANTHROPIC_API_KEY` | Yes | Claude AI API key |
-| `RESEND_API_KEY` | Yes | Resend email API key |
+
 | `FLAGS_SECRET` | No | Secret for Vercel feature flag endpoint verification |
 | `VITE_APP_DOMAIN` | No | e.g. `moodsync.com` (client-side, used for URL display only) |
 

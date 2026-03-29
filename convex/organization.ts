@@ -6,13 +6,13 @@ import { planLiteral } from './schema';
 const createOrgSettings = async (
   ctx: MutationCtx,
   args: {
-    betterAuthOrgId: string;
+    clerkOrgId: string;
     slug: string;
     isPersonal?: boolean;
   }
 ) => {
   return await ctx.db.insert('orgSettings', {
-    betterAuthOrgId: args.betterAuthOrgId,
+    clerkOrgId: args.clerkOrgId,
     slug: args.slug,
     ...(args.isPersonal !== undefined && { isPersonal: args.isPersonal }),
   });
@@ -20,10 +20,10 @@ const createOrgSettings = async (
 
 export const handleOrganizationOnboard = mutation({
   args: {
-    neonUserId: v.string(),
+    clerkUserId: v.string(),
     displayName: v.string(),
     slug: v.string(),
-    betterAuthOrgId: v.string(),
+    clerkOrgId: v.string(),
     role: v.optional(v.string()),
     isPersonal: v.optional(v.boolean()),
   },
@@ -31,11 +31,13 @@ export const handleOrganizationOnboard = mutation({
     // Idempotency: skip if user already exists
     const existingUser = await ctx.db
       .query('users')
-      .withIndex('by_neon_user_id', (q) => q.eq('neonUserId', args.neonUserId))
+      .withIndex('by_clerk_user_id', (q) =>
+        q.eq('clerkUserId', args.clerkUserId)
+      )
       .first();
     if (!existingUser) {
       await createUserHelper(ctx, {
-        neonUserId: args.neonUserId,
+        clerkUserId: args.clerkUserId,
         displayName: args.displayName,
         role: args.role,
       });
@@ -44,13 +46,11 @@ export const handleOrganizationOnboard = mutation({
     // Idempotency: skip if orgSettings already exists
     const existingOrg = await ctx.db
       .query('orgSettings')
-      .withIndex('by_better_auth_org_id', (q) =>
-        q.eq('betterAuthOrgId', args.betterAuthOrgId)
-      )
+      .withIndex('by_clerk_org_id', (q) => q.eq('clerkOrgId', args.clerkOrgId))
       .first();
     if (!existingOrg) {
       await createOrgSettings(ctx, {
-        betterAuthOrgId: args.betterAuthOrgId,
+        clerkOrgId: args.clerkOrgId,
         slug: args.slug,
         isPersonal: args.isPersonal,
       });
@@ -68,21 +68,19 @@ export const getOrgSettingsBySlug = query({
   },
 });
 
-export const getOrgSettingsByBetterAuthOrgId = query({
-  args: { betterAuthOrgId: v.string() },
+export const getOrgSettingsByClerkOrgId = query({
+  args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query('orgSettings')
-      .withIndex('by_better_auth_org_id', (q) =>
-        q.eq('betterAuthOrgId', args.betterAuthOrgId)
-      )
+      .withIndex('by_clerk_org_id', (q) => q.eq('clerkOrgId', args.clerkOrgId))
       .first();
   },
 });
 
 export const updateOrgSettings = mutation({
   args: {
-    betterAuthOrgId: v.string(),
+    clerkOrgId: v.string(),
     branding: v.optional(
       v.object({
         logo: v.optional(v.string()),
@@ -103,9 +101,7 @@ export const updateOrgSettings = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('orgSettings')
-      .withIndex('by_better_auth_org_id', (q) =>
-        q.eq('betterAuthOrgId', args.betterAuthOrgId)
-      )
+      .withIndex('by_clerk_org_id', (q) => q.eq('clerkOrgId', args.clerkOrgId))
       .first();
 
     if (!existing) {
@@ -177,7 +173,7 @@ function featureFlagsForPlan(plan: string) {
  */
 export const updateOrgPlan = mutation({
   args: {
-    betterAuthOrgId: v.string(),
+    clerkOrgId: v.string(),
     plan: planLiteral,
     polarSubscriptionId: v.optional(v.string()),
     polarCustomerId: v.optional(v.string()),
@@ -186,14 +182,12 @@ export const updateOrgPlan = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('orgSettings')
-      .withIndex('by_better_auth_org_id', (q) =>
-        q.eq('betterAuthOrgId', args.betterAuthOrgId)
-      )
+      .withIndex('by_clerk_org_id', (q) => q.eq('clerkOrgId', args.clerkOrgId))
       .first();
 
     if (!existing) {
       throw new Error(
-        `Organization settings not found for betterAuthOrgId: ${args.betterAuthOrgId}`
+        `Organization settings not found for clerkOrgId: ${args.clerkOrgId}`
       );
     }
 

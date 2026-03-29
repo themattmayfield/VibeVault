@@ -1,6 +1,6 @@
 /**
  * Polar product ID mappings.
- * Separated from app/actions/polar.ts to avoid circular imports with auth.ts.
+ * Separated from app/actions/polar.ts for clean imports.
  */
 import type { PlanTier } from '@/lib/plan-features';
 

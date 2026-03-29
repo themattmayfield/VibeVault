@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { authClient } from 'auth-client';
+import { useClerk } from '@clerk/tanstack-react-start';
 import { useRouter, useParams } from '@tanstack/react-router';
 
 const LogoutButton = () => {
+  const { signOut } = useClerk();
   const router = useRouter();
   const { slug } = useParams({ strict: false }) as { slug?: string };
   return (
@@ -10,7 +11,7 @@ const LogoutButton = () => {
       className="cursor-pointer"
       variant="default"
       onClick={async () => {
-        await authClient.signOut();
+        await signOut();
         if (slug) {
           router.navigate({
             to: '/org/$slug/sign-in',

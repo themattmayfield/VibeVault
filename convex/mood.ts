@@ -8,7 +8,7 @@ import { v, type Infer } from 'convex/values';
 import { moodLiteral } from './schema';
 import type { Id } from './_generated/dataModel';
 import { format } from 'date-fns-tz';
-import { getUserFromNeonUserIdHelper } from './user';
+import { getUserByClerkIdHelper } from './user';
 
 async function createMoodHelper(
   ctx: MutationCtx,
@@ -359,15 +359,15 @@ export const getMoodTrends = query({
   },
 });
 
-export const createMoodsFromLocalStorageUsingNeonUserId = mutation({
+export const createMoodsFromLocalStorage = mutation({
   args: {
-    neonUserId: v.string(),
+    clerkUserId: v.string(),
     moods: v.array(v.string()),
     organizationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getUserFromNeonUserIdHelper(ctx, {
-      neonUserId: args.neonUserId,
+    const user = await getUserByClerkIdHelper(ctx, {
+      clerkUserId: args.clerkUserId,
     });
 
     for (const moodId of args.moods) {

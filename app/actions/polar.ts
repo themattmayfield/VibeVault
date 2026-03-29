@@ -1,4 +1,4 @@
-import { polarClient } from 'auth';
+import { polarClient } from '@/lib/polar';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { PLAN_PRODUCT_MAP } from '@/lib/polar-products';
@@ -25,7 +25,7 @@ const createPolarCheckoutSessionSchema = z.object({
     .record(z.string(), z.string())
     .optional()
     .describe(
-      'Additional metadata to attach to the checkout (e.g. betterAuthOrgId)'
+      'Additional metadata to attach to the checkout (e.g. clerkOrgId)'
     ),
 });
 
@@ -74,22 +74,17 @@ export const getPolarCustomer = createServerFn({ method: 'GET' })
 /** Get the Polar customer portal URL for the authenticated user */
 export const getCustomerPortalUrl = createServerFn({ method: 'GET' }).handler(
   async () => {
-    const { auth } = await import('auth');
-    const { getRequestHeaders } = await import('@tanstack/react-start/server');
-    const headers = getRequestHeaders();
+    const { auth } = await import('@clerk/tanstack-react-start/server');
+    const { userId } = await auth();
 
-    const session = await auth.api.getSession({
-      headers: headers as unknown as Headers,
-    });
-
-    if (!session?.user?.id) {
+    if (!userId) {
       throw new Error('Not authenticated');
     }
 
     // Use the Polar SDK to create a customer session directly
     try {
       const customerSession = await polarClient.customerSessions.create({
-        externalCustomerId: session.user.id,
+        externalCustomerId: userId,
       });
       return customerSession.customerPortalUrl;
     } catch {

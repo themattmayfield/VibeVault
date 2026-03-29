@@ -36,10 +36,10 @@ const groupMemberStatus = v.union(
 );
 
 export default defineSchema({
-  // App-specific org settings. Better Auth (Neon Postgres) owns the canonical
+  // App-specific org settings. Clerk owns the canonical
   // org/membership/invitation data. This table stores org config for the app.
   orgSettings: defineTable({
-    betterAuthOrgId: v.string(), // links to Better Auth organization.id
+    clerkOrgId: v.string(), // links to Clerk organization.id
     slug: v.string(), // org URL slug, e.g. "acme" -> /org/acme
     isPersonal: v.optional(v.boolean()), // true for auto-created personal orgs
     branding: v.optional(
@@ -64,9 +64,9 @@ export default defineSchema({
     ),
   })
     .index('by_slug', ['slug'])
-    .index('by_better_auth_org_id', ['betterAuthOrgId']),
+    .index('by_clerk_org_id', ['clerkOrgId']),
   users: defineTable({
-    neonUserId: v.string(),
+    clerkUserId: v.string(),
     displayName: v.string(),
     image: v.optional(v.string()),
     role: v.optional(v.string()),
@@ -86,14 +86,14 @@ export default defineSchema({
         moodReminders: v.optional(v.boolean()),
       })
     ),
-  }).index('by_neon_user_id', ['neonUserId']),
+  }).index('by_clerk_user_id', ['clerkUserId']),
   groups: defineTable({
     name: v.string(),
     isPrivate: v.boolean(),
     description: v.optional(v.string()),
     image: v.optional(v.string()),
     creator: v.id('users'),
-    organizationId: v.optional(v.string()), // Better Auth org ID for multi-tenant scoping
+    organizationId: v.optional(v.string()), // Clerk org ID for multi-tenant scoping
   }).index('by_organization', ['organizationId']),
   groupMemberInfo: defineTable({
     userId: v.id('users'),
@@ -109,7 +109,7 @@ export default defineSchema({
     tags: v.optional(v.array(v.string())),
     group: v.optional(v.id('groups')),
     userId: v.optional(v.id('users')),
-    organizationId: v.optional(v.string()), // Better Auth org ID for multi-tenant scoping
+    organizationId: v.optional(v.string()), // Clerk org ID for multi-tenant scoping
   })
     .index('by_user_id', ['userId'])
     .index('by_org_and_user', ['organizationId', 'userId']),

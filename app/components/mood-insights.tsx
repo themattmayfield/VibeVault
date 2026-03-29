@@ -40,29 +40,51 @@ const MoodInsightsSection = ({
 interface InsightTabContentProps {
   insights: Record<string, string>;
   isLoading: boolean;
+  error?: Error | null;
   sections: Array<{ title: string; key: string }>;
 }
 
 const InsightTabContent = ({
   insights,
   isLoading,
+  error,
   sections,
-}: InsightTabContentProps) => (
-  <Card>
-    <CardContent className="pt-6">
-      <div className="space-y-4">
-        {sections.map(({ title, key }) => (
-          <MoodInsightsSection
-            key={key}
-            title={title}
-            insight={insights?.[key] || ''}
-            isLoading={isLoading}
-          />
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
+}: InsightTabContentProps) => {
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <p className="font-medium text-destructive">
+              Unable to generate insights
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {error.message ||
+                'An unexpected error occurred. Please try again later.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-4">
+          {sections.map(({ title, key }) => (
+            <MoodInsightsSection
+              key={key}
+              title={title}
+              insight={insights?.[key] || ''}
+              isLoading={isLoading}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export function MoodInsights() {
   const user = useLoaderData({
@@ -72,7 +94,7 @@ export function MoodInsights() {
 
   const { hasMoods, patterns, triggers, suggestions } = useMoodInsights({
     userId: user._id,
-    organizationId: orgSettings.betterAuthOrgId,
+    organizationId: orgSettings.clerkOrgId ?? '',
   });
 
   if (!hasMoods) {
@@ -102,6 +124,7 @@ export function MoodInsights() {
         <InsightTabContent
           insights={patterns.data}
           isLoading={patterns.isLoading}
+          error={patterns.error}
           sections={[
             { title: 'Weekly Patterns', key: 'weeklyPatterns' },
             { title: 'Time of Day', key: 'timeOfDay' },
@@ -114,6 +137,7 @@ export function MoodInsights() {
         <InsightTabContent
           insights={triggers.data}
           isLoading={triggers.isLoading}
+          error={triggers.error}
           sections={[
             { title: 'Positive Triggers', key: 'positiveTriggers' },
             { title: 'Negative Triggers', key: 'negativeTriggers' },
@@ -126,6 +150,7 @@ export function MoodInsights() {
         <InsightTabContent
           insights={suggestions.data}
           isLoading={suggestions.isLoading}
+          error={suggestions.error}
           sections={[
             { title: 'Mood Improvement', key: 'moodImprovement' },
             { title: 'Activity Suggestions', key: 'activitySuggestions' },

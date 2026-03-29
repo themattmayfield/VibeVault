@@ -9,7 +9,7 @@ import { BillingSettings } from '@/components/settings/billing-settings';
 import { OrganizationSettings } from '@/components/settings/organization-settings';
 import { MembersSettings } from '@/components/settings/members-settings';
 import { DataPrivacySettings } from '@/components/settings/data-privacy-settings';
-import { authClient } from 'auth-client';
+import { useUser } from '@clerk/tanstack-react-start';
 import { getOrgMemberRole, getFullOrganization } from '@/actions/organization';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
@@ -23,7 +23,7 @@ import {
   Users,
   Shield,
 } from 'lucide-react';
-import { useOrgSettings } from '@/hooks/use-org-settings';
+import { useOrgSettings, useDevRoleOverride } from '@/hooks/use-org-settings';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
   component: () => (
@@ -36,7 +36,7 @@ export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
 function SettingsPage() {
   const user = useLoaderData({ from: '/org/$slug/_authenticated' });
   const { orgSettings } = useOrgSettings();
-  const { data: session } = authClient.useSession();
+  const { user: clerkUser } = useUser();
 
   const [memberRole, setMemberRole] = useState<string | null>(null);
   const [members, setMembers] = useState<
@@ -55,13 +55,13 @@ function SettingsPage() {
 
   // Re-fetch the user from Convex so we get the latest preferences
   const { data: convexUser } = useSuspenseQuery(
-    convexQuery(api.user.getUserFromNeonUserId, {
-      neonUserId: user.neonUserId,
+    convexQuery(api.user.getUserByClerkId, {
+      clerkUserId: user.clerkUserId ?? '',
     })
   );
 
   const fetchOrgData = useCallback(async () => {
-    if (!orgSettings?.betterAuthOrgId) {
+    if (!orgSettings?.clerkOrgId) {
       setRoleLoading(false);
       return;
     }
@@ -69,10 +69,10 @@ function SettingsPage() {
     try {
       const [role, fullOrg] = await Promise.all([
         getOrgMemberRole({
-          data: { organizationId: orgSettings.betterAuthOrgId },
+          data: { organizationId: orgSettings.clerkOrgId ?? '' },
         }),
         getFullOrganization({
-          data: { organizationId: orgSettings.betterAuthOrgId },
+          data: { organizationId: orgSettings.clerkOrgId ?? '' },
         }),
       ]);
 
@@ -108,15 +108,17 @@ function SettingsPage() {
     } finally {
       setRoleLoading(false);
     }
-  }, [orgSettings?.betterAuthOrgId]);
+  }, [orgSettings?.clerkOrgId]);
 
   useEffect(() => {
     fetchOrgData();
   }, [fetchOrgData]);
 
-  const isOwner = memberRole === 'owner';
-  const authEmail = session?.user?.email ?? '';
-  const authName = session?.user?.name ?? '';
+  const roleOverride = useDevRoleOverride();
+  const effectiveRole = roleOverride ?? memberRole;
+  const isOwner = effectiveRole === 'owner';
+  const authEmail = clerkUser?.primaryEmailAddress?.emailAddress ?? '';
+  const authName = clerkUser?.fullName ?? '';
 
   const personalTabs = [
     { value: 'account', label: 'Account', icon: User },
@@ -197,7 +199,7 @@ function SettingsPage() {
                     orgSettings={orgSettings}
                     orgName={orgDetails.name}
                     orgSlug={orgDetails.slug}
-                    betterAuthOrgId={orgSettings.betterAuthOrgId}
+                    clerkOrgId={orgSettings.clerkOrgId ?? ''}
                   />
                 )}
               </TabsContent>
@@ -206,9 +208,9 @@ function SettingsPage() {
                 {!roleLoading && (
                   <MembersSettings
                     members={members}
-                    currentUserId={session?.user?.id ?? ''}
+                    currentUserId={clerkUser?.id ?? ''}
                     currentUserRole={memberRole ?? 'member'}
-                    organizationId={orgSettings?.betterAuthOrgId ?? ''}
+                    organizationId={orgSettings?.clerkOrgId ?? ''}
                     onRefresh={fetchOrgData}
                   />
                 )}

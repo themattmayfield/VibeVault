@@ -22,19 +22,19 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { authClient } from 'auth-client';
+import { useClerk, useUser } from '@clerk/tanstack-react-start';
 import { useRouter, useParams } from '@tanstack/react-router';
 import getInitials from '@/lib/getInitials';
-import { signOutAction } from '@/actions/auth';
 
 export function NavUser() {
-  const { data: session } = authClient.useSession();
+  const { user: clerkUser } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const { isMobile } = useSidebar();
   const { slug } = useParams({ strict: false }) as { slug?: string };
 
   const handleLogout = async () => {
-    await signOutAction();
+    await signOut();
     if (slug) {
       router.navigate({
         to: '/org/$slug/sign-in',
@@ -49,9 +49,9 @@ export function NavUser() {
     }
   };
 
-  const name = session?.user?.name ?? '';
-  const email = session?.user?.email ?? '';
-  const image = session?.user?.image ?? '';
+  const name = clerkUser?.fullName ?? '';
+  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? '';
+  const image = clerkUser?.imageUrl ?? '';
   const initials = getInitials(name);
 
   const navigateToSettings = () => {
