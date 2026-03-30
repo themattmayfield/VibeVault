@@ -1,20 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  Building2,
-  CheckIcon,
-  ChevronsUpDown,
-  HelpCircleIcon,
-  Plus,
-  SearchIcon,
-  SettingsIcon,
-  User,
-} from 'lucide-react';
+import { Building2, CheckIcon, ChevronsUpDown, Plus, User } from 'lucide-react';
 
 import { NavJournals } from '@/components/nav-journals';
 import { NavMain } from '@/components/nav-main';
-import { NavSecondary } from '@/components/nav-secondary';
 import { NavUser } from '@/components/nav-user';
 import {
   Sidebar,
@@ -47,26 +37,6 @@ type OrgMembership = {
   orgName: string | null;
   orgSlug: string | null;
   role: string;
-};
-
-const data = {
-  navSecondary: (slug: string) => [
-    {
-      title: 'Settings',
-      url: `/org/${slug}/settings`,
-      icon: SettingsIcon,
-    },
-    {
-      title: 'Get Help',
-      url: '#',
-      icon: HelpCircleIcon,
-    },
-    {
-      title: 'Search',
-      url: '#',
-      icon: SearchIcon,
-    },
-  ],
 };
 
 function OrgIcon({ name }: { name: string | null }) {
@@ -182,7 +152,6 @@ function OrgSwitcher() {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { slug } = useParams({ strict: false }) as { slug?: string };
   const { orgSettings } = useOrgSettings();
 
   // AppSidebar is always rendered within the _authenticated layout,
@@ -205,10 +174,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             organizationId={orgSettings.clerkOrgId}
           />
         )}
-        <NavSecondary
-          items={data.navSecondary(slug ?? '')}
-          className="mt-auto"
-        />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

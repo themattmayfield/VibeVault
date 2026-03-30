@@ -51,6 +51,24 @@ export const updateAuthProfile = createServerFn({ method: 'POST' })
     };
   });
 
+/**
+ * Fetch the authenticated user's primary email from Clerk.
+ * Used for self-healing email backfill on existing Convex user docs.
+ */
+export const getClerkUserEmail = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { userId } = await auth();
+    if (!userId) return null;
+
+    const clerkUser = await clerkClient.users.getUser(userId);
+    const primaryEmail = clerkUser.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId
+    );
+
+    return primaryEmail?.emailAddress ?? null;
+  }
+);
+
 /** Delete the authenticated user's account */
 export const deleteAccount = createServerFn({ method: 'POST' })
   .inputValidator(

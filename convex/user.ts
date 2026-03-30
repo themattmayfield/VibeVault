@@ -64,6 +64,45 @@ export const getUserByClerkId = query({
   },
 });
 
+/**
+ * Self-healing email sync. Backfills the email on the Convex user doc.
+ *
+ * Tries two sources in order:
+ * 1. The `email` argument (passed from the Clerk Backend API via a server function)
+ * 2. The JWT identity's `email` claim (works once the Clerk JWT template is updated)
+ *
+ * No-ops if the user already has an email stored.
+ */
+export const syncUserEmail = mutation({
+  args: {
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_user_id', (q) =>
+        q.eq('clerkUserId', identity.subject)
+      )
+      .first();
+
+    if (!user) return null;
+
+    // Already has email -- nothing to do
+    if (user.email) return null;
+
+    // Prefer the explicit argument, fall back to the JWT claim
+    const resolvedEmail = args.email || identity.email;
+    if (resolvedEmail) {
+      await ctx.db.patch(user._id, { email: resolvedEmail });
+    }
+
+    return null;
+  },
+});
+
 export const createUser = mutation({
   args: {
     clerkUserId: v.string(),

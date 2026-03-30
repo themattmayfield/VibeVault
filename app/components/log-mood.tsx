@@ -102,7 +102,12 @@ export function LogMood({
         mood: selectedMood,
         note,
         userId: user?._id,
-        tags: tags.split(',').map((tag) => tag.trim()),
+        tags: tags
+          ? tags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          : undefined,
         ...(hasContext && { context: moodContext }),
         ...(isGroupMood && { group: group as Id<'groups'> }),
         ...(isPublicMood && { isPublic: true }),
@@ -117,6 +122,7 @@ export function LogMood({
       }
       toast.success('Mood logged successfully!');
       setNote('');
+      setTags('');
       setMoodContext({});
       setShowContext(false);
     } catch (_error) {
