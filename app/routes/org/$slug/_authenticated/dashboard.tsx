@@ -13,7 +13,14 @@ import { getMoodEmoji, moodOptions } from '@/lib/getMoodEmoji';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { CalendarDays, Lightbulb, ArrowRight } from 'lucide-react';
+import {
+  CalendarDays,
+  Lightbulb,
+  BookOpen,
+  ArrowRight,
+  Trophy,
+} from 'lucide-react';
+import { ACHIEVEMENT_DEFINITIONS } from 'convex/achievements';
 import numeral from 'numeral';
 import pluralize from 'pluralize';
 import { useOrgSettings } from '@/hooks/use-org-settings';
@@ -55,6 +62,13 @@ function Home() {
 
   const { data: moodToday } = useSuspenseQuery(
     convexQuery(api.mood.getMoodToday, {
+      userId: user._id,
+      organizationId,
+    })
+  );
+
+  const { data: userAchievements } = useSuspenseQuery(
+    convexQuery(api.achievements.getUserAchievements, {
       userId: user._id,
       organizationId,
     })
@@ -195,7 +209,7 @@ function Home() {
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <Link to="/org/$slug/calendar" params={{ slug }} className="group">
             <Card className="transition-colors hover:border-primary/50">
               <CardHeader className="flex flex-row items-center gap-3">
@@ -206,6 +220,22 @@ function Home() {
                   <CardTitle className="text-base">Mood Calendar</CardTitle>
                   <CardDescription>
                     View your mood patterns on a calendar
+                  </CardDescription>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link to="/org/$slug/journal" params={{ slug }} className="group">
+            <Card className="transition-colors hover:border-primary/50">
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="rounded-lg bg-primary/10 p-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-base">Journal</CardTitle>
+                  <CardDescription>
+                    Reflect on your emotions and thoughts
                   </CardDescription>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
@@ -229,6 +259,45 @@ function Home() {
             </Card>
           </Link>
         </div>
+
+        {/* Achievements */}
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2">
+              <Trophy className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-base">Achievements</CardTitle>
+              <CardDescription>
+                {userAchievements.length} of {ACHIEVEMENT_DEFINITIONS.length}{' '}
+                earned
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {ACHIEVEMENT_DEFINITIONS.map((def) => {
+                const earned = userAchievements.some(
+                  (a) => a.achievementKey === def.key
+                );
+                return (
+                  <div
+                    key={def.key}
+                    className={`flex flex-col items-center gap-1 text-center ${
+                      earned ? '' : 'opacity-30 grayscale'
+                    }`}
+                    title={`${def.name}: ${def.description}`}
+                  >
+                    <span className="text-2xl">{def.icon}</span>
+                    <span className="text-[10px] font-medium leading-tight max-w-[60px]">
+                      {def.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

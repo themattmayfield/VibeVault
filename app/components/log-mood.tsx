@@ -23,6 +23,11 @@ import { Link, useParams } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { LOCAL_STORAGE_MOODS_KEY } from '@/constants/localStorageMoodKey';
 import {
+  MoodContextSelector,
+  type MoodContext,
+} from '@/components/mood-context-selector';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -68,6 +73,8 @@ export function LogMood({
   const [note, setNote] = useState('');
 
   const [tags, setTags] = useState('');
+  const [moodContext, setMoodContext] = useState<MoodContext>({});
+  const [showContext, setShowContext] = useState(false);
   const [group, setGroup] = useState(
     isLoggedIn ? getUserGroups?.[0]?._id || PUBLIC_GROUP_ID : PUBLIC_GROUP_ID
   );
@@ -82,12 +89,16 @@ export function LogMood({
       return;
     }
 
+    // Build context object, stripping undefined values
+    const hasContext = Object.values(moodContext).some((v) => v !== undefined);
+
     try {
       const moodId = await addMood({
         mood: selectedMood,
         note,
         userId: user?._id,
         tags: tags.split(',').map((tag) => tag.trim()),
+        ...(hasContext && { context: moodContext }),
         ...(isLoggedIn &&
           group !== PERSONAL_GROUP_ID && { group: group as Id<'groups'> }),
         organizationId,
@@ -101,6 +112,8 @@ export function LogMood({
       }
       toast.success('Mood logged successfully!');
       setNote('');
+      setMoodContext({});
+      setShowContext(false);
     } catch (_error) {
       toast.error('Failed to log mood');
     }
@@ -157,6 +170,29 @@ export function LogMood({
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowContext(!showContext)}
+                className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showContext ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+                Add context (sleep, exercise, social...)
+              </button>
+              {showContext && (
+                <div className="pt-2 border rounded-lg p-4">
+                  <MoodContextSelector
+                    context={moodContext}
+                    onChange={setMoodContext}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 w-full">

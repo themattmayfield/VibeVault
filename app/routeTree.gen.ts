@@ -30,10 +30,14 @@ import { Route as OrgSlugAuthenticatedTrendsRouteImport } from './routes/org/$sl
 import { Route as OrgSlugAuthenticatedSettingsRouteImport } from './routes/org/$slug/_authenticated/settings'
 import { Route as OrgSlugAuthenticatedLogRouteImport } from './routes/org/$slug/_authenticated/log'
 import { Route as OrgSlugAuthenticatedInsightsRouteImport } from './routes/org/$slug/_authenticated/insights'
+import { Route as OrgSlugAuthenticatedGoalsRouteImport } from './routes/org/$slug/_authenticated/goals'
 import { Route as OrgSlugAuthenticatedDashboardRouteImport } from './routes/org/$slug/_authenticated/dashboard'
 import { Route as OrgSlugAuthenticatedCalendarRouteImport } from './routes/org/$slug/_authenticated/calendar'
 import { Route as OrgSlugAuthenticatedAdminRouteImport } from './routes/org/$slug/_authenticated/admin'
+import { Route as OrgSlugAuthenticatedJournalIndexRouteImport } from './routes/org/$slug/_authenticated/journal/index'
 import { Route as OrgSlugAuthenticatedGroupsIndexRouteImport } from './routes/org/$slug/_authenticated/groups/index'
+import { Route as OrgSlugAuthenticatedJournalNewRouteImport } from './routes/org/$slug/_authenticated/journal/new'
+import { Route as OrgSlugAuthenticatedJournalJournalIdRouteImport } from './routes/org/$slug/_authenticated/journal/$journalId'
 import { Route as OrgSlugAuthenticatedGroupsGroupIdRouteImport } from './routes/org/$slug/_authenticated/groups/$groupId'
 
 const NewLogRoute = NewLogRouteImport.update({
@@ -147,6 +151,12 @@ const OrgSlugAuthenticatedInsightsRoute =
     path: '/insights',
     getParentRoute: () => OrgSlugAuthenticatedRoute,
   } as any)
+const OrgSlugAuthenticatedGoalsRoute =
+  OrgSlugAuthenticatedGoalsRouteImport.update({
+    id: '/goals',
+    path: '/goals',
+    getParentRoute: () => OrgSlugAuthenticatedRoute,
+  } as any)
 const OrgSlugAuthenticatedDashboardRoute =
   OrgSlugAuthenticatedDashboardRouteImport.update({
     id: '/dashboard',
@@ -165,10 +175,28 @@ const OrgSlugAuthenticatedAdminRoute =
     path: '/admin',
     getParentRoute: () => OrgSlugAuthenticatedRoute,
   } as any)
+const OrgSlugAuthenticatedJournalIndexRoute =
+  OrgSlugAuthenticatedJournalIndexRouteImport.update({
+    id: '/journal/',
+    path: '/journal/',
+    getParentRoute: () => OrgSlugAuthenticatedRoute,
+  } as any)
 const OrgSlugAuthenticatedGroupsIndexRoute =
   OrgSlugAuthenticatedGroupsIndexRouteImport.update({
     id: '/groups/',
     path: '/groups/',
+    getParentRoute: () => OrgSlugAuthenticatedRoute,
+  } as any)
+const OrgSlugAuthenticatedJournalNewRoute =
+  OrgSlugAuthenticatedJournalNewRouteImport.update({
+    id: '/journal/new',
+    path: '/journal/new',
+    getParentRoute: () => OrgSlugAuthenticatedRoute,
+  } as any)
+const OrgSlugAuthenticatedJournalJournalIdRoute =
+  OrgSlugAuthenticatedJournalJournalIdRouteImport.update({
+    id: '/journal/$journalId',
+    path: '/journal/$journalId',
     getParentRoute: () => OrgSlugAuthenticatedRoute,
   } as any)
 const OrgSlugAuthenticatedGroupsGroupIdRoute =
@@ -192,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/calendar': typeof OrgSlugAuthenticatedCalendarRoute
   '/org/$slug/dashboard': typeof OrgSlugAuthenticatedDashboardRoute
+  '/org/$slug/goals': typeof OrgSlugAuthenticatedGoalsRoute
   '/org/$slug/insights': typeof OrgSlugAuthenticatedInsightsRoute
   '/org/$slug/log': typeof OrgSlugAuthenticatedLogRoute
   '/org/$slug/settings': typeof OrgSlugAuthenticatedSettingsRoute
@@ -202,7 +231,10 @@ export interface FileRoutesByFullPath {
   '/org/$slug/sign-up': typeof OrgSlugUnauthenticatedSignUpRoute
   '/org/$slug/sso-callback': typeof OrgSlugUnauthenticatedSsoCallbackRoute
   '/org/$slug/groups/$groupId': typeof OrgSlugAuthenticatedGroupsGroupIdRoute
+  '/org/$slug/journal/$journalId': typeof OrgSlugAuthenticatedJournalJournalIdRoute
+  '/org/$slug/journal/new': typeof OrgSlugAuthenticatedJournalNewRoute
   '/org/$slug/groups/': typeof OrgSlugAuthenticatedGroupsIndexRoute
+  '/org/$slug/journal/': typeof OrgSlugAuthenticatedJournalIndexRoute
 }
 export interface FileRoutesByTo {
   '/new-log': typeof NewLogRoute
@@ -217,6 +249,7 @@ export interface FileRoutesByTo {
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/calendar': typeof OrgSlugAuthenticatedCalendarRoute
   '/org/$slug/dashboard': typeof OrgSlugAuthenticatedDashboardRoute
+  '/org/$slug/goals': typeof OrgSlugAuthenticatedGoalsRoute
   '/org/$slug/insights': typeof OrgSlugAuthenticatedInsightsRoute
   '/org/$slug/log': typeof OrgSlugAuthenticatedLogRoute
   '/org/$slug/settings': typeof OrgSlugAuthenticatedSettingsRoute
@@ -227,7 +260,10 @@ export interface FileRoutesByTo {
   '/org/$slug/sign-up': typeof OrgSlugUnauthenticatedSignUpRoute
   '/org/$slug/sso-callback': typeof OrgSlugUnauthenticatedSsoCallbackRoute
   '/org/$slug/groups/$groupId': typeof OrgSlugAuthenticatedGroupsGroupIdRoute
+  '/org/$slug/journal/$journalId': typeof OrgSlugAuthenticatedJournalJournalIdRoute
+  '/org/$slug/journal/new': typeof OrgSlugAuthenticatedJournalNewRoute
   '/org/$slug/groups': typeof OrgSlugAuthenticatedGroupsIndexRoute
+  '/org/$slug/journal': typeof OrgSlugAuthenticatedJournalIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -246,6 +282,7 @@ export interface FileRoutesById {
   '/org/$slug/_authenticated/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/_authenticated/calendar': typeof OrgSlugAuthenticatedCalendarRoute
   '/org/$slug/_authenticated/dashboard': typeof OrgSlugAuthenticatedDashboardRoute
+  '/org/$slug/_authenticated/goals': typeof OrgSlugAuthenticatedGoalsRoute
   '/org/$slug/_authenticated/insights': typeof OrgSlugAuthenticatedInsightsRoute
   '/org/$slug/_authenticated/log': typeof OrgSlugAuthenticatedLogRoute
   '/org/$slug/_authenticated/settings': typeof OrgSlugAuthenticatedSettingsRoute
@@ -256,7 +293,10 @@ export interface FileRoutesById {
   '/org/$slug/_unauthenticated/sign-up': typeof OrgSlugUnauthenticatedSignUpRoute
   '/org/$slug/_unauthenticated/sso-callback': typeof OrgSlugUnauthenticatedSsoCallbackRoute
   '/org/$slug/_authenticated/groups/$groupId': typeof OrgSlugAuthenticatedGroupsGroupIdRoute
+  '/org/$slug/_authenticated/journal/$journalId': typeof OrgSlugAuthenticatedJournalJournalIdRoute
+  '/org/$slug/_authenticated/journal/new': typeof OrgSlugAuthenticatedJournalNewRoute
   '/org/$slug/_authenticated/groups/': typeof OrgSlugAuthenticatedGroupsIndexRoute
+  '/org/$slug/_authenticated/journal/': typeof OrgSlugAuthenticatedJournalIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -274,6 +314,7 @@ export interface FileRouteTypes {
     | '/org/$slug/admin'
     | '/org/$slug/calendar'
     | '/org/$slug/dashboard'
+    | '/org/$slug/goals'
     | '/org/$slug/insights'
     | '/org/$slug/log'
     | '/org/$slug/settings'
@@ -284,7 +325,10 @@ export interface FileRouteTypes {
     | '/org/$slug/sign-up'
     | '/org/$slug/sso-callback'
     | '/org/$slug/groups/$groupId'
+    | '/org/$slug/journal/$journalId'
+    | '/org/$slug/journal/new'
     | '/org/$slug/groups/'
+    | '/org/$slug/journal/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/new-log'
@@ -299,6 +343,7 @@ export interface FileRouteTypes {
     | '/org/$slug/admin'
     | '/org/$slug/calendar'
     | '/org/$slug/dashboard'
+    | '/org/$slug/goals'
     | '/org/$slug/insights'
     | '/org/$slug/log'
     | '/org/$slug/settings'
@@ -309,7 +354,10 @@ export interface FileRouteTypes {
     | '/org/$slug/sign-up'
     | '/org/$slug/sso-callback'
     | '/org/$slug/groups/$groupId'
+    | '/org/$slug/journal/$journalId'
+    | '/org/$slug/journal/new'
     | '/org/$slug/groups'
+    | '/org/$slug/journal'
   id:
     | '__root__'
     | '/_marketing'
@@ -327,6 +375,7 @@ export interface FileRouteTypes {
     | '/org/$slug/_authenticated/admin'
     | '/org/$slug/_authenticated/calendar'
     | '/org/$slug/_authenticated/dashboard'
+    | '/org/$slug/_authenticated/goals'
     | '/org/$slug/_authenticated/insights'
     | '/org/$slug/_authenticated/log'
     | '/org/$slug/_authenticated/settings'
@@ -337,7 +386,10 @@ export interface FileRouteTypes {
     | '/org/$slug/_unauthenticated/sign-up'
     | '/org/$slug/_unauthenticated/sso-callback'
     | '/org/$slug/_authenticated/groups/$groupId'
+    | '/org/$slug/_authenticated/journal/$journalId'
+    | '/org/$slug/_authenticated/journal/new'
     | '/org/$slug/_authenticated/groups/'
+    | '/org/$slug/_authenticated/journal/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -496,6 +548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugAuthenticatedInsightsRouteImport
       parentRoute: typeof OrgSlugAuthenticatedRoute
     }
+    '/org/$slug/_authenticated/goals': {
+      id: '/org/$slug/_authenticated/goals'
+      path: '/goals'
+      fullPath: '/org/$slug/goals'
+      preLoaderRoute: typeof OrgSlugAuthenticatedGoalsRouteImport
+      parentRoute: typeof OrgSlugAuthenticatedRoute
+    }
     '/org/$slug/_authenticated/dashboard': {
       id: '/org/$slug/_authenticated/dashboard'
       path: '/dashboard'
@@ -517,11 +576,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugAuthenticatedAdminRouteImport
       parentRoute: typeof OrgSlugAuthenticatedRoute
     }
+    '/org/$slug/_authenticated/journal/': {
+      id: '/org/$slug/_authenticated/journal/'
+      path: '/journal'
+      fullPath: '/org/$slug/journal/'
+      preLoaderRoute: typeof OrgSlugAuthenticatedJournalIndexRouteImport
+      parentRoute: typeof OrgSlugAuthenticatedRoute
+    }
     '/org/$slug/_authenticated/groups/': {
       id: '/org/$slug/_authenticated/groups/'
       path: '/groups'
       fullPath: '/org/$slug/groups/'
       preLoaderRoute: typeof OrgSlugAuthenticatedGroupsIndexRouteImport
+      parentRoute: typeof OrgSlugAuthenticatedRoute
+    }
+    '/org/$slug/_authenticated/journal/new': {
+      id: '/org/$slug/_authenticated/journal/new'
+      path: '/journal/new'
+      fullPath: '/org/$slug/journal/new'
+      preLoaderRoute: typeof OrgSlugAuthenticatedJournalNewRouteImport
+      parentRoute: typeof OrgSlugAuthenticatedRoute
+    }
+    '/org/$slug/_authenticated/journal/$journalId': {
+      id: '/org/$slug/_authenticated/journal/$journalId'
+      path: '/journal/$journalId'
+      fullPath: '/org/$slug/journal/$journalId'
+      preLoaderRoute: typeof OrgSlugAuthenticatedJournalJournalIdRouteImport
       parentRoute: typeof OrgSlugAuthenticatedRoute
     }
     '/org/$slug/_authenticated/groups/$groupId': {
@@ -560,19 +640,24 @@ interface OrgSlugAuthenticatedRouteChildren {
   OrgSlugAuthenticatedAdminRoute: typeof OrgSlugAuthenticatedAdminRoute
   OrgSlugAuthenticatedCalendarRoute: typeof OrgSlugAuthenticatedCalendarRoute
   OrgSlugAuthenticatedDashboardRoute: typeof OrgSlugAuthenticatedDashboardRoute
+  OrgSlugAuthenticatedGoalsRoute: typeof OrgSlugAuthenticatedGoalsRoute
   OrgSlugAuthenticatedInsightsRoute: typeof OrgSlugAuthenticatedInsightsRoute
   OrgSlugAuthenticatedLogRoute: typeof OrgSlugAuthenticatedLogRoute
   OrgSlugAuthenticatedSettingsRoute: typeof OrgSlugAuthenticatedSettingsRoute
   OrgSlugAuthenticatedTrendsRoute: typeof OrgSlugAuthenticatedTrendsRoute
   OrgSlugAuthenticatedWelcomeRoute: typeof OrgSlugAuthenticatedWelcomeRoute
   OrgSlugAuthenticatedGroupsGroupIdRoute: typeof OrgSlugAuthenticatedGroupsGroupIdRoute
+  OrgSlugAuthenticatedJournalJournalIdRoute: typeof OrgSlugAuthenticatedJournalJournalIdRoute
+  OrgSlugAuthenticatedJournalNewRoute: typeof OrgSlugAuthenticatedJournalNewRoute
   OrgSlugAuthenticatedGroupsIndexRoute: typeof OrgSlugAuthenticatedGroupsIndexRoute
+  OrgSlugAuthenticatedJournalIndexRoute: typeof OrgSlugAuthenticatedJournalIndexRoute
 }
 
 const OrgSlugAuthenticatedRouteChildren: OrgSlugAuthenticatedRouteChildren = {
   OrgSlugAuthenticatedAdminRoute: OrgSlugAuthenticatedAdminRoute,
   OrgSlugAuthenticatedCalendarRoute: OrgSlugAuthenticatedCalendarRoute,
   OrgSlugAuthenticatedDashboardRoute: OrgSlugAuthenticatedDashboardRoute,
+  OrgSlugAuthenticatedGoalsRoute: OrgSlugAuthenticatedGoalsRoute,
   OrgSlugAuthenticatedInsightsRoute: OrgSlugAuthenticatedInsightsRoute,
   OrgSlugAuthenticatedLogRoute: OrgSlugAuthenticatedLogRoute,
   OrgSlugAuthenticatedSettingsRoute: OrgSlugAuthenticatedSettingsRoute,
@@ -580,7 +665,11 @@ const OrgSlugAuthenticatedRouteChildren: OrgSlugAuthenticatedRouteChildren = {
   OrgSlugAuthenticatedWelcomeRoute: OrgSlugAuthenticatedWelcomeRoute,
   OrgSlugAuthenticatedGroupsGroupIdRoute:
     OrgSlugAuthenticatedGroupsGroupIdRoute,
+  OrgSlugAuthenticatedJournalJournalIdRoute:
+    OrgSlugAuthenticatedJournalJournalIdRoute,
+  OrgSlugAuthenticatedJournalNewRoute: OrgSlugAuthenticatedJournalNewRoute,
   OrgSlugAuthenticatedGroupsIndexRoute: OrgSlugAuthenticatedGroupsIndexRoute,
+  OrgSlugAuthenticatedJournalIndexRoute: OrgSlugAuthenticatedJournalIndexRoute,
 }
 
 const OrgSlugAuthenticatedRouteWithChildren =

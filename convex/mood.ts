@@ -5,7 +5,7 @@ import {
   type MutationCtx,
 } from './_generated/server';
 import { v, type Infer } from 'convex/values';
-import { moodLiteral } from './schema';
+import { moodLiteral, moodContextValidator } from './schema';
 import type { Id } from './_generated/dataModel';
 import { format } from 'date-fns-tz';
 import { getUserByClerkIdHelper } from './user';
@@ -17,6 +17,7 @@ async function createMoodHelper(
     note?: string;
     userId?: Id<'users'>;
     tags?: string[];
+    context?: Infer<typeof moodContextValidator>;
     group?: Id<'groups'>;
     organizationId?: string;
   }
@@ -26,6 +27,7 @@ async function createMoodHelper(
     note: args.note,
     userId: args.userId,
     tags: args.tags,
+    context: args.context,
     group: args.group,
     organizationId: args.organizationId,
   });
@@ -67,6 +69,7 @@ export const createMood = mutation({
     note: v.optional(v.string()),
     userId: v.optional(v.id('users')),
     tags: v.optional(v.array(v.string())),
+    context: v.optional(moodContextValidator),
     group: v.optional(v.id('groups')),
     organizationId: v.optional(v.string()),
   },
@@ -395,6 +398,7 @@ export const getUserMoods = query({
       note: v.optional(v.string()),
       time: v.number(),
       tags: v.optional(v.array(v.string())),
+      context: v.optional(moodContextValidator),
       group: v.optional(v.string()),
     })
   ),
@@ -414,6 +418,7 @@ export const getUserMoods = query({
         note: mood.note,
         time: mood._creationTime,
         tags: mood.tags,
+        context: mood.context,
         group: mood.group,
       };
     });

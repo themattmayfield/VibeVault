@@ -6,6 +6,8 @@ import {
   LayoutDashboardIcon,
   CalendarDays,
   Lightbulb,
+  BookOpen,
+  Target,
 } from 'lucide-react';
 
 export const getRoutes = (slug: string) =>
@@ -26,6 +28,18 @@ export const getRoutes = (slug: string) =>
       label: 'Calendar',
       icon: CalendarDays,
       href: `/org/${slug}/calendar`,
+      ignoreInSidebar: false,
+    },
+    {
+      label: 'Journal',
+      icon: BookOpen,
+      href: `/org/${slug}/journal`,
+      ignoreInSidebar: false,
+    },
+    {
+      label: 'Goals',
+      icon: Target,
+      href: `/org/${slug}/goals`,
       ignoreInSidebar: false,
     },
     {

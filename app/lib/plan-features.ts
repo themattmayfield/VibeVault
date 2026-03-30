@@ -32,6 +32,12 @@ export interface PlanFeatures {
   maxSeats: number;
   /** Public mood sharing */
   publicMoods: boolean;
+  /** Max journal entries a user can create */
+  maxJournalEntries: number;
+  /** Max active goals a user can have simultaneously */
+  maxActiveGoals: number;
+  /** Max check-ins per group */
+  maxCheckInsPerGroup: number;
 }
 
 export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
@@ -48,6 +54,9 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     support: 'community',
     maxSeats: 1,
     publicMoods: false,
+    maxJournalEntries: 5,
+    maxActiveGoals: 1,
+    maxCheckInsPerGroup: 1,
   },
   pro: {
     label: 'Pro',
@@ -62,6 +71,9 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     support: 'email',
     maxSeats: 5,
     publicMoods: true,
+    maxJournalEntries: Infinity,
+    maxActiveGoals: 5,
+    maxCheckInsPerGroup: 3,
   },
   team: {
     label: 'Team',
@@ -76,6 +88,9 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     support: 'priority',
     maxSeats: 100,
     publicMoods: true,
+    maxJournalEntries: Infinity,
+    maxActiveGoals: Infinity,
+    maxCheckInsPerGroup: Infinity,
   },
   enterprise: {
     label: 'Enterprise',
@@ -90,6 +105,9 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     support: 'dedicated',
     maxSeats: Infinity,
     publicMoods: true,
+    maxJournalEntries: Infinity,
+    maxActiveGoals: Infinity,
+    maxCheckInsPerGroup: Infinity,
   },
 };
 

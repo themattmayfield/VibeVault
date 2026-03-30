@@ -1,28 +1,48 @@
+import { useState } from 'react';
 import { createFileRoute, useLoaderData } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { GroupMoodChart } from '@/components/group-mood-chart';
 import { GroupMoodTimeline } from '@/components/group-mood-timeline';
+import { MoodSelector } from '@/components/mood-selector';
 import { redirect } from '@tanstack/react-router';
 import { getAuthUser } from '@/actions/getAuthUser';
 import { convexQuery } from '@convex-dev/react-query';
+import { useMutation } from 'convex/react';
 import { api } from 'convex/_generated/api';
 import type { Id } from 'convex/_generated/dataModel';
 import pluralize from 'pluralize';
-import { moodOptions } from '@/lib/getMoodEmoji';
+import { getMoodEmoji, moodOptions } from '@/lib/getMoodEmoji';
 import { format, formatRelative } from 'date-fns';
 import getInitials from '@/lib/getInitials';
 import capitalize from 'lodash-es/capitalize';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { PlusIcon, Loader2, ClipboardCheck } from 'lucide-react';
+import type { Infer } from 'convex/values';
+import type { moodLiteral } from 'convex/schema';
+import { useOrgSettings } from '@/hooks/use-org-settings';
+import { getPlanFeatures } from '@/lib/plan-features';
 
 export const Route = createFileRoute(
   '/org/$slug/_authenticated/groups/$groupId'
@@ -107,6 +127,7 @@ function RouteComponent() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="check-ins">Check-ins</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -246,6 +267,10 @@ function RouteComponent() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="check-ins" className="space-y-4">
+            <GroupCheckIns groupId={group._id} />
+          </TabsContent>
+
           <TabsContent value="members" className="space-y-4">
             <Card>
               <CardHeader>
@@ -358,5 +383,353 @@ function RouteComponent() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Group Check-ins Component
+// ---------------------------------------------------------------------------
+
+function GroupCheckIns({ groupId }: { groupId: Id<'groups'> }) {
+  const user = useLoaderData({ from: '/org/$slug/_authenticated' });
+  const { orgSettings } = useOrgSettings();
+  const organizationId = orgSettings.clerkOrgId ?? '';
+  const planFeatures = getPlanFeatures(orgSettings.plan);
+
+  const { data: checkIns } = useSuspenseQuery(
+    convexQuery(api.checkIns.getGroupCheckIns, { groupId })
+  );
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const activeCheckIns = checkIns.filter((c) => c.isActive);
+  const canCreateMore =
+    activeCheckIns.length < planFeatures.maxCheckInsPerGroup;
+
+  const createCheckIn = useMutation(api.checkIns.createCheckIn);
+  const respondToCheckIn = useMutation(api.checkIns.respondToCheckIn);
+  const deactivateCheckIn = useMutation(api.checkIns.deactivateCheckIn);
+
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newPrompt, setNewPrompt] = useState('');
+  const [newFrequency, setNewFrequency] = useState<
+    'daily' | 'weekly' | 'biweekly' | 'monthly'
+  >('daily');
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Response state
+  const [respondingTo, setRespondingTo] = useState<Id<'checkIns'> | null>(null);
+  const [responseMood, setResponseMood] =
+    useState<Infer<typeof moodLiteral>>('neutral');
+  const [responseNote, setResponseNote] = useState('');
+  const [isResponding, setIsResponding] = useState(false);
+
+  const handleCreate = async () => {
+    if (!newTitle.trim()) {
+      toast.error('Please add a title');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      await createCheckIn({
+        groupId,
+        title: newTitle.trim(),
+        prompt: newPrompt.trim() || undefined,
+        frequency: newFrequency,
+        createdBy: user._id,
+        organizationId,
+      });
+      toast.success('Check-in created');
+      setShowCreateForm(false);
+      setNewTitle('');
+      setNewPrompt('');
+    } catch {
+      toast.error('Failed to create check-in');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleRespond = async (checkInId: Id<'checkIns'>) => {
+    setIsResponding(true);
+    try {
+      await respondToCheckIn({
+        checkInId,
+        userId: user._id,
+        mood: responseMood,
+        note: responseNote.trim() || undefined,
+        period: today,
+        organizationId,
+      });
+      toast.success('Response submitted');
+      setRespondingTo(null);
+      setResponseNote('');
+    } catch {
+      toast.error('Failed to submit response');
+    } finally {
+      setIsResponding(false);
+    }
+  };
+
+  const handleDeactivate = async (checkInId: Id<'checkIns'>) => {
+    try {
+      await deactivateCheckIn({ checkInId });
+      toast.success('Check-in deactivated');
+    } catch {
+      toast.error('Failed to deactivate check-in');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Team Check-ins</h3>
+          <p className="text-sm text-muted-foreground">
+            Regular mood check-ins for the group
+          </p>
+        </div>
+        {!showCreateForm && (
+          <Button
+            onClick={() => setShowCreateForm(true)}
+            disabled={!canCreateMore}
+            size="sm"
+          >
+            <PlusIcon className="mr-1 h-4 w-4" />
+            New Check-in
+          </Button>
+        )}
+      </div>
+
+      {showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Create Check-in</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                placeholder="e.g., Morning Check-in"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Prompt (optional)</Label>
+              <Textarea
+                placeholder="e.g., How are you starting the day?"
+                value={newPrompt}
+                onChange={(e) => setNewPrompt(e.target.value)}
+                className="min-h-[60px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Frequency</Label>
+              <Select
+                value={newFrequency}
+                onValueChange={(v) =>
+                  setNewFrequency(
+                    v as 'daily' | 'weekly' | 'biweekly' | 'monthly'
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="biweekly">Biweekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          <CardFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowCreateForm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreate} disabled={isCreating}>
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {activeCheckIns.length === 0 && !showCreateForm ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <ClipboardCheck className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <h3 className="font-semibold mb-1">No check-ins yet</h3>
+            <p className="text-sm text-muted-foreground max-w-[250px]">
+              Create a recurring check-in to see how everyone is feeling
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        activeCheckIns.map((checkIn) => (
+          <CheckInCard
+            key={checkIn._id}
+            checkIn={checkIn}
+            today={today}
+            userId={user._id}
+            isRespondingTo={respondingTo === checkIn._id}
+            responseMood={responseMood}
+            responseNote={responseNote}
+            isResponding={isResponding}
+            onStartRespond={() => setRespondingTo(checkIn._id)}
+            onCancelRespond={() => setRespondingTo(null)}
+            onMoodChange={setResponseMood}
+            onNoteChange={setResponseNote}
+            onSubmitResponse={() => handleRespond(checkIn._id)}
+            onDeactivate={() => handleDeactivate(checkIn._id)}
+          />
+        ))
+      )}
+    </div>
+  );
+}
+
+function CheckInCard({
+  checkIn,
+  today,
+  userId,
+  isRespondingTo,
+  responseMood,
+  responseNote,
+  isResponding,
+  onStartRespond,
+  onCancelRespond,
+  onMoodChange,
+  onNoteChange,
+  onSubmitResponse,
+  onDeactivate,
+}: {
+  checkIn: {
+    _id: Id<'checkIns'>;
+    title?: string;
+    prompt?: string;
+    frequency: string;
+  };
+  today: string;
+  userId: Id<'users'>;
+  isRespondingTo: boolean;
+  responseMood: Infer<typeof moodLiteral>;
+  responseNote: string;
+  isResponding: boolean;
+  onStartRespond: () => void;
+  onCancelRespond: () => void;
+  onMoodChange: (mood: Infer<typeof moodLiteral>) => void;
+  onNoteChange: (note: string) => void;
+  onSubmitResponse: () => void;
+  onDeactivate: () => void;
+}) {
+  const { data: responses } = useSuspenseQuery(
+    convexQuery(api.checkIns.getCheckInResponses, {
+      checkInId: checkIn._id,
+      period: today,
+    })
+  );
+
+  const { data: hasResponded } = useSuspenseQuery(
+    convexQuery(api.checkIns.hasRespondedToday, {
+      checkInId: checkIn._id,
+      userId,
+      period: today,
+    })
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base">
+              {checkIn.title ?? 'Team Check-in'}
+            </CardTitle>
+            {checkIn.prompt && (
+              <CardDescription className="mt-1">
+                {checkIn.prompt}
+              </CardDescription>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs capitalize">
+              {checkIn.frequency}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDeactivate}
+              className="text-xs text-muted-foreground"
+            >
+              Deactivate
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Today's responses */}
+        {responses.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Today's responses ({responses.length})
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {responses.map((r) => (
+                <div
+                  key={r._id}
+                  className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1"
+                  title={r.note ?? undefined}
+                >
+                  <span className="text-sm">{getMoodEmoji(r.mood)}</span>
+                  <span className="text-xs font-medium">{r.displayName}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Response form */}
+        {!hasResponded && !isRespondingTo && (
+          <Button size="sm" onClick={onStartRespond}>
+            Respond
+          </Button>
+        )}
+        {hasResponded && !isRespondingTo && (
+          <p className="text-sm text-muted-foreground">
+            You've already checked in today
+          </p>
+        )}
+        {isRespondingTo && (
+          <div className="space-y-3 border rounded-lg p-4">
+            <MoodSelector selectedMood={responseMood} onSelect={onMoodChange} />
+            <Textarea
+              placeholder="How are you feeling? (optional)"
+              value={responseNote}
+              onChange={(e) => onNoteChange(e.target.value)}
+              className="min-h-[60px]"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={onSubmitResponse}
+                disabled={isResponding}
+              >
+                {isResponding && (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                )}
+                Submit
+              </Button>
+              <Button size="sm" variant="outline" onClick={onCancelRespond}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

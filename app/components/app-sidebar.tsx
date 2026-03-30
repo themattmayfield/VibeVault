@@ -5,9 +5,6 @@ import {
   Building2,
   CheckIcon,
   ChevronsUpDown,
-  ClipboardListIcon,
-  DatabaseIcon,
-  FileIcon,
   HelpCircleIcon,
   Plus,
   SearchIcon,
@@ -15,7 +12,7 @@ import {
   User,
 } from 'lucide-react';
 
-import { NavDocuments } from '@/components/nav-documents';
+import { NavJournals } from '@/components/nav-journals';
 import { NavMain } from '@/components/nav-main';
 import { NavSecondary } from '@/components/nav-secondary';
 import { NavUser } from '@/components/nav-user';
@@ -36,8 +33,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link, useParams, useRouter } from '@tanstack/react-router';
+import {
+  Link,
+  useParams,
+  useRouter,
+  useLoaderData,
+} from '@tanstack/react-router';
 import { getUserOrganizations } from '@/actions/organization';
+import { useOrgSettings } from '@/hooks/use-org-settings';
 
 type OrgMembership = {
   orgId: string;
@@ -62,23 +65,6 @@ const data = {
       title: 'Search',
       url: '#',
       icon: SearchIcon,
-    },
-  ],
-  documents: [
-    {
-      name: 'Group 1',
-      url: '#',
-      icon: DatabaseIcon,
-    },
-    {
-      name: 'Group 2',
-      url: '#',
-      icon: ClipboardListIcon,
-    },
-    {
-      name: 'Group 3',
-      url: '#',
-      icon: FileIcon,
     },
   ],
 };
@@ -197,6 +183,14 @@ function OrgSwitcher() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { slug } = useParams({ strict: false }) as { slug?: string };
+  const { orgSettings } = useOrgSettings();
+
+  // AppSidebar is always rendered within the _authenticated layout,
+  // so we can safely access the authenticated user's loader data.
+  const user = useLoaderData({
+    from: '/org/$slug/_authenticated',
+  });
+  const userId = user?._id ?? null;
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -205,7 +199,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain />
-        <NavDocuments items={data.documents} />
+        {userId && orgSettings.clerkOrgId && (
+          <NavJournals
+            userId={userId}
+            organizationId={orgSettings.clerkOrgId}
+          />
+        )}
         <NavSecondary
           items={data.navSecondary(slug ?? '')}
           className="mt-auto"

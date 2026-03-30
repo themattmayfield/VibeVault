@@ -8,9 +8,13 @@
  * @module
  */
 
+import type * as achievements from "../achievements.js";
+import type * as checkIns from "../checkIns.js";
 import type * as dateHelpers from "../dateHelpers.js";
+import type * as goals from "../goals.js";
 import type * as groups from "../groups.js";
 import type * as insights from "../insights.js";
+import type * as journals from "../journals.js";
 import type * as mood from "../mood.js";
 import type * as organization from "../organization.js";
 import type * as user from "../user.js";
@@ -22,9 +26,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  achievements: typeof achievements;
+  checkIns: typeof checkIns;
   dateHelpers: typeof dateHelpers;
+  goals: typeof goals;
   groups: typeof groups;
   insights: typeof insights;
+  journals: typeof journals;
   mood: typeof mood;
   organization: typeof organization;
   user: typeof user;

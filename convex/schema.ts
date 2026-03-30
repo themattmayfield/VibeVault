@@ -20,6 +20,32 @@ export const planLiteral = v.union(
   v.literal('enterprise')
 );
 
+export const moodContextValidator = v.object({
+  sleepQuality: v.optional(
+    v.union(
+      v.literal('poor'),
+      v.literal('fair'),
+      v.literal('good'),
+      v.literal('great')
+    )
+  ),
+  exercise: v.optional(v.boolean()),
+  socialInteraction: v.optional(
+    v.union(v.literal('none'), v.literal('some'), v.literal('lots'))
+  ),
+  workload: v.optional(
+    v.union(v.literal('light'), v.literal('normal'), v.literal('heavy'))
+  ),
+  weather: v.optional(
+    v.union(
+      v.literal('sunny'),
+      v.literal('cloudy'),
+      v.literal('rainy'),
+      v.literal('snowy')
+    )
+  ),
+});
+
 const groupRoleLiteral = v.union(
   v.literal('owner'),
   v.literal('admin'),
@@ -107,6 +133,7 @@ export default defineSchema({
     mood: moodLiteral,
     note: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
+    context: v.optional(moodContextValidator),
     group: v.optional(v.id('groups')),
     userId: v.optional(v.id('users')),
     organizationId: v.optional(v.string()), // Clerk org ID for multi-tenant scoping
@@ -134,4 +161,81 @@ export default defineSchema({
   })
     .index('by_user_id', ['userId'])
     .index('by_org_and_user', ['organizationId', 'userId']),
+  journals: defineTable({
+    title: v.string(),
+    content: v.string(),
+    mood: v.optional(moodLiteral),
+    moodEntryId: v.optional(v.id('moods')),
+    tags: v.optional(v.array(v.string())),
+    userId: v.id('users'),
+    organizationId: v.string(),
+  }).index('by_org_and_user', ['organizationId', 'userId']),
+  goals: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(
+      v.literal('mood_target'),
+      v.literal('streak'),
+      v.literal('custom')
+    ),
+    targetMood: v.optional(moodLiteral),
+    targetDirection: v.optional(
+      v.union(v.literal('increase'), v.literal('decrease'))
+    ),
+    targetCount: v.optional(v.number()),
+    timeframe: v.union(v.literal('weekly'), v.literal('monthly')),
+    status: v.union(
+      v.literal('active'),
+      v.literal('completed'),
+      v.literal('abandoned')
+    ),
+    userId: v.id('users'),
+    organizationId: v.string(),
+  }).index('by_org_and_user', ['organizationId', 'userId']),
+  achievements: defineTable({
+    key: v.string(),
+    name: v.string(),
+    description: v.string(),
+    icon: v.string(),
+    category: v.union(
+      v.literal('streak'),
+      v.literal('logging'),
+      v.literal('social'),
+      v.literal('insight')
+    ),
+    threshold: v.number(),
+  }).index('by_key', ['key']),
+  userAchievements: defineTable({
+    userId: v.id('users'),
+    achievementKey: v.string(),
+    earnedAt: v.number(),
+    organizationId: v.string(),
+  })
+    .index('by_org_and_user', ['organizationId', 'userId'])
+    .index('by_user_and_key', ['userId', 'achievementKey']),
+  checkIns: defineTable({
+    groupId: v.id('groups'),
+    title: v.optional(v.string()),
+    prompt: v.optional(v.string()),
+    frequency: v.union(
+      v.literal('daily'),
+      v.literal('weekly'),
+      v.literal('biweekly'),
+      v.literal('monthly')
+    ),
+    dayOfWeek: v.optional(v.number()), // 0-6 for weekly
+    isActive: v.boolean(),
+    createdBy: v.id('users'),
+    organizationId: v.string(),
+  }).index('by_group', ['groupId']),
+  checkInResponses: defineTable({
+    checkInId: v.id('checkIns'),
+    userId: v.id('users'),
+    mood: moodLiteral,
+    note: v.optional(v.string()),
+    period: v.string(), // "2026-03-29" -- the day this response covers
+    organizationId: v.string(),
+  })
+    .index('by_checkin_and_period', ['checkInId', 'period'])
+    .index('by_user_and_checkin', ['userId', 'checkInId']),
 });
