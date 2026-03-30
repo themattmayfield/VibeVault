@@ -11,6 +11,7 @@ import { MembersSettings } from '@/components/settings/members-settings';
 import { DataPrivacySettings } from '@/components/settings/data-privacy-settings';
 import { useUser } from '@clerk/tanstack-react-start';
 import { getOrgMemberRole, getFullOrganization } from '@/actions/organization';
+import { getFeatureFlag } from '@/actions/flags';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -31,10 +32,19 @@ export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
       <SettingsPage />
     </Suspense>
   ),
+  loader: async () => {
+    const showAppearanceTab = await getFeatureFlag({
+      data: { key: 'settings-appearance-tab' },
+    });
+    return { showAppearanceTab: Boolean(showAppearanceTab) };
+  },
 });
 
 function SettingsPage() {
   const user = useLoaderData({ from: '/org/$slug/_authenticated' });
+  const { showAppearanceTab } = useLoaderData({
+    from: '/org/$slug/_authenticated/settings',
+  });
   const { orgSettings } = useOrgSettings();
   const { user: clerkUser } = useUser();
 
@@ -122,7 +132,9 @@ function SettingsPage() {
 
   const personalTabs = [
     { value: 'account', label: 'Account', icon: User },
-    { value: 'appearance', label: 'Appearance', icon: Palette },
+    ...(showAppearanceTab
+      ? [{ value: 'appearance', label: 'Appearance', icon: Palette }]
+      : []),
     { value: 'notifications', label: 'Notifications', icon: Bell },
     { value: 'data', label: 'Data & Privacy', icon: Shield },
   ];
@@ -165,14 +177,16 @@ function SettingsPage() {
           <TabsContent value="account">
             <AccountSettings
               user={convexUser}
-              authEmail={authEmail}
+              clerkUser={clerkUser ?? null}
               authName={authName}
             />
           </TabsContent>
 
-          <TabsContent value="appearance">
-            <AppearanceSettings user={convexUser} />
-          </TabsContent>
+          {showAppearanceTab && (
+            <TabsContent value="appearance">
+              <AppearanceSettings user={convexUser} />
+            </TabsContent>
+          )}
 
           <TabsContent value="notifications">
             <NotificationSettings user={convexUser} />

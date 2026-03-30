@@ -8,11 +8,11 @@ Convex agent skills for common tasks can be installed by running `npx convex ai-
 
 ---
 
-# MoodSync (VibeVault) - Agent Guide
+# Sentio - Agent Guide
 
 ## Architecture Overview
 
-MoodSync is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g. `moodsync.com/org/acme`). It uses the following stack:
+Sentio is a multi-tenant mood-tracking SaaS using **path-based tenancy** (e.g. `sentio.sh/org/acme`). It uses the following stack:
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -207,7 +207,7 @@ convex/                       # Convex backend
 
 ## Multi-Tenancy Model
 
-Path-based routing: `moodsync.com/org/{slug}/*` where `$slug` is a TanStack Router dynamic param. The org layout route (`app/routes/org/$slug.tsx`) resolves the slug from URL params and loads org settings from Convex (`orgSettings` table via `by_slug` index). All tenant data is scoped by `organizationId` (Clerk organization ID). Components access the slug via `useParams({ strict: false })`.
+Path-based routing: `sentio.sh/org/{slug}/*` where `$slug` is a TanStack Router dynamic param. The org layout route (`app/routes/org/$slug.tsx`) resolves the slug from URL params and loads org settings from Convex (`orgSettings` table via `by_slug` index). All tenant data is scoped by `organizationId` (Clerk organization ID). Components access the slug via `useParams({ strict: false })`.
 
 ## Deployment Model
 

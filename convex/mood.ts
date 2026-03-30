@@ -19,6 +19,7 @@ async function createMoodHelper(
     tags?: string[];
     context?: Infer<typeof moodContextValidator>;
     group?: Id<'groups'>;
+    isPublic?: boolean;
     organizationId?: string;
   }
 ) {
@@ -29,6 +30,7 @@ async function createMoodHelper(
     tags: args.tags,
     context: args.context,
     group: args.group,
+    isPublic: args.isPublic,
     organizationId: args.organizationId,
   });
   return newMoodId;
@@ -71,6 +73,7 @@ export const createMood = mutation({
     tags: v.optional(v.array(v.string())),
     context: v.optional(moodContextValidator),
     group: v.optional(v.id('groups')),
+    isPublic: v.optional(v.boolean()),
     organizationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -383,6 +386,227 @@ export const createMoodsFromLocalStorage = mutation({
         });
       }
     }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Org-wide queries for Global Trends (Team+ feature)
+// ---------------------------------------------------------------------------
+
+const MOOD_TYPES = [
+  'happy',
+  'excited',
+  'calm',
+  'neutral',
+  'tired',
+  'stressed',
+  'sad',
+  'angry',
+  'anxious',
+] as const;
+
+const MIN_CONTRIBUTORS_FOR_TRENDS = 3;
+
+/**
+ * Org-wide mood stats for the Global Trends dashboard.
+ * Returns total moods today, most common mood, unique contributor count,
+ * and whether the privacy threshold is met.
+ */
+export const getOrgMoodStats = query({
+  args: {
+    organizationId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todaysMoods = await ctx.db
+      .query('moods')
+      .withIndex('by_organization', (q) =>
+        q.eq('organizationId', args.organizationId)
+      )
+      .filter((q) => q.gte(q.field('_creationTime'), startOfToday.getTime()))
+      .collect();
+
+    // Count unique contributors (users who logged today)
+    const uniqueContributors = new Set(
+      todaysMoods.filter((m) => m.userId).map((m) => m.userId!.toString())
+    );
+    const contributorCount = uniqueContributors.size;
+    const meetsPrivacyThreshold =
+      contributorCount >= MIN_CONTRIBUTORS_FOR_TRENDS;
+
+    if (!meetsPrivacyThreshold) {
+      return {
+        totalMoodsToday: todaysMoods.length,
+        mostCommonMood: null,
+        mostCommonMoodPercent: null,
+        contributorCount,
+        meetsPrivacyThreshold: false,
+      };
+    }
+
+    // Count mood occurrences
+    const moodCounts: Record<string, number> = {};
+    for (const mood of todaysMoods) {
+      moodCounts[mood.mood] = (moodCounts[mood.mood] || 0) + 1;
+    }
+
+    // Find most common
+    let mostCommonMood: string | null = null;
+    let maxCount = 0;
+    for (const [mood, count] of Object.entries(moodCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostCommonMood = mood;
+      }
+    }
+
+    const mostCommonMoodPercent =
+      todaysMoods.length > 0
+        ? Math.round((maxCount / todaysMoods.length) * 100)
+        : null;
+
+    return {
+      totalMoodsToday: todaysMoods.length,
+      mostCommonMood,
+      mostCommonMoodPercent,
+      contributorCount,
+      meetsPrivacyThreshold: true,
+    };
+  },
+});
+
+/**
+ * Org-wide mood distribution for the pie chart.
+ * Returns an array of { mood, count } for all moods logged today.
+ * Only returns data if the privacy threshold is met.
+ */
+export const getOrgMoodDistribution = query({
+  args: {
+    organizationId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todaysMoods = await ctx.db
+      .query('moods')
+      .withIndex('by_organization', (q) =>
+        q.eq('organizationId', args.organizationId)
+      )
+      .filter((q) => q.gte(q.field('_creationTime'), startOfToday.getTime()))
+      .collect();
+
+    // Privacy check
+    const uniqueContributors = new Set(
+      todaysMoods.filter((m) => m.userId).map((m) => m.userId!.toString())
+    );
+    if (uniqueContributors.size < MIN_CONTRIBUTORS_FOR_TRENDS) {
+      return { distribution: [], meetsPrivacyThreshold: false };
+    }
+
+    // Aggregate by mood type
+    const moodCounts: Record<string, number> = {};
+    for (const mood of todaysMoods) {
+      moodCounts[mood.mood] = (moodCounts[mood.mood] || 0) + 1;
+    }
+
+    const distribution = MOOD_TYPES.filter((m) => moodCounts[m]).map((m) => ({
+      mood: m,
+      count: moodCounts[m],
+    }));
+
+    return { distribution, meetsPrivacyThreshold: true };
+  },
+});
+
+/**
+ * Org-wide mood timeline for the last 7 days.
+ * Returns daily mood counts by type for the line chart.
+ * Only returns data if the privacy threshold is met.
+ */
+export const getOrgMoodTimeline = query({
+  args: {
+    organizationId: v.string(),
+    usersTimeZone: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Calculate 7-day window
+    const now = new Date();
+    const userNow = new Date(
+      now.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+    );
+    userNow.setHours(23, 59, 59, 999);
+
+    const sevenDaysAgo = new Date(userNow);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const startUTC = new Date(
+      sevenDaysAgo.toLocaleString('en-US', { timeZone: 'UTC' })
+    );
+    const endUTC = new Date(
+      userNow.toLocaleString('en-US', { timeZone: 'UTC' })
+    );
+
+    const moods = await ctx.db
+      .query('moods')
+      .withIndex('by_organization', (q) =>
+        q.eq('organizationId', args.organizationId)
+      )
+      .filter((q) =>
+        q.and(
+          q.gte(q.field('_creationTime'), startUTC.getTime()),
+          q.lte(q.field('_creationTime'), endUTC.getTime())
+        )
+      )
+      .collect();
+
+    // Privacy check -- need enough unique contributors across the window
+    const uniqueContributors = new Set(
+      moods.filter((m) => m.userId).map((m) => m.userId!.toString())
+    );
+    if (uniqueContributors.size < MIN_CONTRIBUTORS_FOR_TRENDS) {
+      return { timeline: [], meetsPrivacyThreshold: false };
+    }
+
+    // Initialize 7-day buckets
+    const trendData: Record<string, Record<string, number>> = {};
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(userNow);
+      date.setDate(date.getDate() - i);
+      const userMoodDate = new Date(
+        date.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+      );
+      const formattedDate = format(userMoodDate, 'MMM dd');
+      trendData[formattedDate] = Object.fromEntries(
+        MOOD_TYPES.map((m) => [m, 0])
+      );
+    }
+
+    // Bucket each mood by date
+    for (const mood of moods) {
+      const moodDate = new Date(mood._creationTime);
+      const userMoodDate = new Date(
+        moodDate.toLocaleString('en-US', { timeZone: args.usersTimeZone })
+      );
+      const formattedDate = format(userMoodDate, 'MMM dd');
+      if (trendData[formattedDate]) {
+        trendData[formattedDate][mood.mood]++;
+      }
+    }
+
+    const timeline = Object.entries(trendData)
+      .map(([date, moodCounts]) => ({
+        date,
+        ...moodCounts,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return { timeline, meetsPrivacyThreshold: true };
   },
 });
 

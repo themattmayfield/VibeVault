@@ -22,13 +22,22 @@ const colors = {
   tired: '#c084fc',
   stressed: '#fb923c',
   sad: '#818cf8',
+  angry: '#ef4444',
+  anxious: '#f97316',
 };
 
-export function GroupMoodTimeline({ groupId }: { groupId: Id<'groups'> }) {
+export function GroupMoodTimeline({
+  groupId,
+  clerkUserId,
+}: {
+  groupId: Id<'groups'>;
+  clerkUserId?: string;
+}) {
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.groups.getGroupTimelineLast7Days, {
       groupId,
       usersTimeZone: usersTimeZone,
+      clerkUserId,
     })
   );
 
@@ -61,6 +70,8 @@ export function GroupMoodTimeline({ groupId }: { groupId: Id<'groups'> }) {
           <Line type="monotone" dataKey="tired" stroke={colors.tired} />
           <Line type="monotone" dataKey="stressed" stroke={colors.stressed} />
           <Line type="monotone" dataKey="sad" stroke={colors.sad} />
+          <Line type="monotone" dataKey="angry" stroke={colors.angry} />
+          <Line type="monotone" dataKey="anxious" stroke={colors.anxious} />
         </LineChart>
       </ResponsiveContainer>
     </div>

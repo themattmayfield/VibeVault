@@ -171,7 +171,9 @@ export function useDevRoleOverride(): OrgRole | null {
 // React Context
 // ---------------------------------------------------------------------------
 
-const OrgSettingsContext = createContext<Doc<'orgSettings'> | null>(null);
+export const OrgSettingsContext = createContext<Doc<'orgSettings'> | null>(
+  null
+);
 
 interface OrgSettingsProviderProps {
   orgSettings: Doc<'orgSettings'>;

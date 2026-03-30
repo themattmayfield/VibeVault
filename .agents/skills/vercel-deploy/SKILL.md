@@ -79,7 +79,7 @@ All of these must be set in Vercel for the app to function:
 | `ANTHROPIC_API_KEY` | Yes | Claude AI API key |
 
 | `FLAGS_SECRET` | No | Secret for Vercel feature flag endpoint verification |
-| `VITE_APP_DOMAIN` | No | e.g. `moodsync.com` (client-side, used for URL display only) |
+| `VITE_APP_DOMAIN` | No | e.g. `sentio.sh` (client-side, used for URL display only) |
 
 ## Command Reference
 
@@ -164,7 +164,7 @@ npx vercel promote <deployment-url> --token $VERCEL_TOKEN --yes
 npx vercel domains ls --token $VERCEL_TOKEN
 
 # Add a domain
-npx vercel domains add moodsync.com --token $VERCEL_TOKEN
+npx vercel domains add sentio.sh --token $VERCEL_TOKEN
 ```
 
 ### Projects

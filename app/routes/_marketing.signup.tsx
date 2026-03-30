@@ -107,6 +107,7 @@ function SignupPage() {
       slug,
       clerkOrgId,
       isPersonal: true,
+      email: email.trim(),
     });
 
     // Redirect straight to dashboard

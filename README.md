@@ -1,6 +1,6 @@
-# MoodSync
+# Sentio
 
-Multi-tenant mood tracking SaaS for individuals and organizations. Built with TanStack Start, Convex, and Clerk. Features a 4-tier pricing model (Free / Pro / Team / Enterprise) with plan-gated features like AI insights, groups, global trends, and admin dashboards.
+Emotional wellbeing, made visible. A multi-tenant mood tracking SaaS for individuals and organizations. Built with TanStack Start, Convex, and Clerk. Features a 4-tier pricing model (Free / Pro / Team / Enterprise) with plan-gated features like AI insights, groups, global trends, and admin dashboards.
 
 ## Architecture
 
@@ -49,7 +49,7 @@ POLAR_ENTERPRISE_ANNUAL_ID=...
 ANTHROPIC_API_KEY=...
 
 # App display
-VITE_APP_DOMAIN=moodsync.com               # Used in UI for URL previews
+VITE_APP_DOMAIN=sentio.sh                  # Used in UI for URL previews
 ```
 
 ## Local Development

@@ -16,11 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
-import { useLoaderData } from '@tanstack/react-router';
 
 interface CreateGroupModalProps {
   isOpen: boolean;
@@ -33,24 +32,24 @@ export function CreateGroupModal({
   onClose,
   organizationId,
 }: CreateGroupModalProps) {
-  const user = useLoaderData({
-    from: '/org/$slug/_authenticated',
-  });
-
   const createGroup = useMutation(api.groups.createGroup);
+  const generateUploadUrl = useMutation(api.groups.generateUploadUrl);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [privacy, setPrivacy] = useState('private');
-  const [image, setImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setName('');
     setDescription('');
     setPrivacy('private');
-    setImage(null);
+    setImagePreview(null);
+    setImageFile(null);
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -62,33 +61,45 @@ export function CreateGroupModal({
     try {
       setIsSubmitting(true);
 
+      // Upload image to Convex storage if provided
+      let imageStorageId: any;
+      if (imageFile) {
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': imageFile.type },
+          body: imageFile,
+        });
+        const { storageId } = await result.json();
+        imageStorageId = storageId;
+      }
+
       await createGroup({
         name,
         description,
         isPrivate: privacy === 'private',
-        image: image || undefined,
-        userId: user._id,
+        image: imageStorageId,
         organizationId,
       });
       onClose();
 
       toast.success(`Your group "${name}" has been created successfully.`);
-    } catch (_) {
-      toast.error('Failed to create group');
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to create group'
+      );
     } finally {
       resetForm();
       setIsSubmitting(false);
     }
   };
 
-  // Handle image upload (mock implementation)
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, you would upload this to a storage service
-      // For now, we'll just create a local object URL as a preview
-      const imageUrl = URL.createObjectURL(file);
-      setImage(imageUrl);
+      setImageFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     }
   };
 
@@ -112,9 +123,9 @@ export function CreateGroupModal({
               <div className="flex justify-center">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    {image ? (
+                    {imagePreview ? (
                       <img
-                        src={image || '/placeholder.svg'}
+                        src={imagePreview}
                         alt="Group"
                         className="w-full h-full object-cover"
                       />
@@ -187,7 +198,14 @@ export function CreateGroupModal({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Group'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Group'
+              )}
             </Button>
           </DialogFooter>
         </form>

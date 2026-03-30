@@ -141,7 +141,7 @@ curl -sL -X POST \
   -H "Content-Type: application/json" \
   -d "{
     \"products\": [\"$POLAR_TEAM_MONTHLY_ID\"],
-    \"success_url\": \"https://moodsync.com/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
+    \"success_url\": \"https://sentio.sh/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
     \"customer_email\": \"test@example.com\",
     \"customer_name\": \"Test User\",
     \"metadata\": {
@@ -158,7 +158,7 @@ curl -sL -X POST \
   -H "Content-Type: application/json" \
   -d "{
     \"products\": [\"$POLAR_PRO_ANNUAL_ID\"],
-    \"success_url\": \"https://moodsync.com/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
+    \"success_url\": \"https://sentio.sh/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
     \"customer_email\": \"test@example.com\"
   }" \
   "https://sandbox-api.polar.sh/v1/checkouts/" | jq '.url'
@@ -307,7 +307,7 @@ curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d "{
        \"products\": [\"$POLAR_TEAM_MONTHLY_ID\"],
-       \"success_url\": \"https://moodsync.com/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
+       \"success_url\": \"https://sentio.sh/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
        \"customer_email\": \"test@example.com\",
        \"customer_name\": \"Test User\",
        \"metadata\": {

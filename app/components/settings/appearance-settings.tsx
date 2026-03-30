@@ -73,7 +73,7 @@ export function AppearanceSettings({ user }: AppearanceSettingsProps) {
         <CardHeader>
           <CardTitle>Theme</CardTitle>
           <CardDescription>
-            Choose how MoodSync looks to you. Select a theme preference.
+            Choose how Sentio looks to you. Select a theme preference.
           </CardDescription>
         </CardHeader>
         <CardContent>

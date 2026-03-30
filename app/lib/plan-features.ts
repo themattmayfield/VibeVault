@@ -22,7 +22,7 @@ export interface PlanFeatures {
   globalTrends: boolean;
   /** Access to admin dashboard */
   adminDashboard: boolean;
-  /** Data export capability */
+  /** Highest data export tier unlocked (cumulative: api > json > csv > false) */
   dataExport: false | 'csv' | 'json' | 'api';
   /** Custom branding (logo, etc.) */
   customBranding: boolean;
@@ -138,6 +138,42 @@ export function isAtLeastTier(
   const currentIndex = tierOrder.indexOf(plan ?? 'free');
   const minimumIndex = tierOrder.indexOf(minimumTier);
   return currentIndex >= minimumIndex;
+}
+
+export type ExportFormat = 'csv' | 'json' | 'api';
+
+const EXPORT_TIER_ORDER: (false | ExportFormat)[] = [
+  false,
+  'csv',
+  'json',
+  'api',
+];
+
+/**
+ * Check if a plan's export capability includes a given format.
+ * Export tiers are cumulative: api includes json + csv, json includes csv.
+ */
+export function canExportAs(
+  plan: PlanTier | undefined | null,
+  format: ExportFormat
+): boolean {
+  const features = getPlanFeatures(plan);
+  const planLevel = EXPORT_TIER_ORDER.indexOf(features.dataExport);
+  const requiredLevel = EXPORT_TIER_ORDER.indexOf(format);
+  return planLevel >= requiredLevel;
+}
+
+/**
+ * Get all export formats available for a given plan.
+ */
+export function getAvailableExportFormats(
+  plan: PlanTier | undefined | null
+): ExportFormat[] {
+  const features = getPlanFeatures(plan);
+  const planLevel = EXPORT_TIER_ORDER.indexOf(features.dataExport);
+  return EXPORT_TIER_ORDER.filter(
+    (_, i) => i > 0 && i <= planLevel
+  ) as ExportFormat[];
 }
 
 /**

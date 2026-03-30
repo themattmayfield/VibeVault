@@ -8,11 +8,19 @@ import {
 } from '@/components/ui/sidebar';
 import { Link, useLocation, useParams } from '@tanstack/react-router';
 import { getRoutes } from '@/constants/routes';
+import { useContext } from 'react';
+import { OrgSettingsContext } from '@/hooks/use-org-settings';
 
 export function NavMain() {
   const { slug } = useParams({ strict: false }) as { slug?: string };
   const routes = getRoutes(slug ?? '');
   const location = useLocation();
+
+  // Read context directly (returns null outside provider instead of throwing)
+  const orgSettings = useContext(OrgSettingsContext);
+  const featureFlags = orgSettings?.featureFlags as
+    | Record<string, boolean | undefined>
+    | undefined;
 
   return (
     <SidebarGroup>
@@ -37,6 +45,16 @@ export function NavMain() {
         <SidebarMenu>
           {routes.map((item) => {
             if (item.ignoreInSidebar) return null;
+
+            // Check feature flag gating
+            if (
+              item.featureFlag &&
+              featureFlags &&
+              featureFlags[item.featureFlag] === false
+            ) {
+              return null;
+            }
+
             return (
               <SidebarMenuItem key={item.label}>
                 <Link to={item.href as string} key={item.label}>

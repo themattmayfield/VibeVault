@@ -51,52 +51,6 @@ export const updateAuthProfile = createServerFn({ method: 'POST' })
     };
   });
 
-/** Change the authenticated user's password */
-export const changePassword = createServerFn({ method: 'POST' })
-  .inputValidator(
-    z.object({
-      currentPassword: z.string().min(1),
-      newPassword: z.string().min(8),
-    })
-  )
-  .handler(async ({ data }) => {
-    const { userId } = await auth();
-    if (!userId) throw new Error('Not authenticated');
-
-    // Verify current password first
-    const verified = await clerkClient.users.verifyPassword({
-      userId,
-      password: data.currentPassword,
-    });
-
-    if (!verified.verified) {
-      throw new Error('Current password is incorrect');
-    }
-
-    await clerkClient.users.updateUser(userId, {
-      password: data.newPassword,
-    });
-  });
-
-/** Change the authenticated user's email */
-export const changeEmail = createServerFn({ method: 'POST' })
-  .inputValidator(
-    z.object({
-      newEmail: z.string().email(),
-    })
-  )
-  .handler(async ({ data }) => {
-    const { userId } = await auth();
-    if (!userId) throw new Error('Not authenticated');
-
-    // Create a new email address for the user
-    await clerkClient.emailAddresses.createEmailAddress({
-      userId,
-      emailAddress: data.newEmail,
-      verified: false,
-    });
-  });
-
 /** Delete the authenticated user's account */
 export const deleteAccount = createServerFn({ method: 'POST' })
   .inputValidator(

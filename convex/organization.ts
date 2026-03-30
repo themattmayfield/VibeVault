@@ -26,6 +26,7 @@ export const handleOrganizationOnboard = mutation({
     clerkOrgId: v.string(),
     role: v.optional(v.string()),
     isPersonal: v.optional(v.boolean()),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Idempotency: skip if user already exists
@@ -40,7 +41,11 @@ export const handleOrganizationOnboard = mutation({
         clerkUserId: args.clerkUserId,
         displayName: args.displayName,
         role: args.role,
+        email: args.email,
       });
+    } else if (args.email && !existingUser.email) {
+      // Backfill email for existing users who don't have one yet
+      await ctx.db.patch(existingUser._id, { email: args.email });
     }
 
     // Idempotency: skip if orgSettings already exists

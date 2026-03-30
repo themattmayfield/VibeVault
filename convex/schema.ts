@@ -93,12 +93,14 @@ export default defineSchema({
     .index('by_clerk_org_id', ['clerkOrgId']),
   users: defineTable({
     clerkUserId: v.string(),
+    email: v.optional(v.string()),
     displayName: v.string(),
     image: v.optional(v.string()),
     role: v.optional(v.string()),
     plan: v.optional(v.union(v.literal('free'), v.literal('pro'))),
     polarSubscriptionId: v.optional(v.string()),
     polarCustomerId: v.optional(v.string()),
+    // availableGroups removed -- groupMemberInfo is the sole membership source
     availableGroups: v.optional(v.array(v.id('groups'))),
     theme: v.optional(
       v.union(v.literal('light'), v.literal('dark'), v.literal('system'))
@@ -110,6 +112,9 @@ export default defineSchema({
           v.union(v.literal('daily'), v.literal('weekly'), v.literal('never'))
         ),
         moodReminders: v.optional(v.boolean()),
+        reminderTime: v.optional(v.string()), // e.g. "09:00" in user's timezone
+        lastDigestSentAt: v.optional(v.number()), // timestamp to prevent duplicates
+        lastReminderSentAt: v.optional(v.number()), // timestamp to prevent duplicates
       })
     ),
   }).index('by_clerk_user_id', ['clerkUserId']),
@@ -117,10 +122,15 @@ export default defineSchema({
     name: v.string(),
     isPrivate: v.boolean(),
     description: v.optional(v.string()),
-    image: v.optional(v.string()),
+    image: v.optional(v.id('_storage')),
     creator: v.id('users'),
     organizationId: v.optional(v.string()), // Clerk org ID for multi-tenant scoping
-  }).index('by_organization', ['organizationId']),
+  })
+    .index('by_organization', ['organizationId'])
+    .searchIndex('search_name', {
+      searchField: 'name',
+      filterFields: ['organizationId'],
+    }),
   groupMemberInfo: defineTable({
     userId: v.id('users'),
     groupId: v.id('groups'),
@@ -128,18 +138,22 @@ export default defineSchema({
     status: groupMemberStatus,
   })
     .index('by_user_id_and_group_id', ['userId', 'groupId'])
-    .index('by_user_id', ['userId']),
+    .index('by_user_id', ['userId'])
+    .index('by_group_id', ['groupId']),
   moods: defineTable({
     mood: moodLiteral,
     note: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
     context: v.optional(moodContextValidator),
     group: v.optional(v.id('groups')),
+    isPublic: v.optional(v.boolean()),
     userId: v.optional(v.id('users')),
     organizationId: v.optional(v.string()), // Clerk org ID for multi-tenant scoping
   })
     .index('by_user_id', ['userId'])
-    .index('by_org_and_user', ['organizationId', 'userId']),
+    .index('by_org_and_user', ['organizationId', 'userId'])
+    .index('by_organization', ['organizationId'])
+    .index('by_group', ['group']),
   patterns: defineTable({
     insight: v.string(),
     userId: v.optional(v.id('users')),

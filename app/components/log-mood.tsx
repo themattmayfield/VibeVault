@@ -38,10 +38,9 @@ import { Input } from './ui/input';
 import type { Doc, Id } from 'convex/_generated/dataModel';
 import { useQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
-import {
-  PUBLIC_GROUP_ID,
-  PERSONAL_GROUP_ID,
-} from '@/constants/internal-group-ids';
+import { PERSONAL_GROUP_ID } from '@/constants/internal-group-ids';
+
+const PUBLIC_MOOD_VALUE = '__public__';
 
 export function LogMood({
   user,
@@ -76,7 +75,9 @@ export function LogMood({
   const [moodContext, setMoodContext] = useState<MoodContext>({});
   const [showContext, setShowContext] = useState(false);
   const [group, setGroup] = useState(
-    isLoggedIn ? getUserGroups?.[0]?._id || PUBLIC_GROUP_ID : PUBLIC_GROUP_ID
+    isLoggedIn
+      ? getUserGroups?.[0]?._id || PERSONAL_GROUP_ID
+      : PERSONAL_GROUP_ID
   );
 
   const moods = localStorage.getItem(LOCAL_STORAGE_MOODS_KEY);
@@ -93,14 +94,18 @@ export function LogMood({
     const hasContext = Object.values(moodContext).some((v) => v !== undefined);
 
     try {
+      const isPublicMood = group === PUBLIC_MOOD_VALUE;
+      const isGroupMood =
+        isLoggedIn && group !== PERSONAL_GROUP_ID && !isPublicMood;
+
       const moodId = await addMood({
         mood: selectedMood,
         note,
         userId: user?._id,
         tags: tags.split(',').map((tag) => tag.trim()),
         ...(hasContext && { context: moodContext }),
-        ...(isLoggedIn &&
-          group !== PERSONAL_GROUP_ID && { group: group as Id<'groups'> }),
+        ...(isGroupMood && { group: group as Id<'groups'> }),
+        ...(isPublicMood && { isPublic: true }),
         organizationId,
       });
       if (!isLoggedIn) {
@@ -214,7 +219,7 @@ export function LogMood({
                       {group.name}
                     </SelectItem>
                   ))}
-                  <SelectItem value={PUBLIC_GROUP_ID}>Public</SelectItem>
+                  <SelectItem value={PUBLIC_MOOD_VALUE}>Public</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -10,81 +10,48 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { moodOptions } from '@/lib/getMoodEmoji';
 
-const data = [
-  {
-    time: '6 AM',
-    happy: 10,
-    excited: 5,
-    calm: 15,
-    neutral: 8,
-    tired: 20,
-    stressed: 5,
-    sad: 2,
-  },
-  {
-    time: '9 AM',
-    happy: 25,
-    excited: 15,
-    calm: 10,
-    neutral: 12,
-    tired: 15,
-    stressed: 10,
-    sad: 3,
-  },
-  {
-    time: '12 PM',
-    happy: 40,
-    excited: 20,
-    calm: 8,
-    neutral: 15,
-    tired: 10,
-    stressed: 15,
-    sad: 5,
-  },
-  {
-    time: '3 PM',
-    happy: 30,
-    excited: 15,
-    calm: 12,
-    neutral: 20,
-    tired: 18,
-    stressed: 25,
-    sad: 8,
-  },
-  {
-    time: '6 PM',
-    happy: 45,
-    excited: 25,
-    calm: 20,
-    neutral: 15,
-    tired: 10,
-    stressed: 10,
-    sad: 5,
-  },
-  {
-    time: '9 PM',
-    happy: 35,
-    excited: 15,
-    calm: 30,
-    neutral: 10,
-    tired: 25,
-    stressed: 5,
-    sad: 3,
-  },
-];
+const moodColorMap: Record<string, string> = Object.fromEntries(
+  moodOptions.map((m) => [m.value, m.hexColor])
+);
 
-const colors = {
-  happy: '#4ade80',
-  excited: '#facc15',
-  calm: '#60a5fa',
-  neutral: '#94a3b8',
-  tired: '#c084fc',
-  stressed: '#fb923c',
-  sad: '#818cf8',
-};
+// The mood keys we render lines for
+const MOOD_KEYS = [
+  'happy',
+  'excited',
+  'calm',
+  'neutral',
+  'tired',
+  'stressed',
+  'sad',
+  'angry',
+  'anxious',
+] as const;
 
-export function MoodTimeline() {
+interface TimelineDataPoint {
+  date: string;
+  [mood: string]: string | number;
+}
+
+interface MoodTimelineProps {
+  data: TimelineDataPoint[];
+}
+
+export function MoodTimeline({ data }: MoodTimelineProps) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+        No mood data available yet
+      </div>
+    );
+  }
+
+  // Only show lines for moods that have at least one non-zero entry
+  const activeMoods = MOOD_KEYS.filter((mood) =>
+    data.some((d) => (d[mood] as number) > 0)
+  );
+
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -98,22 +65,19 @@ export function MoodTimeline() {
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
+          <XAxis dataKey="date" />
           <YAxis />
           <Tooltip />
           <Legend />
-          <Line
-            type="monotone"
-            dataKey="happy"
-            stroke={colors.happy}
-            activeDot={{ r: 8 }}
-          />
-          <Line type="monotone" dataKey="excited" stroke={colors.excited} />
-          <Line type="monotone" dataKey="calm" stroke={colors.calm} />
-          <Line type="monotone" dataKey="neutral" stroke={colors.neutral} />
-          <Line type="monotone" dataKey="tired" stroke={colors.tired} />
-          <Line type="monotone" dataKey="stressed" stroke={colors.stressed} />
-          <Line type="monotone" dataKey="sad" stroke={colors.sad} />
+          {activeMoods.map((mood) => (
+            <Line
+              key={mood}
+              type="monotone"
+              dataKey={mood}
+              stroke={moodColorMap[mood] ?? '#94a3b8'}
+              activeDot={mood === 'happy' ? { r: 8 } : undefined}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </div>

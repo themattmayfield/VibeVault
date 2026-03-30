@@ -133,7 +133,7 @@ export function OrganizationSettings({
               <Label htmlFor="orgSlug">URL Slug</Label>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  moodsync.com/org/
+                  sentio.sh/org/
                 </span>
                 <Input
                   id="orgSlug"

@@ -1,5 +1,5 @@
 {
-  "name": "mood-board",
+  "name": "sentio",
   "type": "module",
   "version": "1.0.0",
   "description": "",
@@ -24,6 +24,7 @@
     "@clerk/backend": "^3.2.3",
     "@clerk/tanstack-react-start": "^1.0.7",
     "@convex-dev/react-query": "^0.1.0",
+    "@convex-dev/resend": "^0.2.3",
     "@flags-sdk/vercel": "^1.2.1",
     "@hookform/resolvers": "^5.0.1",
     "@opentelemetry/api": "^1.9.1",
@@ -82,6 +83,7 @@
     "react-hook-form": "^7.55.0",
     "react-is": "^19.2.4",
     "recharts": "^3.8.1",
+    "resend": "^6.9.4",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",
     "tailwindcss": "^4.1.4",

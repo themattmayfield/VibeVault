@@ -247,6 +247,7 @@ function RouteComponent() {
         slug: formData.slug,
         clerkOrgId,
         role: formData.role,
+        email: formData.email,
       });
 
       // 4. Create Polar checkout session and redirect to payment

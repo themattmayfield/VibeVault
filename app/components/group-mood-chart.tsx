@@ -12,10 +12,17 @@ import {
   Tooltip,
 } from 'recharts';
 
-export function GroupMoodChart({ groupId }: { groupId: Id<'groups'> }) {
+export function GroupMoodChart({
+  groupId,
+  clerkUserId,
+}: {
+  groupId: Id<'groups'>;
+  clerkUserId?: string;
+}) {
   const { data: moods } = useSuspenseQuery(
     convexQuery(api.groups.getGroupMoodDistributionLast30Days, {
       groupId,
+      clerkUserId,
     })
   );
 

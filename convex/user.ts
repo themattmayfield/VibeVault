@@ -7,7 +7,7 @@ import {
 import { v } from 'convex/values';
 import { getGroupHelper } from './groups';
 import type { Doc, Id } from './_generated/dataModel';
-import { moodLiteral } from './schema';
+import { moodLiteral, moodContextValidator } from './schema';
 
 export const getUserByClerkIdHelper = async (
   ctx: QueryCtx,
@@ -27,13 +27,18 @@ export const getUserByClerkIdHelper = async (
 
 export const createUserHelper = async (
   ctx: MutationCtx,
-  args: { clerkUserId: string; displayName: string; role?: string }
+  args: {
+    clerkUserId: string;
+    displayName: string;
+    role?: string;
+    email?: string;
+  }
 ) => {
   return await ctx.db.insert('users', {
     clerkUserId: args.clerkUserId,
     displayName: args.displayName,
-    availableGroups: [],
     ...(args.role && { role: args.role }),
+    ...(args.email && { email: args.email }),
   });
 };
 
@@ -63,6 +68,7 @@ export const createUser = mutation({
   args: {
     clerkUserId: v.string(),
     displayName: v.string(),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await createUserHelper(ctx, args);
@@ -97,12 +103,24 @@ export const getUserGroups = query({
 
 export const updateUserProfile = mutation({
   args: {
-    userId: v.id('users'),
     displayName: v.string(),
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.userId, {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error('Not authenticated');
+    }
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_user_id', (q) =>
+        q.eq('clerkUserId', identity.subject)
+      )
+      .first();
+    if (!user) {
+      throw new Error('User not found');
+    }
+    await ctx.db.patch(user._id, {
       displayName: args.displayName,
       ...(args.image !== undefined && { image: args.image }),
     });
@@ -122,6 +140,9 @@ export const updateUserPreferences = mutation({
           v.union(v.literal('daily'), v.literal('weekly'), v.literal('never'))
         ),
         moodReminders: v.optional(v.boolean()),
+        reminderTime: v.optional(v.string()),
+        lastDigestSentAt: v.optional(v.number()),
+        lastReminderSentAt: v.optional(v.number()),
       })
     ),
   },
@@ -134,6 +155,7 @@ export const updateUserPreferences = mutation({
 export const exportUserData = query({
   args: {
     userId: v.id('users'),
+    organizationId: v.optional(v.string()),
   },
   returns: v.object({
     user: v.object({
@@ -148,7 +170,32 @@ export const exportUserData = query({
         mood: moodLiteral,
         note: v.optional(v.string()),
         tags: v.optional(v.array(v.string())),
+        context: v.optional(moodContextValidator),
         time: v.number(),
+      })
+    ),
+    journals: v.array(
+      v.object({
+        title: v.string(),
+        content: v.string(),
+        mood: v.optional(moodLiteral),
+        tags: v.optional(v.array(v.string())),
+        time: v.number(),
+      })
+    ),
+    goals: v.array(
+      v.object({
+        title: v.string(),
+        type: v.string(),
+        status: v.string(),
+        timeframe: v.string(),
+        time: v.number(),
+      })
+    ),
+    achievements: v.array(
+      v.object({
+        achievementKey: v.string(),
+        earnedAt: v.number(),
       })
     ),
     insights: v.object({
@@ -181,6 +228,47 @@ export const exportUserData = query({
       .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
       .collect();
 
+    // Journals -- scoped by org if provided, otherwise all
+    let journals;
+    if (args.organizationId) {
+      journals = await ctx.db
+        .query('journals')
+        .withIndex('by_org_and_user', (q) =>
+          q
+            .eq('organizationId', args.organizationId as string)
+            .eq('userId', args.userId)
+        )
+        .order('desc')
+        .collect();
+    } else {
+      // Fallback: collect all and filter
+      const all = await ctx.db.query('journals').collect();
+      journals = all.filter((j) => j.userId === args.userId);
+    }
+
+    // Goals -- scoped by org if provided
+    let goals;
+    if (args.organizationId) {
+      goals = await ctx.db
+        .query('goals')
+        .withIndex('by_org_and_user', (q) =>
+          q
+            .eq('organizationId', args.organizationId as string)
+            .eq('userId', args.userId)
+        )
+        .order('desc')
+        .collect();
+    } else {
+      const all = await ctx.db.query('goals').collect();
+      goals = all.filter((g) => g.userId === args.userId);
+    }
+
+    // Achievements earned by this user
+    const achievements = await ctx.db
+      .query('userAchievements')
+      .withIndex('by_user_and_key', (q) => q.eq('userId', args.userId))
+      .collect();
+
     return {
       user: {
         displayName: user.displayName,
@@ -191,7 +279,26 @@ export const exportUserData = query({
         mood: m.mood,
         note: m.note,
         tags: m.tags,
+        context: m.context,
         time: m._creationTime,
+      })),
+      journals: journals.map((j) => ({
+        title: j.title,
+        content: j.content,
+        mood: j.mood,
+        tags: j.tags,
+        time: j._creationTime,
+      })),
+      goals: goals.map((g) => ({
+        title: g.title,
+        type: g.type,
+        status: g.status,
+        timeframe: g.timeframe,
+        time: g._creationTime,
+      })),
+      achievements: achievements.map((a) => ({
+        achievementKey: a.achievementKey,
+        earnedAt: a.earnedAt,
       })),
       insights: {
         patterns: patterns.map((p) => ({
@@ -236,12 +343,13 @@ export const deleteUserData = mutation({
       }
     }
 
-    // Delete group memberships
-    const memberships = await ctx.db.query('groupMemberInfo').collect();
+    // Delete group memberships (using index)
+    const memberships = await ctx.db
+      .query('groupMemberInfo')
+      .withIndex('by_user_id', (q) => q.eq('userId', args.userId))
+      .collect();
     for (const m of memberships) {
-      if (m.userId === args.userId) {
-        await ctx.db.delete(m._id);
-      }
+      await ctx.db.delete(m._id);
     }
 
     // Delete the user record

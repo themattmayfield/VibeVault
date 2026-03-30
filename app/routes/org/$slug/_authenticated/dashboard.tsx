@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { createFileRoute, useLoaderData, Link } from '@tanstack/react-router';
 import {
   Card,
@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { PersonalMoodChart } from '@/components/personal-mood-chart';
 import { getMoodEmoji, moodOptions } from '@/lib/getMoodEmoji';
 import { convexQuery } from '@convex-dev/react-query';
@@ -19,11 +20,14 @@ import {
   BookOpen,
   ArrowRight,
   Trophy,
+  Sparkles,
 } from 'lucide-react';
 import { ACHIEVEMENT_DEFINITIONS } from 'convex/achievements';
 import numeral from 'numeral';
 import pluralize from 'pluralize';
 import { useOrgSettings } from '@/hooks/use-org-settings';
+import { createPolarCheckoutSession } from '@/actions/polar';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/org/$slug/_authenticated/dashboard')({
   component: () => (
@@ -40,6 +44,7 @@ function Home() {
   });
   const { orgSettings } = useOrgSettings();
   const organizationId = orgSettings.clerkOrgId ?? '';
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const { data: totalMoodEntries } = useSuspenseQuery(
     convexQuery(api.mood.getUsersTotalMoodEntries, {
@@ -95,6 +100,43 @@ function Home() {
     }
   );
 
+  const handleProUpgrade = async () => {
+    if (!orgSettings?.clerkOrgId) {
+      toast.error('Organization information not found');
+      return;
+    }
+
+    setUpgradeLoading(true);
+    try {
+      const successUrl = `${window.location.origin}/org/${slug}/dashboard?upgraded=true`;
+      const session = await createPolarCheckoutSession({
+        data: {
+          country: 'US',
+          plan: 'pro',
+          billingCycle: 'monthly',
+          successUrl,
+          customerEmail: '',
+          customerName: user.displayName || 'User',
+          metadata: {
+            clerkOrgId: orgSettings.clerkOrgId,
+          },
+        },
+      });
+
+      if (session?.url) {
+        window.location.href = session.url;
+      } else {
+        toast.error('Failed to create checkout session');
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to upgrade plan'
+      );
+    } finally {
+      setUpgradeLoading(false);
+    }
+  };
+
   const dashboardCards = [
     {
       title: 'Current Streak',
@@ -138,6 +180,50 @@ function Home() {
             <DashboardCard key={card.title} {...card} />
           ))}
         </div>
+
+        {/* Pro Upgrade Banner */}
+        {orgSettings?.isPersonal &&
+          (orgSettings?.plan ?? 'free') === 'free' && (
+            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-primary/20 p-2 mt-1">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">
+                        Unlock AI Insights and more
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Upgrade to Pro for $8/mo to get AI-powered mood
+                        analysis, 5 groups, data export, and more.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Or save 25% with annual billing at $6/mo
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    onClick={handleProUpgrade}
+                    disabled={upgradeLoading}
+                    size="sm"
+                  >
+                    {upgradeLoading ? 'Processing...' : 'Upgrade to Pro'}
+                  </Button>
+                  <a href="/#pricing" className="inline-block">
+                    <Button variant="outline" size="sm">
+                      Learn more
+                    </Button>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="col-span-4">

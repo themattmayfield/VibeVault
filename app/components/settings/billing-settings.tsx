@@ -9,15 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getCustomerPortalUrl,
@@ -40,106 +32,13 @@ interface BillingSettingsProps {
 
 const PLAN_ORDER: PlanTier[] = ['free', 'pro', 'team', 'enterprise'];
 
-function getNextTier(currentPlan: PlanTier | undefined): PlanTier | null {
+function getUpgradeTiers(currentPlan: PlanTier | undefined): PlanTier[] {
   const current = currentPlan ?? 'free';
   const currentIndex = PLAN_ORDER.indexOf(current);
-  if (currentIndex === -1 || currentIndex === PLAN_ORDER.length - 1) {
-    return null;
+  if (currentIndex === -1) {
+    return [];
   }
-  return PLAN_ORDER[currentIndex + 1];
-}
-
-function FeatureComparison({
-  currentPlan,
-  nextPlan,
-}: {
-  currentPlan: PlanTier;
-  nextPlan: PlanTier;
-}) {
-  const currentFeatures = getPlanFeatures(currentPlan);
-  const nextFeatures = getPlanFeatures(nextPlan);
-
-  const featureKeys: (keyof typeof currentFeatures)[] = [
-    'aiInsights',
-    'aiInsightsPerDay',
-    'maxGroups',
-    'maxGroupMembers',
-    'globalTrends',
-    'adminDashboard',
-    'dataExport',
-    'customBranding',
-    'support',
-    'maxSeats',
-    'publicMoods',
-  ];
-
-  const featureLabels: Record<string, string> = {
-    aiInsights: 'AI Insights',
-    aiInsightsPerDay: 'AI Insights per Day',
-    maxGroups: 'Max Groups',
-    maxGroupMembers: 'Max Members per Group',
-    globalTrends: 'Global Trends',
-    adminDashboard: 'Admin Dashboard',
-    dataExport: 'Data Export',
-    customBranding: 'Custom Branding',
-    support: 'Support Level',
-    maxSeats: 'Max Seats',
-    publicMoods: 'Public Mood Sharing',
-  };
-
-  const formatFeatureValue = (value: unknown): string => {
-    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    if (typeof value === 'number') {
-      if (value === Infinity) return 'Unlimited';
-      return value.toString();
-    }
-    if (typeof value === 'string') {
-      return value.charAt(0).toUpperCase() + value.slice(1);
-    }
-    return String(value);
-  };
-
-  return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-1/3">Feature</TableHead>
-            <TableHead className="w-1/3 text-center">
-              {currentFeatures.label}
-            </TableHead>
-            <TableHead className="w-1/3 text-center">
-              {nextFeatures.label}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {featureKeys.map((key) => {
-            const currentValue = currentFeatures[key];
-            const nextValue = nextFeatures[key];
-            const isImprovement =
-              JSON.stringify(currentValue) !== JSON.stringify(nextValue);
-
-            return (
-              <TableRow key={key}>
-                <TableCell className="font-medium">
-                  {featureLabels[key]}
-                </TableCell>
-                <TableCell className="text-center">
-                  {formatFeatureValue(currentValue)}
-                </TableCell>
-                <TableCell
-                  className={`text-center ${isImprovement ? 'font-semibold text-green-600 dark:text-green-400' : ''}`}
-                >
-                  {formatFeatureValue(nextValue)}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  return PLAN_ORDER.slice(currentIndex + 1);
 }
 
 export function BillingSettings({
@@ -149,12 +48,17 @@ export function BillingSettings({
   orgEmail,
 }: BillingSettingsProps) {
   const [portalLoading, setPortalLoading] = useState(false);
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>(
+    'monthly'
+  );
 
   const currentPlan = (orgSettings?.plan ?? 'free') as PlanTier;
   const currentFeatures = getPlanFeatures(currentPlan);
-  const nextTier = getNextTier(currentPlan);
+  const upgradeTiers = getUpgradeTiers(currentPlan);
   const isEnterprise = currentPlan === 'enterprise';
+  const isPaidPlan = currentPlan !== 'free';
+  const isPersonal = orgSettings?.isPersonal ?? false;
 
   const handleOpenPortal = async () => {
     setPortalLoading(true);
@@ -174,20 +78,20 @@ export function BillingSettings({
     }
   };
 
-  const handleUpgrade = async () => {
-    if (!nextTier || !orgSlug || !orgName || !orgEmail) {
+  const handleUpgrade = async (tier: PlanTier) => {
+    if (!orgSlug || !orgName || !orgEmail) {
       toast.error('Missing required information for upgrade');
       return;
     }
 
-    setUpgradeLoading(true);
+    setUpgradeLoading(tier);
     try {
       const successUrl = `${window.location.origin}/org/${orgSlug}/settings?tab=billing&upgraded=true`;
       const session = await createPolarCheckoutSession({
         data: {
           country: 'US',
-          plan: nextTier as 'pro' | 'team' | 'enterprise',
-          billingCycle: 'monthly',
+          plan: tier as 'pro' | 'team' | 'enterprise',
+          billingCycle,
           successUrl,
           customerEmail: orgEmail,
           customerName: orgName,
@@ -207,7 +111,7 @@ export function BillingSettings({
         error instanceof Error ? error.message : 'Failed to upgrade plan'
       );
     } finally {
-      setUpgradeLoading(false);
+      setUpgradeLoading(null);
     }
   };
 
@@ -274,20 +178,36 @@ export function BillingSettings({
               </p>
               <p className="text-lg font-semibold">
                 {currentFeatures.dataExport
-                  ? currentFeatures.dataExport.toUpperCase()
+                  ? currentFeatures.dataExport === 'api'
+                    ? 'CSV + JSON + API'
+                    : currentFeatures.dataExport === 'json'
+                      ? 'CSV + JSON'
+                      : 'CSV'
                   : 'Not included'}
               </p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Max Seats
-              </p>
-              <p className="text-lg font-semibold">
-                {currentFeatures.maxSeats === Infinity
-                  ? 'Unlimited'
-                  : currentFeatures.maxSeats}
-              </p>
-            </div>
+            {currentPlan === 'team' && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Seats
+                </p>
+                <p className="text-lg font-semibold">
+                  {orgSettings?.seatCount ?? 'N/A'} purchased
+                </p>
+              </div>
+            )}
+            {currentPlan !== 'team' && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Max Seats
+                </p>
+                <p className="text-lg font-semibold">
+                  {currentFeatures.maxSeats === Infinity
+                    ? 'Unlimited'
+                    : currentFeatures.maxSeats}
+                </p>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -302,42 +222,128 @@ export function BillingSettings({
               {portalLoading ? 'Opening...' : 'Manage Subscription'}
             </Button>
           </div>
+
+          {isPaidPlan && (
+            <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
+              You can downgrade, cancel, or change your payment method through
+              the billing portal.
+              {currentPlan === 'team' && (
+                <>
+                  <br />
+                  To add more seats, contact us or upgrade to Enterprise for
+                  unlimited seats.
+                </>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Plan Comparison */}
-      {nextTier && (
+      {/* Upgrade Options */}
+      {upgradeTiers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Upgrade to {getPlanFeatures(nextTier).label}</CardTitle>
+            <CardTitle>Upgrade Your Plan</CardTitle>
             <CardDescription>
-              See what you'll get with the next tier
+              {isPersonal && currentPlan === 'free'
+                ? 'Get AI-powered mood analysis, more groups, and data export'
+                : 'Choose a plan that fits your needs'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FeatureComparison currentPlan={currentPlan} nextPlan={nextTier} />
+            {/* Billing Cycle Toggle */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium">Billing Cycle</p>
+              <div className="flex gap-2">
+                <Button
+                  variant={billingCycle === 'monthly' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setBillingCycle('monthly')}
+                >
+                  Monthly
+                </Button>
+                <Button
+                  variant={billingCycle === 'annual' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setBillingCycle('annual')}
+                >
+                  Annual (Save 25%)
+                </Button>
+              </div>
+            </div>
 
             <Separator />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {getPlanFeatures(nextTier).label} Plan
-                </p>
-                <p className="text-2xl font-bold">
-                  {formatPrice(PLAN_PRICING[nextTier].monthly)}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    /month
-                  </span>
-                </p>
-              </div>
-              <Button
-                onClick={handleUpgrade}
-                disabled={upgradeLoading}
-                size="lg"
-              >
-                {upgradeLoading ? 'Processing...' : 'Upgrade Now'}
-              </Button>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {upgradeTiers.map((tier) => {
+                const tierFeatures = getPlanFeatures(tier);
+                const isLoading = upgradeLoading === tier;
+                const price =
+                  billingCycle === 'monthly'
+                    ? PLAN_PRICING[tier].monthly
+                    : PLAN_PRICING[tier].annual;
+                return (
+                  <div
+                    key={tier}
+                    className="flex flex-col rounded-lg border p-4 hover:border-primary/50 hover:shadow-sm transition-all"
+                  >
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold">
+                        {tierFeatures.label}
+                      </h3>
+                      <p className="text-2xl font-bold mt-2">
+                        {formatPrice(price)}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {billingCycle === 'monthly' ? '/month' : '/year'}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="mb-4 flex-1 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          {tierFeatures.aiInsights
+                            ? `${tierFeatures.aiInsightsPerDay === Infinity ? 'Unlimited' : tierFeatures.aiInsightsPerDay} AI insights/day`
+                            : 'No AI insights'}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          {tierFeatures.maxGroups === Infinity
+                            ? 'Unlimited groups'
+                            : `Up to ${tierFeatures.maxGroups} groups`}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          {tierFeatures.globalTrends
+                            ? 'Global trends dashboard'
+                            : 'Personal insights only'}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          {tierFeatures.adminDashboard
+                            ? 'Admin dashboard'
+                            : 'No admin features'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => handleUpgrade(tier)}
+                      disabled={isLoading}
+                      className="w-full"
+                    >
+                      {isLoading ? 'Processing...' : 'Upgrade Now'}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

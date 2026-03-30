@@ -1,8 +1,7 @@
 export const APP_INFO = {
-  name: 'MoodSync',
-  domain: (import.meta as any).env?.VITE_APP_DOMAIN || 'moodsync.com',
-  description:
-    'Analyze, and improve mental health with real-time mood tracking and powerful analytics',
+  name: 'Sentio',
+  domain: (import.meta as any).env?.VITE_APP_DOMAIN || 'sentio.sh',
+  description: 'Emotional wellbeing, made visible.',
   version: '1.0.0',
-  author: 'theMattMayfield',
+  author: 'agape-media',
 };

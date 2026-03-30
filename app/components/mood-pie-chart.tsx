@@ -8,24 +8,37 @@ import {
   Legend,
   Tooltip,
 } from 'recharts';
+import { moodOptions } from '@/lib/getMoodEmoji';
 
-const data = [
-  { name: 'Happy', value: 42, color: '#4ade80' },
-  { name: 'Excited', value: 18, color: '#facc15' },
-  { name: 'Calm', value: 15, color: '#60a5fa' },
-  { name: 'Neutral', value: 10, color: '#94a3b8' },
-  { name: 'Tired', value: 8, color: '#c084fc' },
-  { name: 'Stressed', value: 5, color: '#fb923c' },
-  { name: 'Sad', value: 2, color: '#818cf8' },
-];
+const moodColorMap: Record<string, string> = Object.fromEntries(
+  moodOptions.map((m) => [m.value, m.hexColor])
+);
 
-export function MoodPieChart() {
+interface MoodPieChartProps {
+  data: Array<{ mood: string; count: number }>;
+}
+
+export function MoodPieChart({ data }: MoodPieChartProps) {
+  const chartData = data.map((d) => ({
+    name: d.mood.charAt(0).toUpperCase() + d.mood.slice(1),
+    value: d.count,
+    color: moodColorMap[d.mood] ?? '#94a3b8',
+  }));
+
+  if (chartData.length === 0) {
+    return (
+      <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+        No mood data yet today
+      </div>
+    );
+  }
+
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
+            data={chartData}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -36,7 +49,7 @@ export function MoodPieChart() {
               `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
             }
           >
-            {data.map((entry, index) => (
+            {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>

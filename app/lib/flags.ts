@@ -22,6 +22,12 @@ import { createClient, type FlagsClient } from '@vercel/flags-core';
 export const FLAG_DEFAULTS = {
   /** Example flag -- replace with real flags as needed */
   'example-flag': false,
+  /**
+   * Show / hide the Appearance (theme) tab on the Settings page.
+   * Defaults to `true` so it's visible in local dev (where FLAGS env is unset).
+   * Disabled in production & preview via the Vercel dashboard.
+   */
+  'settings-appearance-tab': true,
 } as const satisfies Record<string, boolean | string | number>;
 
 export type FlagKey = keyof typeof FLAG_DEFAULTS;

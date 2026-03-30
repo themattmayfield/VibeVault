@@ -192,7 +192,16 @@ export function PlanSwitcherPanel() {
           />
           <FeatureRow label="Global Trends" value={features.globalTrends} />
           <FeatureRow label="Admin Dashboard" value={features.adminDashboard} />
-          <FeatureRow label="Data Export" value={features.dataExport || 'No'} />
+          <FeatureRow
+            label="Data Export"
+            value={
+              features.dataExport === 'api'
+                ? 'CSV + JSON + API'
+                : features.dataExport === 'json'
+                  ? 'CSV + JSON'
+                  : features.dataExport || 'No'
+            }
+          />
           <FeatureRow label="Custom Branding" value={features.customBranding} />
           <FeatureRow label="Public Moods" value={features.publicMoods} />
           <FeatureRow
