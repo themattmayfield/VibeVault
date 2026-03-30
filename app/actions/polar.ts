@@ -21,6 +21,12 @@ const createPolarCheckoutSessionSchema = z.object({
   successUrl: z.string().min(1),
   customerEmail: z.string().email(),
   customerName: z.string().min(1),
+  seats: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe('Number of seats (for seat-based Team plan only)'),
   metadata: z
     .record(z.string(), z.string())
     .optional()
@@ -47,6 +53,7 @@ export const createPolarCheckoutSession = createServerFn({ method: 'POST' })
       successUrl: data.successUrl,
       customerEmail: data.customerEmail,
       customerName: data.customerName,
+      ...(data.seats !== undefined && { seats: data.seats }),
       metadata: {
         plan: data.plan,
         billingCycle: data.billingCycle,

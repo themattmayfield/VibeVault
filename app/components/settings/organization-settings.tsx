@@ -34,6 +34,7 @@ export function OrganizationSettings({
 }: OrganizationSettingsProps) {
   const [name, setName] = useState(orgName);
   const [slug, setSlug] = useState(orgSlug);
+  const [openSignup, setOpenSignup] = useState(orgSettings.openSignup ?? false);
   const [orgLoading, setOrgLoading] = useState(false);
 
   const plan = (orgSettings.plan ?? 'free') as PlanTier;
@@ -147,6 +148,55 @@ export function OrganizationSettings({
               {orgLoading ? 'Saving...' : 'Save Changes'}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Access Control */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Control</CardTitle>
+          <CardDescription>
+            Control how new members can join your organization.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="open-signup-flag">Open Sign-Up</Label>
+              <p className="text-sm text-muted-foreground">
+                When enabled, anyone who signs up through your organization's
+                page will be automatically added as a member. When disabled, new
+                users must be invited by an admin.
+              </p>
+            </div>
+            <Switch
+              id="open-signup-flag"
+              checked={openSignup}
+              onCheckedChange={async (checked) => {
+                setOpenSignup(checked);
+                try {
+                  await updateConvexOrgSettings({
+                    clerkOrgId,
+                    openSignup: checked,
+                  });
+                  toast.success(
+                    checked
+                      ? 'Open sign-up enabled'
+                      : 'Open sign-up disabled -- new members must be invited'
+                  );
+                } catch (err) {
+                  setOpenSignup(!checked);
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : 'Failed to update setting'
+                  );
+                }
+              }}
+            />
+          </div>
         </CardContent>
       </Card>
 

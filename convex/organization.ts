@@ -91,6 +91,7 @@ export const updateOrgSettings = mutation({
         logo: v.optional(v.string()),
       })
     ),
+    openSignup: v.optional(v.boolean()),
     featureFlags: v.optional(
       v.object({
         groupsEnabled: v.optional(v.boolean()),
@@ -116,6 +117,9 @@ export const updateOrgSettings = mutation({
     const updates: Record<string, unknown> = {};
     if (args.branding !== undefined) {
       updates.branding = args.branding;
+    }
+    if (args.openSignup !== undefined) {
+      updates.openSignup = args.openSignup;
     }
     if (args.featureFlags !== undefined) {
       updates.featureFlags = args.featureFlags;

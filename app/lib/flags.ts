@@ -28,6 +28,12 @@ export const FLAG_DEFAULTS = {
    * Disabled in production & preview via the Vercel dashboard.
    */
   'settings-appearance-tab': true,
+  /**
+   * Show / hide the Resources card on the Help & Support settings tab.
+   * Defaults to `true` so it's visible in local dev (where FLAGS env is unset).
+   * Disabled in production & preview via the Vercel dashboard.
+   */
+  'support-resources-card': true,
 } as const satisfies Record<string, boolean | string | number>;
 
 export type FlagKey = keyof typeof FLAG_DEFAULTS;

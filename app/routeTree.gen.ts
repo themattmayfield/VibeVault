@@ -20,7 +20,9 @@ import { Route as MarketingJoinRouteImport } from './routes/_marketing.join'
 import { Route as MarketingGetStartedRouteImport } from './routes/_marketing.get-started'
 import { Route as OrgSlugIndexRouteImport } from './routes/org/$slug/index'
 import { Route as ApiFlagsIndexRouteImport } from './routes/api/flags/index'
+import { Route as OrgSlugNotAMemberRouteImport } from './routes/org/$slug/not-a-member'
 import { Route as OrgSlugAuthenticatedRouteImport } from './routes/org/$slug/_authenticated'
+import { Route as ApiPolarWebhookRouteImport } from './routes/api/polar/webhook'
 import { Route as OrgSlugUnauthenticatedSsoCallbackRouteImport } from './routes/org/$slug/_unauthenticated/sso-callback'
 import { Route as OrgSlugUnauthenticatedSignUpRouteImport } from './routes/org/$slug/_unauthenticated/sign-up'
 import { Route as OrgSlugUnauthenticatedSignInRouteImport } from './routes/org/$slug/_unauthenticated/sign-in'
@@ -94,9 +96,19 @@ const ApiFlagsIndexRoute = ApiFlagsIndexRouteImport.update({
   path: '/api/flags/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrgSlugNotAMemberRoute = OrgSlugNotAMemberRouteImport.update({
+  id: '/not-a-member',
+  path: '/not-a-member',
+  getParentRoute: () => OrgSlugRoute,
+} as any)
 const OrgSlugAuthenticatedRoute = OrgSlugAuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => OrgSlugRoute,
+} as any)
+const ApiPolarWebhookRoute = ApiPolarWebhookRouteImport.update({
+  id: '/api/polar/webhook',
+  path: '/api/polar/webhook',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const OrgSlugUnauthenticatedSsoCallbackRoute =
   OrgSlugUnauthenticatedSsoCallbackRouteImport.update({
@@ -215,6 +227,8 @@ export interface FileRoutesByFullPath {
   '/signup': typeof MarketingSignupRoute
   '/sso-callback': typeof MarketingSsoCallbackRoute
   '/org/$slug': typeof OrgSlugAuthenticatedRouteWithChildren
+  '/api/polar/webhook': typeof ApiPolarWebhookRoute
+  '/org/$slug/not-a-member': typeof OrgSlugNotAMemberRoute
   '/api/flags/': typeof ApiFlagsIndexRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
@@ -244,7 +258,9 @@ export interface FileRoutesByTo {
   '/signup': typeof MarketingSignupRoute
   '/sso-callback': typeof MarketingSsoCallbackRoute
   '/': typeof MarketingIndexRoute
+  '/api/polar/webhook': typeof ApiPolarWebhookRoute
   '/org/$slug': typeof OrgSlugIndexRoute
+  '/org/$slug/not-a-member': typeof OrgSlugNotAMemberRoute
   '/api/flags': typeof ApiFlagsIndexRoute
   '/org/$slug/admin': typeof OrgSlugAuthenticatedAdminRoute
   '/org/$slug/calendar': typeof OrgSlugAuthenticatedCalendarRoute
@@ -276,7 +292,9 @@ export interface FileRoutesById {
   '/_marketing/sso-callback': typeof MarketingSsoCallbackRoute
   '/org/$slug': typeof OrgSlugRouteWithChildren
   '/_marketing/': typeof MarketingIndexRoute
+  '/api/polar/webhook': typeof ApiPolarWebhookRoute
   '/org/$slug/_authenticated': typeof OrgSlugAuthenticatedRouteWithChildren
+  '/org/$slug/not-a-member': typeof OrgSlugNotAMemberRoute
   '/api/flags/': typeof ApiFlagsIndexRoute
   '/org/$slug/': typeof OrgSlugIndexRoute
   '/org/$slug/_authenticated/admin': typeof OrgSlugAuthenticatedAdminRoute
@@ -309,6 +327,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sso-callback'
     | '/org/$slug'
+    | '/api/polar/webhook'
+    | '/org/$slug/not-a-member'
     | '/api/flags/'
     | '/org/$slug/'
     | '/org/$slug/admin'
@@ -338,7 +358,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sso-callback'
     | '/'
+    | '/api/polar/webhook'
     | '/org/$slug'
+    | '/org/$slug/not-a-member'
     | '/api/flags'
     | '/org/$slug/admin'
     | '/org/$slug/calendar'
@@ -369,7 +391,9 @@ export interface FileRouteTypes {
     | '/_marketing/sso-callback'
     | '/org/$slug'
     | '/_marketing/'
+    | '/api/polar/webhook'
     | '/org/$slug/_authenticated'
+    | '/org/$slug/not-a-member'
     | '/api/flags/'
     | '/org/$slug/'
     | '/org/$slug/_authenticated/admin'
@@ -396,6 +420,7 @@ export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
   NewLogRoute: typeof NewLogRoute
   OrgSlugRoute: typeof OrgSlugRouteWithChildren
+  ApiPolarWebhookRoute: typeof ApiPolarWebhookRoute
   ApiFlagsIndexRoute: typeof ApiFlagsIndexRoute
 }
 
@@ -478,12 +503,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFlagsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/org/$slug/not-a-member': {
+      id: '/org/$slug/not-a-member'
+      path: '/not-a-member'
+      fullPath: '/org/$slug/not-a-member'
+      preLoaderRoute: typeof OrgSlugNotAMemberRouteImport
+      parentRoute: typeof OrgSlugRoute
+    }
     '/org/$slug/_authenticated': {
       id: '/org/$slug/_authenticated'
       path: ''
       fullPath: '/org/$slug'
       preLoaderRoute: typeof OrgSlugAuthenticatedRouteImport
       parentRoute: typeof OrgSlugRoute
+    }
+    '/api/polar/webhook': {
+      id: '/api/polar/webhook'
+      path: '/api/polar/webhook'
+      fullPath: '/api/polar/webhook'
+      preLoaderRoute: typeof ApiPolarWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/org/$slug/_unauthenticated/sso-callback': {
       id: '/org/$slug/_unauthenticated/sso-callback'
@@ -677,6 +716,7 @@ const OrgSlugAuthenticatedRouteWithChildren =
 
 interface OrgSlugRouteChildren {
   OrgSlugAuthenticatedRoute: typeof OrgSlugAuthenticatedRouteWithChildren
+  OrgSlugNotAMemberRoute: typeof OrgSlugNotAMemberRoute
   OrgSlugIndexRoute: typeof OrgSlugIndexRoute
   OrgSlugUnauthenticatedForgotPasswordRoute: typeof OrgSlugUnauthenticatedForgotPasswordRoute
   OrgSlugUnauthenticatedSignInRoute: typeof OrgSlugUnauthenticatedSignInRoute
@@ -686,6 +726,7 @@ interface OrgSlugRouteChildren {
 
 const OrgSlugRouteChildren: OrgSlugRouteChildren = {
   OrgSlugAuthenticatedRoute: OrgSlugAuthenticatedRouteWithChildren,
+  OrgSlugNotAMemberRoute: OrgSlugNotAMemberRoute,
   OrgSlugIndexRoute: OrgSlugIndexRoute,
   OrgSlugUnauthenticatedForgotPasswordRoute:
     OrgSlugUnauthenticatedForgotPasswordRoute,
@@ -702,6 +743,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
   NewLogRoute: NewLogRoute,
   OrgSlugRoute: OrgSlugRouteWithChildren,
+  ApiPolarWebhookRoute: ApiPolarWebhookRoute,
   ApiFlagsIndexRoute: ApiFlagsIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -53,6 +53,7 @@ interface MembersSettingsProps {
   currentUserId: string;
   currentUserRole: string;
   organizationId: string;
+  slug: string;
   onRefresh: () => void;
 }
 
@@ -61,6 +62,7 @@ export function MembersSettings({
   currentUserId,
   currentUserRole,
   organizationId,
+  slug,
   onRefresh,
 }: MembersSettingsProps) {
   const [inviteEmail, setInviteEmail] = useState('');
@@ -81,6 +83,7 @@ export function MembersSettings({
           organizationId,
           email: inviteEmail.trim(),
           role: inviteRole,
+          slug,
         },
       });
       toast.success(`Invitation sent to ${inviteEmail}`);
@@ -99,7 +102,7 @@ export function MembersSettings({
       await removeMember({
         data: {
           organizationId,
-          memberIdOrEmail: member.id,
+          memberIdOrEmail: member.userId,
         },
       });
       toast.success(`${member.user.name} has been removed`);
@@ -224,7 +227,10 @@ export function MembersSettings({
                       <Select
                         value={member.role}
                         onValueChange={(v) =>
-                          handleRoleChange(member.id, v as 'member' | 'owner')
+                          handleRoleChange(
+                            member.userId,
+                            v as 'member' | 'owner'
+                          )
                         }
                       >
                         <SelectTrigger className="w-24 h-8">

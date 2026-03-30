@@ -202,20 +202,34 @@ export function AuthForm() {
 
           await createUser({ clerkUserId, displayName: value.name });
 
-          // Add the new user as a member of this organization
-          await addMemberToOrganization({
-            data: {
-              userId: clerkUserId,
-              organizationId: orgSettings.clerkOrgId ?? '',
-              role: 'member',
-            },
-          });
+          // Add the new user as a member of this organization (only if open signup is enabled)
+          if (orgSettings.openSignup) {
+            await addMemberToOrganization({
+              data: {
+                userId: clerkUserId,
+                organizationId: orgSettings.clerkOrgId ?? '',
+                role: 'member',
+              },
+            });
+          }
         }
 
         // Wait for session to propagate, then run post-auth setup
         await new Promise((resolve) => setTimeout(resolve, 500));
         const authUser = await getAuthUser();
         const clerkUserId = authUser?.id ?? '';
+
+        // If the user just signed up and open signup is off, redirect to not-a-member
+        if (!isSignIn && !orgSettings.openSignup) {
+          router.navigate({
+            to: '/org/$slug/not-a-member',
+            params: { slug },
+          });
+          toast.info(
+            'Account created. Contact an admin for access to this organization.'
+          );
+          return;
+        }
 
         await completePostAuth(clerkUserId);
         toast.success(
@@ -239,14 +253,28 @@ export function AuthForm() {
 
       await createUser({ clerkUserId, displayName: pendingName });
 
-      // Add the new user as a member of this organization
-      await addMemberToOrganization({
-        data: {
-          userId: clerkUserId,
-          organizationId: orgSettings.clerkOrgId ?? '',
-          role: 'member',
-        },
-      });
+      // Add the new user as a member of this organization (only if open signup is enabled)
+      if (orgSettings.openSignup) {
+        await addMemberToOrganization({
+          data: {
+            userId: clerkUserId,
+            organizationId: orgSettings.clerkOrgId ?? '',
+            role: 'member',
+          },
+        });
+      }
+
+      // If open signup is off, redirect to not-a-member page
+      if (!orgSettings.openSignup) {
+        router.navigate({
+          to: '/org/$slug/not-a-member',
+          params: { slug },
+        });
+        toast.info(
+          'Account created. Contact an admin for access to this organization.'
+        );
+        return;
+      }
 
       // Migrate local storage moods and navigate to dashboard
       await new Promise((resolve) => setTimeout(resolve, 500));

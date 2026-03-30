@@ -7,10 +7,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -18,24 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { deleteAccount } from '@/actions/auth';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from 'convex/_generated/api';
 import type { Doc } from 'convex/_generated/dataModel';
-import { useParams } from '@tanstack/react-router';
-import { Download, Trash2, Lock } from 'lucide-react';
+import { Download, Lock, Mail } from 'lucide-react';
 import { useOrgSettings } from '@/hooks/use-org-settings';
 import {
   getAvailableExportFormats,
@@ -143,9 +128,6 @@ function buildGoalsCsv(
 export function DataPrivacySettings({ user }: DataPrivacySettingsProps) {
   const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
   const [exportLoading, setExportLoading] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const { slug } = useParams({ strict: false }) as { slug?: string };
   const { orgSettings } = useOrgSettings();
   const organizationId = orgSettings.clerkOrgId ?? '';
 
@@ -162,7 +144,6 @@ export function DataPrivacySettings({ user }: DataPrivacySettingsProps) {
     api.user.exportUserData,
     hasExport ? { userId: user._id, organizationId } : 'skip'
   );
-  const deleteUserData = useMutation(api.user.deleteUserData);
 
   const handleExport = async () => {
     if (!exportData) {
@@ -217,29 +198,6 @@ export function DataPrivacySettings({ user }: DataPrivacySettingsProps) {
       toast.error('Failed to export data');
     } finally {
       setExportLoading(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!deletePassword) {
-      toast.error('Password is required to delete your account');
-      return;
-    }
-    setDeleteLoading(true);
-    try {
-      // Delete Convex data first
-      await deleteUserData({ userId: user._id });
-      // Then delete auth account
-      await deleteAccount({ data: { password: deletePassword } });
-      toast.success('Account deleted');
-      // Clerk session is invalidated when user is deleted -- reload to clear
-      window.location.href = slug ? `/org/${slug}/sign-in` : '/';
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to delete account'
-      );
-    } finally {
-      setDeleteLoading(false);
     }
   };
 
@@ -329,57 +287,22 @@ export function DataPrivacySettings({ user }: DataPrivacySettingsProps) {
         </CardContent>
       </Card>
 
-      <Separator />
-
-      {/* Delete Account */}
-      <Card className="border-destructive/50">
+      {/* Account Deletion */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardTitle>Delete Account</CardTitle>
           <CardDescription>
-            Permanently delete your account and all associated data. This action
-            cannot be undone.
+            If you need to delete your account and all associated data, please
+            contact our support team. We will handle the process securely.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Account
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete your account, all mood entries,
-                  insights, and group memberships. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-2 py-2">
-                <Label htmlFor="delete-password">
-                  Enter your password to confirm
-                </Label>
-                <Input
-                  id="delete-password"
-                  type="password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Your password"
-                />
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteAccount}
-                  disabled={deleteLoading || !deletePassword}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleteLoading ? 'Deleting...' : 'Delete My Account'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button variant="outline" asChild>
+            <a href="mailto:support@sentio.sh?subject=Account Deletion Request">
+              <Mail className="mr-2 h-4 w-4" />
+              Contact Support
+            </a>
+          </Button>
         </CardContent>
       </Card>
     </div>

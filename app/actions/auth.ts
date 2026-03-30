@@ -68,27 +68,3 @@ export const getClerkUserEmail = createServerFn({ method: 'GET' }).handler(
     return primaryEmail?.emailAddress ?? null;
   }
 );
-
-/** Delete the authenticated user's account */
-export const deleteAccount = createServerFn({ method: 'POST' })
-  .inputValidator(
-    z.object({
-      password: z.string().min(1),
-    })
-  )
-  .handler(async ({ data }) => {
-    const { userId } = await auth();
-    if (!userId) throw new Error('Not authenticated');
-
-    // Verify password before deletion
-    const verified = await clerkClient.users.verifyPassword({
-      userId,
-      password: data.password,
-    });
-
-    if (!verified.verified) {
-      throw new Error('Password is incorrect');
-    }
-
-    await clerkClient.users.deleteUser(userId);
-  });

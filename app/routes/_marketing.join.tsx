@@ -56,6 +56,7 @@ function RouteComponent() {
     // Plan selection
     plan: 'team',
     billingCycle: 'annual',
+    seatCount: 5,
 
     // Organization details
     organizationName: '',
@@ -259,6 +260,7 @@ function RouteComponent() {
           successUrl: `${window.location.origin}/org/${formData.slug}/welcome?checkout_id={CHECKOUT_ID}&email=${encodeURIComponent(formData.email)}`,
           customerEmail: formData.email,
           customerName: name,
+          ...(formData.plan === 'team' && { seats: formData.seatCount }),
           metadata: {
             clerkOrgId: clerkOrgId,
           },
@@ -509,6 +511,87 @@ function RouteComponent() {
                 </button>
               ))}
             </div>
+
+            {/* Seat count selector for Team plan */}
+            {formData.plan === 'team' && (
+              <div className="mt-6 border rounded-lg p-4 bg-muted/30">
+                <Label className="text-sm font-medium">
+                  How many seats do you need?
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Each seat is for one team member. You can add more later.
+                </p>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-9 p-0"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        seatCount: Math.max(1, prev.seatCount - 1),
+                      }))
+                    }
+                    disabled={formData.seatCount <= 1}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={formData.seatCount}
+                    onChange={(e) => {
+                      const val = Math.min(
+                        100,
+                        Math.max(1, Number(e.target.value) || 1)
+                      );
+                      setFormData((prev) => ({ ...prev, seatCount: val }));
+                    }}
+                    className="w-20 text-center"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-9 p-0"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        seatCount: Math.min(100, prev.seatCount + 1),
+                      }))
+                    }
+                    disabled={formData.seatCount >= 100}
+                  >
+                    +
+                  </Button>
+                  <span className="text-sm text-muted-foreground">seats</span>
+                </div>
+                <div className="mt-3 text-sm">
+                  <span className="font-medium">
+                    {formData.seatCount}{' '}
+                    {formData.seatCount === 1 ? 'seat' : 'seats'} &times;{' '}
+                    {formData.billingCycle === 'annual' ? '$22' : '$29'}/seat/mo
+                    ={' '}
+                  </span>
+                  <span className="text-lg font-bold">
+                    $
+                    {formData.billingCycle === 'annual'
+                      ? formData.seatCount * 22
+                      : formData.seatCount * 29}
+                    /mo
+                  </span>
+                  {formData.billingCycle === 'annual' && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      ($
+                      {(formData.seatCount * 264).toLocaleString()}
+                      /yr)
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button className="w-full" onClick={nextStep}>

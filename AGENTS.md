@@ -172,6 +172,9 @@ app/                          # TanStack Start application
     __root.tsx                # Root layout
     index.tsx                 # Marketing landing page
     join.tsx                  # Multi-step org signup
+    api/                      # API routes
+      polar/
+        webhook.tsx           # Polar webhook endpoint (validates + delegates to polar-webhook.ts)
     org/$slug/                # Tenant routes (path-based: /org/{slug}/...)
       _authenticated/         # Auth-required routes
         dashboard.tsx         # Main dashboard
@@ -246,6 +249,8 @@ All Polar env vars are configured in both Vercel environments. Sandbox product I
 `POLAR_PRO_MONTHLY_ID`, `POLAR_PRO_ANNUAL_ID`, `POLAR_TEAM_MONTHLY_ID`, `POLAR_TEAM_ANNUAL_ID`, `POLAR_ENTERPRISE_MONTHLY_ID`, `POLAR_ENTERPRISE_ANNUAL_ID`
 
 Plus the shared: `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`
+
+**Webhook Integration:** Polar webhooks are received at `/api/polar/webhook` via TanStack Start API route. The endpoint validates events using `@polar-sh/sdk/webhooks` `validateEvent()`, then delegates to `app/actions/polar-webhook.ts` for processing (`subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked` events).
 
 ## Environment Setup
 

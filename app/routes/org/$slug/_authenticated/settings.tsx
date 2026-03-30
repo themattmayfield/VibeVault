@@ -9,6 +9,7 @@ import { BillingSettings } from '@/components/settings/billing-settings';
 import { OrganizationSettings } from '@/components/settings/organization-settings';
 import { MembersSettings } from '@/components/settings/members-settings';
 import { DataPrivacySettings } from '@/components/settings/data-privacy-settings';
+import { SupportSettings } from '@/components/settings/support-settings';
 import { useUser } from '@clerk/tanstack-react-start';
 import { getOrgMemberRole, getFullOrganization } from '@/actions/organization';
 import { getFeatureFlag } from '@/actions/flags';
@@ -23,6 +24,7 @@ import {
   Building2,
   Users,
   Shield,
+  LifeBuoy,
 } from 'lucide-react';
 import { useOrgSettings, useDevRoleOverride } from '@/hooks/use-org-settings';
 
@@ -33,16 +35,20 @@ export const Route = createFileRoute('/org/$slug/_authenticated/settings')({
     </Suspense>
   ),
   loader: async () => {
-    const showAppearanceTab = await getFeatureFlag({
-      data: { key: 'settings-appearance-tab' },
-    });
-    return { showAppearanceTab: Boolean(showAppearanceTab) };
+    const [showAppearanceTab, showSupportResources] = await Promise.all([
+      getFeatureFlag({ data: { key: 'settings-appearance-tab' } }),
+      getFeatureFlag({ data: { key: 'support-resources-card' } }),
+    ]);
+    return {
+      showAppearanceTab: Boolean(showAppearanceTab),
+      showSupportResources: Boolean(showSupportResources),
+    };
   },
 });
 
 function SettingsPage() {
   const user = useLoaderData({ from: '/org/$slug/_authenticated' });
-  const { showAppearanceTab } = useLoaderData({
+  const { showAppearanceTab, showSupportResources } = useLoaderData({
     from: '/org/$slug/_authenticated/settings',
   });
   const { orgSettings } = useOrgSettings();
@@ -137,6 +143,7 @@ function SettingsPage() {
       : []),
     { value: 'notifications', label: 'Notifications', icon: Bell },
     { value: 'data', label: 'Data & Privacy', icon: Shield },
+    { value: 'support', label: 'Help & Support', icon: LifeBuoy },
   ];
 
   const ownerTabs = [
@@ -196,6 +203,15 @@ function SettingsPage() {
             <DataPrivacySettings user={convexUser} />
           </TabsContent>
 
+          <TabsContent value="support">
+            <SupportSettings
+              user={convexUser}
+              orgSettings={orgSettings}
+              orgSlug={orgDetails?.slug}
+              showResources={showSupportResources}
+            />
+          </TabsContent>
+
           {isOwner && (
             <>
               <TabsContent value="billing">
@@ -225,6 +241,7 @@ function SettingsPage() {
                     currentUserId={clerkUser?.id ?? ''}
                     currentUserRole={memberRole ?? 'member'}
                     organizationId={orgSettings?.clerkOrgId ?? ''}
+                    slug={orgDetails?.slug ?? ''}
                     onRefresh={fetchOrgData}
                   />
                 )}

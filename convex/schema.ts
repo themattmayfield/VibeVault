@@ -77,6 +77,7 @@ export default defineSchema({
     polarSubscriptionId: v.optional(v.string()),
     polarCustomerId: v.optional(v.string()),
     seatCount: v.optional(v.number()),
+    openSignup: v.optional(v.boolean()), // when true, anyone can sign up and auto-join; default false (invite-only)
     featureFlags: v.optional(
       v.object({
         groupsEnabled: v.optional(v.boolean()),

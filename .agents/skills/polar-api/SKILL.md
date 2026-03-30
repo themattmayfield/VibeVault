@@ -67,14 +67,16 @@ This project uses **sandbox mode** for dev/preview. All examples below use the s
 
 ### Pricing Model (4 Tiers)
 
-| Tier | Monthly | Annual | Target |
-|------|---------|--------|--------|
-| **Free** | $0 | $0 | Individuals (no Polar product) |
-| **Pro** | $8/mo | $72/yr | Power users / small teams |
-| **Team** | $29/seat/mo | $264/seat/yr | Organizations (5-100 seats) |
-| **Enterprise** | $99/mo | $990/yr | Large organizations (100+ seats) |
+| Tier | Monthly | Annual | Target | Billing |
+|------|---------|--------|--------|---------|
+| **Free** | $0 | $0 | Individuals (no Polar product) | N/A |
+| **Pro** | $8/mo | $72/yr | Power users / small teams | Per-user |
+| **Team** | $29/seat/mo | $264/seat/yr | Organizations (5-100 seats) | **Seat-based** |
+| **Enterprise** | $99/mo | $990/yr | Large organizations (100+ seats) | Per-org |
 
 Free tier has no Polar product -- it's the default state when no subscription exists.
+
+**Team seat-based pricing:** Team products use `amount_type: "seat_based"` with volume tiers. Checkouts for Team plans pass `seats: <count>` to set the initial seat count.
 
 ### Product IDs (6 Products)
 
@@ -100,6 +102,7 @@ Sandbox and production have separate product IDs (same names, different UUIDs). 
 - **Product mapping:** `app/lib/polar-products.ts` -- `PLAN_PRODUCT_MAP` (tier+cycle -> product ID) and `resolvePlanFromProductId()` (product ID -> tier+cycle)
 - **Plan features:** `app/lib/plan-features.ts` -- `PLAN_FEATURES` defines feature limits per tier, `getPlanFeatures()`, `hasFeature()`, `isAtLeastTier()`
 - **Server actions:** `app/actions/polar.ts` -- `createPolarCheckoutSession`, `getPolarCheckoutSession`, `getPolarCustomer`, `getCustomerPortalUrl`
+- **Webhook endpoint:** `/api/polar/webhook` (TanStack Start API route) -- validates events using `@polar-sh/sdk/webhooks` `validateEvent()`, then delegates to `app/actions/polar-webhook.ts`
 - **Webhook handler:** `app/actions/polar-webhook.ts` -- standalone handler processes `subscription.created`, `subscription.active`, `subscription.updated`, `subscription.canceled`, `subscription.revoked` events
 - **Plan persistence:** Webhook handler calls `api.organization.updateOrgPlan` in Convex to update `orgSettings.plan`, `orgSettings.polarSubscriptionId`, `orgSettings.polarCustomerId`, and auto-derives `orgSettings.featureFlags`
 
@@ -320,6 +323,38 @@ curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
    ```
 
 4. Open the returned URL to complete the test checkout.
+
+## Workflow: Test Seat-Based Checkout
+
+Team plans use seat-based pricing. To test a Team checkout with a specific seat count:
+
+1. Create a checkout with `seats` parameter:
+   ```bash
+   curl -sL -X POST \
+     -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d "{
+       \"products\": [\"$POLAR_TEAM_MONTHLY_ID\"],
+       \"seats\": 5,
+       \"success_url\": \"https://sentio.sh/org/test-org/welcome?checkout_id={CHECKOUT_ID}\",
+       \"customer_email\": \"test@example.com\",
+       \"customer_name\": \"Test User\",
+       \"metadata\": {
+         \"plan\": \"team\",
+         \"billingCycle\": \"monthly\",
+         \"clerkOrgId\": \"test-org-id\"
+       }
+     }" \
+     "https://sandbox-api.polar.sh/v1/checkouts/" | jq '.url'
+   ```
+
+2. Open the returned URL to complete the checkout. The subscription will be created with the specified seat count.
+
+3. Verify the subscription was created with the correct seat count:
+   ```bash
+   curl -sL -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" \
+     "https://sandbox-api.polar.sh/v1/subscriptions/?active=true" | jq '.items[-1] | {id, status, product: .product.name, seats}'
+   ```
 
 ## Workflow: Verify Subscription -> Plan Sync
 

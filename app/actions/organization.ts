@@ -7,6 +7,90 @@ const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY!,
 });
 
+/**
+ * Verify the caller is authenticated and has org:admin role in the given org.
+ * Returns the caller's userId on success, throws on failure.
+ */
+async function requireOrgAdmin(organizationId: string): Promise<string> {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error('Authentication required');
+  }
+
+  const memberships =
+    await clerkClient.organizations.getOrganizationMembershipList({
+      organizationId,
+    });
+
+  const membership = memberships.data.find(
+    (m) => m.publicUserData?.userId === userId
+  );
+
+  if (!membership || membership.role !== 'org:admin') {
+    throw new Error('Only organization owners can perform this action');
+  }
+
+  return userId;
+}
+
+/**
+ * Verify the caller is authenticated and is a member (any role) of the given org.
+ * Returns the caller's userId and role on success, throws on failure.
+ */
+async function requireOrgMember(
+  organizationId: string
+): Promise<{ userId: string; role: string }> {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error('Authentication required');
+  }
+
+  const memberships =
+    await clerkClient.organizations.getOrganizationMembershipList({
+      organizationId,
+    });
+
+  const membership = memberships.data.find(
+    (m) => m.publicUserData?.userId === userId
+  );
+
+  if (!membership) {
+    throw new Error('You are not a member of this organization');
+  }
+
+  const rawRole = membership.role;
+  const role = rawRole === 'org:admin' ? 'owner' : 'member';
+
+  return { userId, role };
+}
+
+/**
+ * Check if the authenticated caller is a member of the given org.
+ * Returns { isMember, role } without throwing -- designed for route loaders
+ * that need to make redirect decisions.
+ */
+export const checkOrgMembership = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ organizationId: z.string() }))
+  .handler(async ({ data }) => {
+    const { userId } = await auth();
+    if (!userId) return { isMember: false, role: null };
+
+    const memberships =
+      await clerkClient.organizations.getOrganizationMembershipList({
+        organizationId: data.organizationId,
+      });
+
+    const membership = memberships.data.find(
+      (m) => m.publicUserData?.userId === userId
+    );
+
+    if (!membership) return { isMember: false, role: null };
+
+    const rawRole = membership.role;
+    const role = rawRole === 'org:admin' ? 'owner' : 'member';
+    return { isMember: true, role };
+  });
+
 /** Set the active organization on the user's session based on org ID */
 export const setActiveOrganization = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ organizationId: z.string() }))
@@ -17,10 +101,12 @@ export const setActiveOrganization = createServerFn({ method: 'POST' })
     return { organizationId: data.organizationId };
   });
 
-/** Get the full organization details including members */
+/** Get the full organization details including members (requires membership) */
 export const getFullOrganization = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ organizationId: z.string() }))
   .handler(async ({ data }) => {
+    await requireOrgMember(data.organizationId);
+
     const org = await clerkClient.organizations.getOrganization({
       organizationId: data.organizationId,
     });
@@ -39,7 +125,7 @@ export const getFullOrganization = createServerFn({ method: 'GET' })
       members: memberships.data.map((m) => ({
         id: m.id,
         userId: m.publicUserData?.userId ?? '',
-        role: m.role,
+        role: m.role === 'org:admin' ? 'owner' : 'member',
         user: {
           name: `${m.publicUserData?.firstName ?? ''} ${m.publicUserData?.lastName ?? ''}`.trim(),
           email: m.publicUserData?.identifier ?? '',
@@ -71,7 +157,7 @@ export const getOrgMemberRole = createServerFn({ method: 'GET' })
     return rawRole;
   });
 
-/** Update organization name/slug/logo */
+/** Update organization name/slug/logo (requires org admin) */
 export const updateOrganization = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({
@@ -82,6 +168,8 @@ export const updateOrganization = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
+    await requireOrgAdmin(data.organizationId);
+
     const result = await clerkClient.organizations.updateOrganization(
       data.organizationId,
       {
@@ -104,19 +192,25 @@ export const inviteMember = createServerFn({ method: 'POST' })
       organizationId: z.string(),
       email: z.string().email(),
       role: z.enum(['member', 'owner']),
+      slug: z.string(),
     })
   )
   .handler(async ({ data }) => {
-    // Map 'owner' to 'org:admin' for Clerk's role system
+    const userId = await requireOrgAdmin(data.organizationId);
+
     const clerkRole =
       data.role === 'owner' ? 'org:admin' : (`org:${data.role}` as string);
+
+    const domain = process.env.VITE_APP_DOMAIN || 'sentio.sh';
+    const redirectUrl = `https://${domain}/org/${data.slug}/dashboard`;
 
     const result = await clerkClient.organizations.createOrganizationInvitation(
       {
         organizationId: data.organizationId,
         emailAddress: data.email,
         role: clerkRole,
-        inviterUserId: (await auth()).userId!,
+        inviterUserId: userId,
+        redirectUrl,
       }
     );
 
@@ -136,7 +230,12 @@ export const removeMember = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
-    // Clerk uses userId to remove members
+    const callerId = await requireOrgAdmin(data.organizationId);
+
+    if (data.memberIdOrEmail === callerId) {
+      throw new Error('Cannot remove yourself from the organization');
+    }
+
     await clerkClient.organizations.deleteOrganizationMembership({
       organizationId: data.organizationId,
       userId: data.memberIdOrEmail,
@@ -153,6 +252,8 @@ export const updateMemberRole = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
+    await requireOrgAdmin(data.organizationId);
+
     const clerkRole =
       data.role === 'owner' ? 'org:admin' : (`org:${data.role}` as string);
 
@@ -199,7 +300,15 @@ export const getUserOrganizations = createServerFn({ method: 'GET' }).handler(
   }
 );
 
-/** Add a user as a member of an organization */
+/**
+ * Add a user as a member of an organization.
+ *
+ * Authorization rules:
+ * - Self-join (caller === userId being added): only allowed when the org has
+ *   openSignup enabled. Role is always 'member' for self-joins.
+ * - Admin-add (caller is an org:admin): allowed regardless of openSignup.
+ *   Role can be 'member' or 'admin'.
+ */
 export const addMemberToOrganization = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({
@@ -209,6 +318,47 @@ export const addMemberToOrganization = createServerFn({ method: 'POST' })
     })
   )
   .handler(async ({ data }) => {
+    const { userId: callerId } = await auth();
+    if (!callerId) {
+      throw new Error('Authentication required');
+    }
+
+    const isSelfJoin = callerId === data.userId;
+
+    if (isSelfJoin) {
+      // Self-join: check if the org allows open sign-up
+      const convexUrl = process.env.VITE_CONVEX_URL;
+      if (!convexUrl) throw new Error('Convex URL not configured');
+
+      const { ConvexHttpClient } = await import('convex/browser');
+      const { api } = await import('../../convex/_generated/api');
+      const convex = new ConvexHttpClient(convexUrl);
+
+      const orgSettings = await convex.query(
+        api.organization.getOrgSettingsByClerkOrgId,
+        { clerkOrgId: data.organizationId }
+      );
+
+      if (!orgSettings?.openSignup) {
+        throw new Error(
+          'This organization requires an invitation to join. Contact an admin for access.'
+        );
+      }
+
+      // Self-join is always as a regular member -- ignore any role escalation
+      const result =
+        await clerkClient.organizations.createOrganizationMembership({
+          organizationId: data.organizationId,
+          userId: data.userId,
+          role: 'org:member',
+        });
+
+      return { id: result.id, role: result.role };
+    }
+
+    // Admin-initiated add: verify the caller is an org admin
+    await requireOrgAdmin(data.organizationId);
+
     const clerkRole =
       data.role === 'owner'
         ? 'org:admin'

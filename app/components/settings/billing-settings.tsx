@@ -224,14 +224,20 @@ export function BillingSettings({
           </div>
 
           {isPaidPlan && (
-            <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
+            <div className="rounded-md bg-amber-50 p-3 text-sm text-foreground dark:bg-amber-950 dark:text-foreground">
               You can downgrade, cancel, or change your payment method through
               the billing portal.
               {currentPlan === 'team' && (
                 <>
                   <br />
-                  To add more seats, contact us or upgrade to Enterprise for
-                  unlimited seats.
+                  To add more seats,{' '}
+                  <a
+                    href="mailto:support@sentio.sh?subject=Add%20More%20Seats%20(Team%20Plan)"
+                    className="underline hover:text-primary dark:hover:text-primary"
+                  >
+                    contact us
+                  </a>{' '}
+                  or upgrade to Enterprise for unlimited seats.
                 </>
               )}
             </div>
@@ -359,7 +365,12 @@ export function BillingSettings({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline">Contact Sales</Button>
+            <Button variant="outline" asChild>
+              <a href="mailto:support@sentio.sh?subject=Enterprise%20Custom%20Solutions">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Contact Sales
+              </a>
+            </Button>
           </CardContent>
         </Card>
       )}

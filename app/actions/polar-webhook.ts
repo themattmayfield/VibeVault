@@ -1,4 +1,3 @@
-import { polarClient } from '@/lib/polar';
 import { resolvePlanFromProductId } from '@/lib/polar-products';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../convex/_generated/api';
@@ -8,8 +7,8 @@ const convexUrl = process.env.VITE_CONVEX_URL;
 const convex = convexUrl ? new ConvexHttpClient(convexUrl) : null;
 
 /**
- * Handle a Polar webhook payload.
- * Called from the API route that receives Polar webhook events.
+ * Handle a validated Polar webhook payload.
+ * Called from the /api/polar/webhook route after signature verification.
  */
 export async function handlePolarWebhook(payload: unknown) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,8 +46,12 @@ export async function handlePolarWebhook(payload: unknown) {
       return;
     }
 
+    // Extract seat count for seat-based subscriptions (Team plan)
+    const seatCount =
+      typeof subscription?.seats === 'number' ? subscription.seats : undefined;
+
     console.log(
-      `[Polar Webhook] Subscription ${type}: plan=${resolved.plan}, orgId=${clerkOrgId ?? 'unknown'}`
+      `[Polar Webhook] Subscription ${type}: plan=${resolved.plan}, orgId=${clerkOrgId ?? 'unknown'}, seats=${seatCount ?? 'N/A'}`
     );
 
     if (clerkOrgId) {
@@ -58,8 +61,11 @@ export async function handlePolarWebhook(payload: unknown) {
           plan: resolved.plan,
           polarSubscriptionId: subscription.id,
           polarCustomerId: subscription.customer_id,
+          ...(seatCount !== undefined && { seatCount }),
         });
-        console.log(`[Polar Webhook] Updated org plan to ${resolved.plan}`);
+        console.log(
+          `[Polar Webhook] Updated org plan to ${resolved.plan}${seatCount ? ` (${seatCount} seats)` : ''}`
+        );
       } catch (err) {
         console.error('[Polar Webhook] Failed to update org plan:', err);
       }

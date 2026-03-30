@@ -48,20 +48,37 @@ function OrgSSOCallbackPage() {
           clerkUserId: userId,
         });
 
-        if (!existingUser) {
-          // New user via OAuth sign-up -- create Convex user + add to org
+        const isNewUser = !existingUser;
+
+        if (isNewUser) {
+          // New user via OAuth sign-up -- create Convex user
           await createUser({
             clerkUserId: userId,
             displayName: '',
           });
 
-          await addMemberToOrganization({
-            data: {
-              userId,
-              organizationId: orgSettings.clerkOrgId ?? '',
-              role: 'member',
-            },
+          // Add to org only if open signup is enabled
+          if (orgSettings.openSignup) {
+            await addMemberToOrganization({
+              data: {
+                userId,
+                organizationId: orgSettings.clerkOrgId ?? '',
+                role: 'member',
+              },
+            });
+          }
+        }
+
+        // If this is a new user and open signup is off, redirect to not-a-member
+        if (isNewUser && !orgSettings.openSignup) {
+          router.navigate({
+            to: '/org/$slug/not-a-member',
+            params: { slug },
           });
+          toast.info(
+            'Account created. Contact an admin for access to this organization.'
+          );
+          return;
         }
 
         // Migrate any local storage moods
